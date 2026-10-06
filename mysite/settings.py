@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.users',
     'apps.info',
+    'apps.motor',
 ]
 
 MIDDLEWARE = [
@@ -81,7 +82,7 @@ if os.getenv('USE_MYSQL') == '1':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'bsitcrud',
+            'NAME': 'motor_assistant_db',
             'USER': 'root',
             'PASSWORD': '',
             'HOST': 'localhost',
