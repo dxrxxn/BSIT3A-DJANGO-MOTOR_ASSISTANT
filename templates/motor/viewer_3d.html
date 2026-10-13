@@ -1,0 +1,891 @@
+{% extends "theme/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-xl">
+
+  <!-- ── Page Header ─────────────────────────────────────────── -->
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="page-pretitle">Interactive</div>
+          <h2 class="page-title mb-0">3D Engine Viewer</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+          <button class="btn btn-primary" id="btn-upload-open" type="button">
+            <i class="fas fa-upload me-2"></i>Upload
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  <div id="viewer-alert" class="alert d-none mb-3" role="alert"></div>
+
+  <div class="row g-3">
+
+    <!-- ── LEFT: viewer ──────────────────────────────────────── -->
+    <div class="col-lg-9">
+      <div class="sf-viewer-card" id="viewer-card">
+
+        <!-- loading overlay -->
+        <div id="viewer-loading" class="sf-loading" style="display:none">
+          <div class="sf-loading-inner">
+            <div class="sf-spinner"></div>
+            <div id="viewer-loading-text" class="sf-loading-text">Initialising…</div>
+            <div id="viewer-progress-wrap" class="sf-progress-wrap d-none">
+              <div id="viewer-progress-bar" class="sf-progress-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- placeholder -->
+        <div id="viewer-placeholder" class="sf-placeholder">
+          <i class="fas fa-motorcycle sf-placeholder-icon"></i>
+          <p class="sf-placeholder-title">3D Engine Viewer</p>
+          <p class="sf-placeholder-sub">Upload a GLB/GLTF model or a JPG/PNG photo</p>
+          <button class="sf-btn-upload" id="btn-upload-open-2" type="button">
+            <i class="fas fa-upload me-1"></i>Upload
+          </button>
+        </div>
+
+        <canvas id="viewer-canvas"></canvas>
+
+        <!-- Stats overlay -->
+        <div id="sf-stats" class="sf-stats d-none">
+          <div class="sf-stat-row"><span class="sf-stat-label">Faces</span><span class="sf-stat-val" id="stat-faces">—</span></div>
+          <div class="sf-stat-row"><span class="sf-stat-label">Verts</span><span class="sf-stat-val" id="stat-verts">—</span></div>
+          <div class="sf-stat-row mt-1"><span class="sf-stat-label">Mode</span><span class="sf-stat-val" id="stat-mode">Clay</span></div>
+        </div>
+
+        <!-- Bottom toolbar -->
+        <div id="sf-toolbar" class="sf-toolbar d-none">
+          <div class="sf-toolbar-group">
+            <button class="sf-tbtn sf-shade active" data-shade="clay"><i class="fas fa-circle-half-stroke"></i><span>Clay</span></button>
+            <button class="sf-tbtn sf-shade" data-shade="texture"><i class="fas fa-palette"></i><span>Color</span></button>
+            <button class="sf-tbtn sf-shade" data-shade="wireframe"><i class="fas fa-draw-polygon"></i><span>Wire</span></button>
+            <button class="sf-tbtn sf-shade" data-shade="normals"><i class="fas fa-layer-group"></i><span>Normals</span></button>
+          </div>
+          <div class="sf-toolbar-sep"></div>
+          <div class="sf-toolbar-group">
+            <button class="sf-tbtn" id="btn-auto-rotate"><i class="fas fa-sync-alt"></i><span>Spin</span></button>
+            <button class="sf-tbtn" id="btn-reset-camera"><i class="fas fa-home"></i><span>Reset</span></button>
+            <button class="sf-tbtn" id="btn-fullscreen"><i class="fas fa-expand"></i><span>Full</span></button>
+            <button class="sf-tbtn" id="btn-download-glb" style="display:none"><i class="fas fa-download"></i><span>GLB</span></button>
+          </div>
+        </div>
+
+        <div id="viewer-hint" class="sf-hint d-none">
+          <i class="fas fa-mouse me-1"></i> Drag · Scroll · Right-drag
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── RIGHT: panels ─────────────────────────────────────── -->
+    <div class="col-lg-3 d-flex flex-column gap-3">
+
+      <!-- My Models -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-cubes me-2 text-primary"></i>My Models</div>
+        </div>
+        <div class="card-body p-2">
+          <div id="model-list-empty" class="text-center text-muted py-2 small">No models yet.</div>
+          <div id="model-list" class="list-group list-group-flush"></div>
+        </div>
+      </div>
+
+      <!-- Reconstruction settings (shown when image selected) -->
+      <div class="card" id="recon-card" style="display:none">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-magic me-2 text-warning"></i>Photo → 3D (Server)</div>
+        </div>
+        <div class="card-body p-2">
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1 d-flex justify-content-between">
+              Depth <span id="depth-val" class="text-primary">0.35</span>
+            </label>
+            <input type="range" class="form-range" id="depth-slider"
+                   min="0.05" max="0.80" step="0.05" value="0.35">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Mesh Resolution</label>
+            <select class="form-select form-select-sm" id="mesh-res">
+              <option value="100">Low (100)</option>
+              <option value="200" selected>Medium (200)</option>
+              <option value="300">High (300)</option>
+              <option value="400">Ultra (400)</option>
+            </select>
+          </div>
+          <button class="btn btn-sm btn-warning w-100 fw-semibold" id="btn-reconstruct">
+            <i class="fas fa-cube me-1"></i>Convert to 3D
+          </button>
+          <div id="recon-status" class="mt-2 small text-muted d-none"></div>
+          <div id="recon-warnings" class="mt-1 small text-warning d-none"></div>
+        </div>
+      </div>
+
+      <!-- Parts inspector -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-cogs me-2 text-primary"></i>Parts Inspector</div>
+        </div>
+        <div class="card-body p-2">
+          <div id="parts-empty" class="text-center text-muted py-2 small">Load a model to inspect.</div>
+          <div id="parts-list" class="list-group list-group-flush"
+               style="max-height:220px;overflow-y:auto;"></div>
+          <div id="selected-part-info" class="d-none mt-2 p-2 rounded"
+               style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);">
+            <div class="small fw-bold text-primary" id="selected-part-name"></div>
+            <div class="small text-muted mt-1" id="selected-part-desc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Free models hint -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Free GLB Models</div>
+        </div>
+        <div class="card-body">
+          <ul class="small mb-0 ps-3">
+            <li><a href="https://sketchfab.com/search?q=scooter+engine&type=models&features=downloadable"
+                   target="_blank" rel="noopener" class="text-primary">Sketchfab</a></li>
+            <li><a href="https://poly.pizza" target="_blank" rel="noopener" class="text-primary">Poly Pizza</a></li>
+            <li><a href="https://market.pmnd.rs" target="_blank" rel="noopener" class="text-primary">pmnd.rs market</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Upload Modal ──────────────────────────────────────────────── -->
+<div class="modal modal-blur fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-upload me-2 text-primary"></i>Upload File</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="upload-error" class="alert alert-danger d-none mb-3"></div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Select file</label>
+          <input type="file" class="form-control" id="upload-input"
+                 accept=".glb,.gltf,.jpg,.jpeg,.png">
+          <div class="form-hint mt-1">
+            <strong>GLB/GLTF</strong> — loads directly into viewer &nbsp;·&nbsp;
+            <strong>JPG/PNG</strong> — use "Convert to 3D" panel after upload
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-upload-confirm">
+          <i class="fas fa-upload me-1"></i>Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── STYLES ────────────────────────────────────────────────────── -->
+<style>
+.sf-viewer-card {
+  position:relative; width:100%; min-height:600px; height:70vh;
+  background:#0e0e12; border-radius:14px; overflow:hidden;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.9);
+}
+#viewer-canvas {
+  position:absolute; inset:0; width:100% !important; height:100% !important;
+  display:none; border-radius:14px;
+}
+.sf-loading {
+  position:absolute; inset:0; z-index:30;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(8,8,14,.88); backdrop-filter:blur(4px);
+}
+.sf-loading-inner { text-align:center; min-width:200px; }
+.sf-spinner {
+  width:3rem; height:3rem; margin:0 auto 1rem;
+  border:3px solid rgba(99,102,241,.2); border-top-color:#6366f1;
+  border-radius:50%; animation:sf-spin .8s linear infinite;
+}
+@keyframes sf-spin { to { transform:rotate(360deg); } }
+.sf-loading-text { color:rgba(255,255,255,.55); font-size:.8rem; letter-spacing:.06em; }
+.sf-progress-wrap {
+  height:4px; background:rgba(255,255,255,.1); border-radius:2px;
+  margin-top:.75rem; overflow:hidden;
+}
+.sf-progress-bar {
+  height:100%; width:0%; background:#6366f1; border-radius:2px;
+  transition:width .3s ease;
+}
+.sf-placeholder {
+  position:absolute; inset:0; z-index:20;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem;
+}
+.sf-placeholder-icon { font-size:4rem; color:rgba(99,102,241,.35); margin-bottom:.5rem; }
+.sf-placeholder-title { color:rgba(255,255,255,.6); font-size:1rem; font-weight:600; margin:0; }
+.sf-placeholder-sub { color:rgba(255,255,255,.3); font-size:.78rem; margin:0; text-align:center; }
+.sf-btn-upload {
+  padding:.5rem 1.25rem; border:none; border-radius:8px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:#fff; font-size:.82rem; font-weight:600; cursor:pointer;
+  transition:opacity .15s,transform .15s;
+}
+.sf-btn-upload:hover { opacity:.88; transform:translateY(-1px); }
+.sf-stats {
+  position:absolute; top:1rem; left:1rem; z-index:25;
+  background:rgba(8,8,14,.78); backdrop-filter:blur(8px);
+  border-radius:10px; padding:.65rem .9rem; min-width:9rem;
+  border:1px solid rgba(255,255,255,.07);
+}
+.sf-stat-row { display:flex; justify-content:space-between; gap:1.5rem; line-height:1.8; }
+.sf-stat-label { color:rgba(255,255,255,.4); font-size:.7rem; font-weight:500; letter-spacing:.04em; }
+.sf-stat-val { color:rgba(255,255,255,.92); font-size:.78rem; font-weight:700; font-variant-numeric:tabular-nums; }
+.sf-toolbar {
+  position:absolute; bottom:1rem; left:50%; transform:translateX(-50%); z-index:25;
+  display:flex; align-items:center; gap:.45rem;
+  background:rgba(8,8,14,.82); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.09); border-radius:50px;
+  padding:.4rem .7rem; white-space:nowrap;
+}
+.sf-toolbar-group { display:flex; gap:.25rem; }
+.sf-toolbar-sep { width:1px; height:1.3rem; background:rgba(255,255,255,.1); margin:0 .2rem; }
+.sf-tbtn {
+  display:flex; flex-direction:column; align-items:center; gap:.12rem;
+  padding:.3rem .5rem; border:none; border-radius:8px; background:transparent;
+  color:rgba(255,255,255,.45); font-size:.58rem; font-weight:600; letter-spacing:.04em;
+  cursor:pointer; transition:background .15s,color .15s,transform .12s; min-width:2.6rem;
+}
+.sf-tbtn i { font-size:.82rem; }
+.sf-tbtn:hover { background:rgba(255,255,255,.1); color:#fff; transform:translateY(-1px); }
+.sf-tbtn.active { background:rgba(99,102,241,.42); color:#fff; box-shadow:0 0 0 1px rgba(99,102,241,.55); }
+.sf-tbtn.sf-shade.active { background:rgba(34,197,94,.25); color:#4ade80; box-shadow:0 0 0 1px rgba(34,197,94,.45); }
+.sf-hint {
+  position:absolute; top:1rem; right:1rem; z-index:25;
+  background:rgba(8,8,14,.65); backdrop-filter:blur(4px);
+  color:rgba(255,255,255,.35); font-size:.66rem; border-radius:8px;
+  padding:.3rem .65rem; pointer-events:none; border:1px solid rgba(255,255,255,.05);
+}
+#model-list .list-group-item {
+  cursor:pointer; padding:.42rem .6rem; font-size:.78rem;
+  display:flex; align-items:center; gap:.45rem;
+  border-radius:.45rem !important; margin-bottom:.18rem; transition:background .12s;
+}
+#model-list .list-group-item.active {
+  background:rgba(99,102,241,.12); border-color:rgba(99,102,241,.25); color:var(--tblr-primary);
+}
+#parts-list .list-group-item {
+  padding:.32rem .5rem; font-size:.76rem; cursor:pointer;
+  display:flex; align-items:center; gap:.45rem;
+  border-radius:.45rem !important; transition:background .1s;
+}
+#parts-list .list-group-item:hover,
+#parts-list .list-group-item.active { background:rgba(99,102,241,.1); color:var(--tblr-primary); }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+'use strict';
+import * as THREE from 'three';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader }     from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }    from 'three/addons/loaders/DRACOLoader.js';
+import { RGBELoader }     from 'three/addons/loaders/RGBELoader.js';
+import { EXRLoader }      from 'three/addons/loaders/EXRLoader.js';
+
+/* ═══════════════════════════════ DOM ═══════════════════════════════════════ */
+const canvas       = document.getElementById('viewer-canvas');
+const card         = document.getElementById('viewer-card');
+const placeholder  = document.getElementById('viewer-placeholder');
+const loadingEl    = document.getElementById('viewer-loading');
+const loadingText  = document.getElementById('viewer-loading-text');
+const progressWrap = document.getElementById('viewer-progress-wrap');
+const progressBar  = document.getElementById('viewer-progress-bar');
+const toolbar      = document.getElementById('sf-toolbar');
+const statsEl      = document.getElementById('sf-stats');
+const hintBar      = document.getElementById('viewer-hint');
+const statFaces    = document.getElementById('stat-faces');
+const statVerts    = document.getElementById('stat-verts');
+const statMode     = document.getElementById('stat-mode');
+const partsList    = document.getElementById('parts-list');
+const partsEmpty   = document.getElementById('parts-empty');
+const selName      = document.getElementById('selected-part-name');
+const selDesc      = document.getElementById('selected-part-desc');
+const selInfo      = document.getElementById('selected-part-info');
+const modelListEl  = document.getElementById('model-list');
+const modelEmpty   = document.getElementById('model-list-empty');
+const alertBox     = document.getElementById('viewer-alert');
+const uploadInput  = document.getElementById('upload-input');
+const uploadError  = document.getElementById('upload-error');
+const depthSlider  = document.getElementById('depth-slider');
+const depthVal     = document.getElementById('depth-val');
+const meshResEl    = document.getElementById('mesh-res');
+const btnReconstruct = document.getElementById('btn-reconstruct');
+const reconCard    = document.getElementById('recon-card');
+const reconStatus  = document.getElementById('recon-status');
+const reconWarnings= document.getElementById('recon-warnings');
+const btnAutoRotate= document.getElementById('btn-auto-rotate');
+const btnReset     = document.getElementById('btn-reset-camera');
+const btnFullscreen= document.getElementById('btn-fullscreen');
+const btnDownload  = document.getElementById('btn-download-glb');
+
+let SERVER_MODELS  = {{ model_files|safe }};
+let _lastImageEntry = null;  // { name, url, label } of the last uploaded image
+let _lastGlbUrl     = null;  // URL of the last server-generated GLB
+
+/* ═════════════════════════ THREE.JS SETUP ═══════════════════════════════════ */
+let renderer, scene, camera, controls;
+let currentModel   = null;
+let savedMaterials = new Map();
+let currentShade   = 'clay';
+
+function initThree() {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled   = true;
+  renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+  renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  renderer.outputColorSpace    = THREE.SRGBColorSpace;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0e0e12);
+  scene.fog = new THREE.FogExp2(0x0e0e12, 0.04);
+
+  // Procedural studio environment map (no external HDRI needed)
+  const pmgen = new THREE.PMREMGenerator(renderer);
+  pmgen.compileEquirectangularShader();
+  const envScene = new THREE.Scene();
+  // Dome light: top warm, horizon neutral
+  const topLight = new THREE.DirectionalLight(0xfff8f0, 2.5);
+  topLight.position.set(3, 8, 5);
+  envScene.add(topLight);
+  const fillLight = new THREE.DirectionalLight(0x8090cc, 0.8);
+  fillLight.position.set(-4, 2, -3);
+  envScene.add(fillLight);
+
+  // Grid floor
+  const grid = new THREE.GridHelper(30, 60, 0x1a1a24, 0x141420);
+  grid.position.y = -2.2;
+  grid.material.opacity = 0.5;
+  grid.material.transparent = true;
+  scene.add(grid);
+
+  // Studio lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+
+  const key = new THREE.DirectionalLight(0xfff8f0, 3.0);
+  key.position.set(4, 8, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.radius = 3;
+  key.shadow.bias = -0.0003;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0x8899cc, 1.0);
+  fill.position.set(-5, 3, -4);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xffd090, 0.7);
+  rim.position.set(0, -2, -6);
+  scene.add(rim);
+
+  camera = new THREE.PerspectiveCamera(40, 1, 0.01, 300);
+  camera.position.set(0, 1.5, 6);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping   = true;
+  controls.dampingFactor   = 0.06;
+  controls.minDistance     = 0.3;
+  controls.maxDistance     = 60;
+  controls.maxPolarAngle   = Math.PI * 0.72;
+  controls.autoRotateSpeed = 1.2;
+
+  fitCanvas();
+  new ResizeObserver(fitCanvas).observe(card);
+  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+}
+
+function fitCanvas() {
+  const w = card.clientWidth || 900, h = card.clientHeight || 600;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+/* ════════════════════════ MATCAP (clay) ════════════════════════════════════ */
+function buildMatcap() {
+  const sz = 256, c = document.createElement('canvas');
+  c.width = c.height = sz;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#18181c'; ctx.fillRect(0, 0, sz, sz);
+  const g1 = ctx.createRadialGradient(sz*.37, sz*.31, 0, sz*.5, sz*.5, sz*.65);
+  g1.addColorStop(0,   'rgba(220,217,210,1)');
+  g1.addColorStop(0.3, 'rgba(168,165,160,1)');
+  g1.addColorStop(0.65,'rgba(95,93,90,1)');
+  g1.addColorStop(1,   'rgba(18,18,20,1)');
+  ctx.fillStyle = g1;
+  ctx.beginPath(); ctx.arc(sz/2,sz/2,sz/2,0,Math.PI*2); ctx.fill();
+  const g2 = ctx.createRadialGradient(sz*.32,sz*.27,0, sz*.34,sz*.29,sz*.13);
+  g2.addColorStop(0,'rgba(255,255,252,.9)');
+  g2.addColorStop(.5,'rgba(240,238,230,.3)');
+  g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.arc(sz/2,sz/2,sz/2,0,Math.PI*2); ctx.fill();
+  const g3 = ctx.createRadialGradient(sz*.72,sz*.78,0, sz*.72,sz*.78,sz*.3);
+  g3.addColorStop(0,'rgba(140,165,210,.4)');
+  g3.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = g3;
+  ctx.beginPath(); ctx.arc(sz/2,sz/2,sz/2,0,Math.PI*2); ctx.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const MATCAP = buildMatcap();
+
+/* ═══════════════════════════ SHADING ══════════════════════════════════════ */
+function clayMat() {
+  return new THREE.MeshMatcapMaterial({ matcap: MATCAP, side: THREE.FrontSide });
+}
+function setShade(mode) {
+  currentShade = mode;
+  document.querySelectorAll('.sf-shade').forEach(b =>
+    b.classList.toggle('active', b.dataset.shade === mode));
+  if (!currentModel) return;
+  currentModel.traverse(c => {
+    if (!c.isMesh) return;
+    const orig = savedMaterials.get(c);
+    if      (mode === 'clay')      c.material = clayMat();
+    else if (mode === 'wireframe') c.material = new THREE.MeshBasicMaterial({ color: 0x6366f1, wireframe: true });
+    else if (mode === 'normals')   c.material = new THREE.MeshNormalMaterial();
+    else if (orig) c.material = Array.isArray(orig) ? orig.map(m => m.clone()) : orig.clone();
+  });
+  statMode.textContent = { clay:'Clay', texture:'Color', wireframe:'Wire', normals:'Normals' }[mode];
+}
+document.querySelectorAll('.sf-shade').forEach(b =>
+  b.addEventListener('click', () => setShade(b.dataset.shade)));
+
+/* ═══════════════════════════ UTILITIES ════════════════════════════════════ */
+function showLoading(msg = 'Loading…', progress = null) {
+  loadingText.textContent = msg;
+  loadingEl.style.display = 'flex';
+  if (progress !== null) {
+    progressWrap.classList.remove('d-none');
+    progressBar.style.width = `${Math.round(progress * 100)}%`;
+  } else {
+    progressWrap.classList.add('d-none');
+  }
+}
+function hideLoading() { loadingEl.style.display = 'none'; }
+
+function showCanvas() {
+  placeholder.style.display = 'none';
+  canvas.style.display = 'block';
+  toolbar.classList.remove('d-none');
+  statsEl.classList.remove('d-none');
+  hintBar.classList.remove('d-none');
+}
+function showAlert(type, msg) {
+  alertBox.className = `alert alert-${type} mb-3`;
+  alertBox.textContent = msg;
+  alertBox.classList.remove('d-none');
+  clearTimeout(showAlert._t);
+  showAlert._t = setTimeout(() => alertBox.classList.add('d-none'), 10000);
+}
+function resetCamera() {
+  if (!currentModel) return;
+  const box = new THREE.Box3().setFromObject(currentModel);
+  const ctr = new THREE.Vector3(); box.getCenter(ctr);
+  const sz  = new THREE.Vector3(); box.getSize(sz);
+  const d   = Math.max(sz.x, sz.y, sz.z) * 2.4;
+  camera.position.set(ctr.x + d * .28, ctr.y + sz.y * .3, ctr.z + d);
+  controls.target.copy(ctr); controls.update();
+}
+function clearScene() {
+  if (!currentModel) return;
+  scene.remove(currentModel);
+  currentModel.traverse(o => {
+    if (o.isMesh) {
+      o.geometry.dispose();
+      [].concat(o.material).forEach(m => m.dispose());
+    }
+  });
+  currentModel = null;
+  savedMaterials.clear();
+}
+function countGeo(model) {
+  let f = 0, v = 0;
+  model.traverse(c => {
+    if (!c.isMesh) return;
+    const g = c.geometry;
+    f += g.index ? g.index.count / 3 : (g.attributes.position?.count ?? 0) / 3;
+    v += g.attributes.position?.count ?? 0;
+  });
+  statFaces.textContent = Math.round(f).toLocaleString();
+  statVerts.textContent = v.toLocaleString();
+}
+
+/* ═══════════════════════════ TOOLBAR ══════════════════════════════════════ */
+btnAutoRotate.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  btnAutoRotate.classList.toggle('active', controls.autoRotate);
+});
+btnReset.addEventListener('click', resetCamera);
+btnFullscreen.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    card.requestFullscreen().catch(() => {});
+    btnFullscreen.querySelector('i').className = 'fas fa-compress';
+  } else {
+    document.exitFullscreen();
+    btnFullscreen.querySelector('i').className = 'fas fa-expand';
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement)
+    btnFullscreen.querySelector('i').className = 'fas fa-expand';
+  setTimeout(fitCanvas, 100);
+});
+btnDownload.addEventListener('click', () => {
+  if (_lastGlbUrl) { const a = document.createElement('a'); a.href = _lastGlbUrl; a.download = ''; a.click(); }
+});
+
+/* ═══════════════════════════ PARTS LIST ═══════════════════════════════════ */
+const PART_DESC = {
+  crankcase:'Main engine housing — crankshaft, bearings, oil.',
+  cylinder:'Cylinder bore — combustion + cooling fins.',
+  head:'Cylinder head — seals combustion; holds spark plug.',
+  intake:'Intake manifold — delivers air-fuel mix.',
+  exhaust:'Exhaust pipe — routes combustion gases out.',
+  pulley:'CVT pulley — variable gear ratio.',
+  belt:'CVT belt — power transfer.',
+  bolt:'Fastener.',
+  mount:'Engine mount bracket.',
+  cover:'Side cover — CVT or magneto.',
+  shaft:'Crankshaft / output shaft.',
+  fin:'Cooling fin.',
+};
+function partDesc(name) {
+  const l = name.toLowerCase();
+  for (const [k, d] of Object.entries(PART_DESC)) if (l.includes(k)) return d;
+  return 'Engine component.';
+}
+function buildPartsList(model) {
+  partsList.innerHTML = ''; selInfo.classList.add('d-none');
+  const seen = new Set(), items = [];
+  model.traverse(c => {
+    if (c.isMesh && c.name && !seen.has(c.name)) { seen.add(c.name); items.push(c); }
+  });
+  if (!items.length) { partsEmpty.style.display = 'block'; return; }
+  partsEmpty.style.display = 'none';
+  items.slice(0, 120).forEach(mesh => {
+    const item = document.createElement('div');
+    item.className = 'list-group-item';
+    item.innerHTML = `<i class="fas fa-cog text-primary" style="font-size:.72rem;"></i><span>${mesh.name}</span>`;
+    item.addEventListener('click', () => {
+      partsList.querySelectorAll('.list-group-item').forEach(x => x.classList.remove('active'));
+      item.classList.add('active');
+      const box = new THREE.Box3().setFromObject(mesh);
+      const ctr = new THREE.Vector3(); box.getCenter(ctr);
+      const sz  = new THREE.Vector3(); box.getSize(sz);
+      camera.position.set(ctr.x, ctr.y + sz.y * .5, ctr.z + Math.max(sz.x, sz.y, sz.z) * 3.5);
+      controls.target.copy(ctr); controls.update();
+      selName.textContent = mesh.name;
+      selDesc.textContent = partDesc(mesh.name);
+      selInfo.classList.remove('d-none');
+    });
+    partsList.appendChild(item);
+  });
+}
+
+/* ═══════════════════════════ GLB LOADER ═══════════════════════════════════ */
+function loadGLTF(url, label, isGenerated = false) {
+  showLoading(`Loading ${label}…`, 0);
+  const draco = new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/libs/draco/');
+  const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+  loader.load(
+    url,
+    gltf => {
+      clearScene();
+      currentShade = 'clay';
+      const model = gltf.scene;
+      // Normalise size
+      const box = new THREE.Box3().setFromObject(model);
+      const sz  = new THREE.Vector3(); box.getSize(sz);
+      const ctr = new THREE.Vector3(); box.getCenter(ctr);
+      const sc  = 3 / Math.max(sz.x, sz.y, sz.z);
+      model.scale.setScalar(sc);
+      model.position.sub(ctr.multiplyScalar(sc));
+      model.traverse(c => {
+        if (c.isMesh) {
+          c.castShadow = c.receiveShadow = true;
+          // Store originals for texture-mode switching
+          savedMaterials.set(c,
+            Array.isArray(c.material)
+              ? c.material.map(m => m.clone())
+              : c.material.clone()
+          );
+        }
+      });
+      scene.add(model); currentModel = model;
+      setShade('clay');
+      countGeo(model); resetCamera(); showCanvas();
+      buildPartsList(model); hideLoading();
+      reconCard.style.display = 'none';
+      // Show download button only for server-generated GLBs
+      if (isGenerated) {
+        _lastGlbUrl = url;
+        btnDownload.style.display = '';
+      } else {
+        btnDownload.style.display = 'none';
+      }
+    },
+    xhr => {
+      if (xhr.total) showLoading(`Loading ${label}…`, xhr.loaded / xhr.total);
+    },
+    err => {
+      hideLoading();
+      showAlert('danger', 'Load failed: ' + (err.message || err));
+    }
+  );
+}
+
+/* ═══════════════════════════ IMAGE PREVIEW ════════════════════════════════ */
+function loadImagePreview(url, label) {
+  // Show the image as a flat textured plane so user can see it while
+  // server reconstruction is running (or if they don't reconstruct at all).
+  showLoading('Displaying image…');
+  const loader = new THREE.TextureLoader();
+  loader.load(url, tex => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    clearScene();
+    const asp  = tex.image.width / tex.image.height;
+    const pH = 2.6, pW = pH * asp;
+    const geo  = new THREE.PlaneGeometry(pW, pH);
+    const mat  = new THREE.MeshStandardMaterial({
+      map: tex, roughness: 0.5, metalness: 0.05, side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name  = 'image_preview';
+    savedMaterials.set(mesh, mat.clone());
+    const grp  = new THREE.Group(); grp.add(mesh);
+    scene.add(grp); currentModel = grp;
+    statFaces.textContent = '2';
+    statVerts.textContent = '4';
+    const camD = Math.max(pW, pH) * 1.7;
+    camera.position.set(0, 0, camD);
+    controls.target.set(0, 0, 0);
+    controls.minDistance  = 0.4;
+    controls.maxDistance  = camD * 4;
+    controls.maxPolarAngle = Math.PI;
+    controls.update();
+    showCanvas();
+    setShade('texture');  // images look best in texture mode
+    hideLoading();
+    // Show reconstruction panel
+    reconCard.style.display = '';
+    reconStatus.classList.add('d-none');
+    reconWarnings.classList.add('d-none');
+    btnDownload.style.display = 'none';
+  }, undefined, () => {
+    hideLoading();
+    showAlert('danger', 'Could not display image.');
+  });
+}
+
+/* ═══════════════════════════ RECONSTRUCTION ══════════════════════════════ */
+depthSlider.addEventListener('input', () => { depthVal.textContent = depthSlider.value; });
+
+btnReconstruct.addEventListener('click', async () => {
+  if (!_lastImageEntry) { showAlert('warning', 'Upload an image first.'); return; }
+
+  const depth = depthSlider.value;
+  const res   = meshResEl.value;
+
+  btnReconstruct.disabled = true;
+  btnReconstruct.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing…';
+  reconStatus.textContent  = 'Sending to server…';
+  reconStatus.classList.remove('d-none');
+  reconWarnings.classList.add('d-none');
+  showLoading('Reconstructing 3D mesh…');
+
+  // Re-fetch the image file as a blob to POST it
+  let blob;
+  try {
+    const r = await fetch(_lastImageEntry.url);
+    blob = await r.blob();
+  } catch (e) {
+    hideLoading();
+    showAlert('danger', 'Could not retrieve image: ' + e.message);
+    _resetReconBtn();
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('model_file', blob, _lastImageEntry.name);
+  fd.append('depth_scale', depth);
+  fd.append('mesh_res', res);
+
+  try {
+    const resp = await fetch('{% url "motor:reconstruct_3d" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      body: fd,
+    });
+    const data = await resp.json();
+
+    if (data.error) {
+      hideLoading();
+      showAlert('danger', 'Reconstruction failed: ' + data.error);
+      reconStatus.textContent = 'Failed.';
+      _resetReconBtn();
+      return;
+    }
+
+    // Add to model list and load
+    const entry = { name: data.name, url: data.url, label: data.label };
+    SERVER_MODELS.push(entry);
+    buildModelList(SERVER_MODELS);
+    _markActive(entry.name);
+
+    reconStatus.textContent = `Done — ${data.faces.toLocaleString()} faces, ${data.vertices.toLocaleString()} verts`;
+
+    if (data.warnings && data.warnings.length) {
+      reconWarnings.textContent = '⚠ ' + data.warnings.join(' | ');
+      reconWarnings.classList.remove('d-none');
+    }
+
+    loadGLTF(data.url, data.label, true);
+  } catch (e) {
+    hideLoading();
+    showAlert('danger', 'Server error: ' + e.message);
+    reconStatus.textContent = 'Failed.';
+  }
+  _resetReconBtn();
+});
+
+function _resetReconBtn() {
+  btnReconstruct.disabled = false;
+  btnReconstruct.innerHTML = '<i class="fas fa-cube me-1"></i>Convert to 3D';
+}
+
+/* ═══════════════════════════ MODEL LIST ══════════════════════════════════ */
+function buildModelList(models) {
+  modelListEl.innerHTML = '';
+  modelEmpty.style.display = (!models || !models.length) ? 'block' : 'none';
+  (models || []).forEach(m => {
+    const isImg = /\.(jpg|jpeg|png)$/i.test(m.name);
+    const item  = document.createElement('div');
+    item.className   = 'list-group-item';
+    item.dataset.name = m.name;
+    item.innerHTML   = `<i class="fas ${isImg ? 'fa-image text-warning' : 'fa-cube text-primary'}" style="font-size:.8rem;"></i><span class="flex-grow-1 text-truncate">${m.label}</span>`;
+    item.addEventListener('click', () => {
+      modelListEl.querySelectorAll('.list-group-item').forEach(x => x.classList.remove('active'));
+      item.classList.add('active');
+      if (isImg) {
+        _lastImageEntry = m;
+        loadImagePreview(m.url, m.label);
+      } else {
+        loadGLTF(m.url, m.label, m.name.startsWith('recon_'));
+      }
+    });
+    modelListEl.appendChild(item);
+  });
+}
+
+function _markActive(name) {
+  modelListEl.querySelectorAll('.list-group-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.name === name);
+  });
+}
+
+/* ═══════════════════════════ UPLOAD ═════════════════════════════════════ */
+function openModal() {
+  uploadInput.value = '';
+  uploadError.classList.add('d-none');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadModal')).show();
+}
+document.getElementById('btn-upload-open').addEventListener('click',  openModal);
+document.getElementById('btn-upload-open-2').addEventListener('click', openModal);
+
+document.getElementById('btn-upload-confirm').addEventListener('click', async () => {
+  const file = uploadInput.files[0];
+  if (!file) {
+    uploadError.textContent = 'Please select a file.';
+    uploadError.classList.remove('d-none');
+    return;
+  }
+  uploadError.classList.add('d-none');
+  const btn = document.getElementById('btn-upload-confirm');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading…';
+
+  const fd = new FormData();
+  fd.append('model_file', file);
+  try {
+    const res  = await fetch('{% url "motor:upload_model" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      body: fd,
+    });
+    const data = await res.json();
+    if (data.error) {
+      uploadError.textContent = data.error;
+      uploadError.classList.remove('d-none');
+      return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+
+    const entry = { name: data.name, url: data.url, label: data.label };
+    SERVER_MODELS.push(entry);
+    buildModelList(SERVER_MODELS);
+    _markActive(entry.name);
+
+    if (data.is_image) {
+      _lastImageEntry = entry;
+      loadImagePreview(data.url, data.label);
+    } else {
+      loadGLTF(data.url, data.label, false);
+    }
+  } catch (e) {
+    uploadError.textContent = 'Error: ' + e.message;
+    uploadError.classList.remove('d-none');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-upload me-1"></i>Upload';
+  }
+});
+
+/* ═══════════════════════════ BOOT ═══════════════════════════════════════ */
+initThree();
+hideLoading();
+buildModelList(SERVER_MODELS);
+
+// Auto-load first GLB if available
+const firstGlb = SERVER_MODELS.find(m => /\.(glb|gltf)$/i.test(m.name));
+if (firstGlb) {
+  loadGLTF(firstGlb.url, firstGlb.label, firstGlb.name.startsWith('recon_'));
+  setTimeout(() => {
+    const el = modelListEl.querySelector(`[data-name="${firstGlb.name}"]`);
+    if (el) el.classList.add('active');
+  }, 120);
+}
+</script>
+{% endblock %}

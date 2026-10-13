@@ -1,0 +1,725 @@
+{% load static %}
+<!-- ===================== JARVIS AI WIDGET ===================== -->
+
+<!-- Floating toggle button -->
+<button
+  id="jarvis-toggle"
+  class="jarvis-fab"
+  aria-label="Open Jarvis AI"
+  title="Ask Jarvis"
+  type="button"
+>
+  <span class="jarvis-fab-icon" id="jarvis-fab-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 9.05v-.1"/>
+      <path d="M16 9.05v-.1"/>
+      <path d="M10 13a3 3 0 0 0 4 0"/>
+    </svg>
+  </span>
+  <span class="jarvis-fab-label">Jarvis</span>
+  <span class="jarvis-notif-dot" id="jarvis-notif-dot"></span>
+</button>
+
+<!-- Chat panel -->
+<div id="jarvis-panel" class="jarvis-panel" role="dialog" aria-label="Jarvis AI Assistant" aria-modal="true">
+  <!-- Header -->
+  <div class="jarvis-header">
+    <div class="jarvis-header-left">
+      <div class="jarvis-avatar-pulse">
+        <span class="jarvis-avatar-icon">
+          <i class="fa-solid fa-robot"></i>
+        </span>
+      </div>
+      <div>
+        <div class="jarvis-title">JARVIS</div>
+        <div class="jarvis-subtitle">
+          <span class="jarvis-online-dot"></span> Motor Assistant AI
+        </div>
+      </div>
+    </div>
+    <div class="jarvis-header-actions">
+      <button class="jarvis-icon-btn" id="jarvis-clear" title="Clear chat" type="button">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+      <button class="jarvis-icon-btn" id="jarvis-close" title="Close" type="button">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="jarvis-body" id="jarvis-messages" role="log" aria-live="polite">
+    <div class="jarvis-msg jarvis-msg--bot">
+      <div class="jarvis-msg-bubble">
+        👋 Hello, <strong>{{ request.user.first_name|default:request.user.username }}</strong>! I'm <strong>Jarvis</strong>, your Motor Assistant AI.<br><br>
+        I can help with diagnostic symptoms, troubleshooting guides, and parts information. Type <code>help</code> to see what I can do.
+      </div>
+      <div class="jarvis-msg-time">Now</div>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="jarvis-footer">
+    <div class="jarvis-input-row">
+      <textarea
+        id="jarvis-input"
+        class="jarvis-input"
+        placeholder="Ask Jarvis something…"
+        rows="1"
+        maxlength="1000"
+        aria-label="Message Jarvis"
+      ></textarea>
+      <button id="jarvis-send" class="jarvis-send-btn" type="button" aria-label="Send message">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+    <div class="jarvis-footer-hint">Motor Assistant AI · Powered by Jarvis</div>
+  </div>
+</div>
+
+<style>
+/* ============================================================
+   JARVIS WIDGET STYLES
+   ============================================================ */
+:root {
+  --jarvis-primary: #6366f1;
+  --jarvis-primary-dark: #4f46e5;
+  --jarvis-glow: rgba(99,102,241,0.35);
+  --jarvis-bg: #0e1020;
+  --jarvis-bg-2: #161a30;
+  --jarvis-bg-3: #1b1f38;
+  --jarvis-border: rgba(255,255,255,0.08);
+  --jarvis-text: #e6e8f4;
+  --jarvis-text-muted: rgba(230,232,244,0.55);
+  --jarvis-radius: 18px;
+  --jarvis-radius-msg: 14px;
+  --jarvis-w: 370px;
+  --jarvis-h: 520px;
+}
+
+/* FAB button */
+.jarvis-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.1rem 0.7rem 0.85rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(135deg, var(--jarvis-primary) 0%, #8b5cf6 100%);
+  box-shadow: 0 8px 24px -6px var(--jarvis-glow), 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jarvis-fab:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 32px -6px var(--jarvis-glow), 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.jarvis-fab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.jarvis-fab-label {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.jarvis-notif-dot {
+  display: none;
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 8px;
+  height: 8px;
+  background: #f59e0b;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: jarvis-pulse-dot 2s ease infinite;
+}
+
+.jarvis-notif-dot.show { display: block; }
+
+@keyframes jarvis-pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* Panel */
+.jarvis-panel {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 2rem;
+  z-index: 1049;
+  width: var(--jarvis-w);
+  height: var(--jarvis-h);
+  border-radius: var(--jarvis-radius);
+  background: var(--jarvis-bg);
+  border: 1px solid var(--jarvis-border);
+  box-shadow:
+    0 30px 60px -20px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(99,102,241,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
+}
+
+.jarvis-panel.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Header */
+.jarvis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(139,92,246,0.22) 0%, transparent 55%),
+    linear-gradient(135deg, #1a1d3b 0%, #12142e 100%);
+  border-bottom: 1px solid var(--jarvis-border);
+  flex-shrink: 0;
+}
+
+.jarvis-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.jarvis-avatar-pulse {
+  position: relative;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
+}
+
+.jarvis-avatar-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--jarvis-primary), #8b5cf6, var(--jarvis-primary));
+  animation: jarvis-spin 4s linear infinite;
+  opacity: 0.6;
+}
+
+.jarvis-avatar-icon {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--jarvis-primary) 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+  z-index: 1;
+}
+
+@keyframes jarvis-spin {
+  to { transform: rotate(360deg); }
+}
+
+.jarvis-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.jarvis-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--jarvis-text-muted);
+  font-weight: 500;
+}
+
+.jarvis-online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.3);
+  animation: jarvis-blink 2.5s ease infinite;
+}
+
+@keyframes jarvis-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.jarvis-header-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.jarvis-icon-btn {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.06);
+  color: var(--jarvis-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.jarvis-icon-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+/* Messages */
+.jarvis-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  scroll-behavior: smooth;
+}
+
+.jarvis-body::-webkit-scrollbar { width: 4px; }
+.jarvis-body::-webkit-scrollbar-track { background: transparent; }
+.jarvis-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.jarvis-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+.jarvis-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+  animation: jarvis-msg-in 0.22s ease;
+}
+
+@keyframes jarvis-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.jarvis-msg--bot { align-self: flex-start; }
+.jarvis-msg--user { align-self: flex-end; }
+
+.jarvis-msg-bubble {
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--jarvis-radius-msg);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.jarvis-msg--bot .jarvis-msg-bubble {
+  background: var(--jarvis-bg-2);
+  border: 1px solid var(--jarvis-border);
+  color: var(--jarvis-text);
+  border-bottom-left-radius: 4px;
+}
+
+.jarvis-msg--user .jarvis-msg-bubble {
+  background: linear-gradient(135deg, var(--jarvis-primary) 0%, #8b5cf6 100%);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 12px -4px var(--jarvis-glow);
+}
+
+.jarvis-msg-time {
+  font-size: 0.65rem;
+  color: var(--jarvis-text-muted);
+  margin-top: 0.2rem;
+  padding: 0 0.2rem;
+}
+
+.jarvis-msg--user .jarvis-msg-time { text-align: right; }
+
+/* Typing indicator */
+.jarvis-typing .jarvis-msg-bubble {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.65rem 1rem;
+}
+
+.jarvis-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--jarvis-primary);
+  animation: jarvis-typing 1.2s ease infinite;
+}
+
+.jarvis-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.jarvis-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes jarvis-typing {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Markdown-like rendering for bot messages */
+.jarvis-msg--bot .jarvis-msg-bubble strong { color: #a5b4fc; font-weight: 700; }
+.jarvis-msg--bot .jarvis-msg-bubble code {
+  background: rgba(99,102,241,0.18);
+  color: #c7d2fe;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-family: monospace;
+}
+
+/* Footer / input */
+.jarvis-footer {
+  padding: 0.75rem 1rem 0.9rem;
+  border-top: 1px solid var(--jarvis-border);
+  background: var(--jarvis-bg-2);
+  flex-shrink: 0;
+}
+
+.jarvis-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.jarvis-input {
+  flex: 1;
+  min-height: 2.5rem;
+  max-height: 6rem;
+  padding: 0.55rem 0.85rem;
+  background: var(--jarvis-bg-3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: var(--jarvis-text);
+  font-family: inherit;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+
+.jarvis-input::placeholder { color: var(--jarvis-text-muted); }
+.jarvis-input:focus { border-color: rgba(99,102,241,0.5); }
+
+.jarvis-send-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--jarvis-primary) 0%, #8b5cf6 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px -4px var(--jarvis-glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.jarvis-send-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px -4px var(--jarvis-glow);
+}
+
+.jarvis-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.jarvis-footer-hint {
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--jarvis-text-muted);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  :root {
+    --jarvis-w: calc(100vw - 2rem);
+    --jarvis-h: 480px;
+  }
+  .jarvis-panel { right: 1rem; }
+  .jarvis-fab { right: 1rem; bottom: 1.5rem; }
+}
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  const toggle   = document.getElementById('jarvis-toggle');
+  const panel    = document.getElementById('jarvis-panel');
+  const closeBtn = document.getElementById('jarvis-close');
+  const clearBtn = document.getElementById('jarvis-clear');
+  const input    = document.getElementById('jarvis-input');
+  const sendBtn  = document.getElementById('jarvis-send');
+  const messages = document.getElementById('jarvis-messages');
+  const notifDot = document.getElementById('jarvis-notif-dot');
+
+  const CHAT_URL    = "{% url 'jarvis_chat' %}";
+  const CSRF_TOKEN  = "{{ csrf_token }}";
+  // localStorage key — scoped to the logged-in user so different users don't share history
+  const STORAGE_KEY = 'jarvis_history_{{ request.user.pk }}';
+  const OPEN_KEY    = 'jarvis_open_{{ request.user.pk }}';
+  const MAX_STORED  = 80;   // max messages kept in storage
+
+  let isOpen    = false;
+  let isLoading = false;
+
+  // ─────────────────────────────────────────────────────
+  // Persistence helpers
+  // ─────────────────────────────────────────────────────
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch { return []; }
+  }
+
+  function saveHistory(history) {
+    // Keep only the last MAX_STORED entries to avoid bloating storage
+    const trimmed = history.slice(-MAX_STORED);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed)); } catch {}
+  }
+
+  function loadOpenState() {
+    return localStorage.getItem(OPEN_KEY) === '1';
+  }
+
+  function saveOpenState(val) {
+    try { localStorage.setItem(OPEN_KEY, val ? '1' : '0'); } catch {}
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Restore chat from storage on page load
+  // ─────────────────────────────────────────────────────
+  function restoreHistory() {
+    const history = loadHistory();
+    if (history.length === 0) return;   // keep the default welcome message
+
+    // Clear the server-rendered welcome message
+    messages.innerHTML = '';
+
+    history.forEach(({ role, text, time }) => {
+      if (role === 'user') _renderUserMsg(text, time);
+      else                 _renderBotMsg(text, time);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Panel open/close
+  // ─────────────────────────────────────────────────────
+  function openPanel() {
+    isOpen = true;
+    panel.classList.add('open');
+    toggle.setAttribute('aria-expanded', 'true');
+    notifDot.classList.remove('show');
+    saveOpenState(true);
+    setTimeout(() => input.focus(), 280);
+    scrollToBottom();
+  }
+
+  function closePanel() {
+    isOpen = false;
+    panel.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+    saveOpenState(false);
+  }
+
+  toggle.addEventListener('click', () => isOpen ? closePanel() : openPanel());
+  closeBtn.addEventListener('click', closePanel);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen) closePanel();
+  });
+
+  // ─────────────────────────────────────────────────────
+  // Clear chat
+  // ─────────────────────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    messages.innerHTML = '';
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    const clearMsg = '🔄 Chat cleared. I\'m Jarvis, your Motor Assistant AI — still here and ready to help!';
+    _renderBotMsg(clearMsg);
+    saveHistory([{ role: 'bot', text: clearMsg, time: getTime() }]);
+  });
+
+  // ─────────────────────────────────────────────────────
+  // Textarea auto-resize + send key
+  // ─────────────────────────────────────────────────────
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+
+  // ─────────────────────────────────────────────────────
+  // Render helpers (no storage side-effects)
+  // ─────────────────────────────────────────────────────
+  function scrollToBottom() {
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function getTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function _renderUserMsg(text, time) {
+    const t = time || getTime();
+    const div = document.createElement('div');
+    div.className = 'jarvis-msg jarvis-msg--user';
+    div.innerHTML = `<div class="jarvis-msg-bubble">${escapeHtml(text)}</div><div class="jarvis-msg-time">${t}</div>`;
+    messages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function _renderBotMsg(text, time) {
+    const t = time || getTime();
+    const div = document.createElement('div');
+    div.className = 'jarvis-msg jarvis-msg--bot';
+    div.innerHTML = `<div class="jarvis-msg-bubble">${renderMarkdown(text)}</div><div class="jarvis-msg-time">${t}</div>`;
+    messages.appendChild(div);
+    scrollToBottom();
+    if (!isOpen) notifDot.classList.add('show');
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Public append helpers (also persist to storage)
+  // ─────────────────────────────────────────────────────
+  function appendUserMessage(text) {
+    const time = getTime();
+    _renderUserMsg(text, time);
+    const history = loadHistory();
+    history.push({ role: 'user', text, time });
+    saveHistory(history);
+  }
+
+  function appendBotMessage(text) {
+    const time = getTime();
+    _renderBotMsg(text, time);
+    const history = loadHistory();
+    history.push({ role: 'bot', text, time });
+    saveHistory(history);
+  }
+
+  function appendTyping() {
+    const div = document.createElement('div');
+    div.className = 'jarvis-msg jarvis-msg--bot jarvis-typing';
+    div.id = 'jarvis-typing';
+    div.innerHTML = `<div class="jarvis-msg-bubble">
+      <span class="jarvis-typing-dot"></span>
+      <span class="jarvis-typing-dot"></span>
+      <span class="jarvis-typing-dot"></span>
+    </div>`;
+    messages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('jarvis-typing');
+    if (t) t.remove();
+  }
+
+  function setLoading(val) {
+    isLoading = val;
+    sendBtn.disabled = val;
+    input.disabled = val;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Send message
+  // ─────────────────────────────────────────────────────
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    appendUserMessage(text);
+    setLoading(true);
+    appendTyping();
+
+    await new Promise(r => setTimeout(r, 350 + Math.random() * 350));
+
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ message: text }),
+      });
+      removeTyping();
+      if (!res.ok) { appendBotMessage('⚠️ Something went wrong on my end. Please try again.'); return; }
+      const data = await res.json();
+      appendBotMessage(data.reply || 'I had trouble generating a response. Please try again.');
+    } catch (err) {
+      removeTyping();
+      appendBotMessage('⚠️ Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+      input.focus();
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Boot — restore history & panel state
+  // ─────────────────────────────────────────────────────
+  restoreHistory();
+  if (loadOpenState()) openPanel();
+
+})();
+</script>
+<!-- ==================== END JARVIS WIDGET ==================== -->

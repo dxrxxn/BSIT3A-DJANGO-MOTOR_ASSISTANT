@@ -6,4 +6,5 @@ urlpatterns = [
     path('home/', views.home, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_view, name='register'),
+    path('jarvis/chat/', views.jarvis_chat, name='jarvis_chat'),
 ]
