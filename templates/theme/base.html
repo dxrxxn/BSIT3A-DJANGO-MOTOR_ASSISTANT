@@ -46,9 +46,11 @@
     </div>
    
     {% include 'theme/settings.html' %}
+    {% block jarvis_widget %}
     {% if request.user.is_authenticated %}
     {% include 'theme/jarvis.html' %}
     {% endif %}
+    {% endblock %}
 
     <script src="{% static 'js/tabler-theme.js' %}"></script>
     <script src="{% static 'libs/apexcharts/dist/apexcharts.min.js' %}" defer></script>

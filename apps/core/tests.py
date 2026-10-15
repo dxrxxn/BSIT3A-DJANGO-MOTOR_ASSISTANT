@@ -43,3 +43,31 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['diagnostic_results'], [])
+
+    def test_dashboard_shows_jarvis_console(self):
+        user = get_user_model().objects.create_user(username='mechanic', password='secret1234')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertContains(response, 'J.A.R.V.I.S.')
+        self.assertContains(response, 'jarvis-console')
+
+    def test_jarvis_chat_answers_in_character(self):
+        user = get_user_model().objects.create_user(
+            username='mechanic',
+            password='secret1234',
+            first_name='Tony',
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('jarvis_chat'),
+            data='{"message": "hello"}',
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        reply = response.json()['reply']
+        self.assertIn('At your service', reply)
+        self.assertIn('Tony', reply)

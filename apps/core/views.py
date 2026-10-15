@@ -239,68 +239,76 @@ def register_view(request):
 # Jarvis AI Chat
 # ---------------------------------------------------------------------------
 
+def _jarvis_address(user):
+    first = (getattr(user, 'first_name', '') or '').strip()
+    return first if first else 'sir'
+
+
 def _jarvis_response(message, user):
     """
-    Rule-based AI engine for Jarvis.
-    Queries the database for context-aware motor diagnostics answers.
+    Rule-based J.A.R.V.I.S. engine.
+    Speaks like Tony Stark's assistant while answering from the motor database.
     """
     from apps.motor.models import DiagnosticSymptom, Part, TroubleshootingGuide
 
     msg = message.lower().strip()
+    sir = _jarvis_address(user)
 
-    # Greetings
     greetings = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'howdy']
     if any(msg.startswith(g) for g in greetings):
-        name = user.first_name or user.username
         return (
-            f"Hello {name}! I'm Jarvis, your Motor Assistant AI. "
-            "I can help you with diagnostic symptoms, troubleshooting guides, parts information, "
-            "and general motor questions. What can I help you with today?"
+            f"At your service, {sir}. J.A.R.V.I.S. online. Systems nominal. "
+            "I can run diagnostics, retrieve troubleshooting protocols, look up parts, "
+            "and advise on the motorcycle. How may I assist?"
         )
 
-    # Identity
     if any(k in msg for k in ['who are you', 'what are you', 'your name', 'introduce yourself']):
         return (
-            "I'm Jarvis — your intelligent Motor Assistant AI. "
-            "I'm built into this dashboard to help you diagnose vehicle issues, "
-            "find troubleshooting guides, look up parts, and answer motor-related questions. "
-            "Just ask me anything!"
+            f"I am J.A.R.V.I.S., Just A Rather Very Intelligent System. "
+            f"I was built to keep this workshop running, {sir}: diagnose faults, "
+            "pull repair guides, catalogue parts, and offer a second opinion before you pick up a wrench. "
+            "Shall we begin?"
         )
 
-    # Help / capabilities
     if any(k in msg for k in ['help', 'what can you do', 'capabilities', 'commands']):
         return (
-            "Here's what I can do for you:\n\n"
-            "• **Symptom lookup** — Ask about any symptom (e.g. 'engine knocking')\n"
-            "• **Troubleshooting guides** — Ask 'how to fix [symptom]'\n"
-            "• **Parts info** — Ask 'what parts do I need for [issue]' or 'list all parts'\n"
-            "• **Stats** — Ask 'how many symptoms', 'how many parts'\n"
-            "• **General motor questions** — Oil, brakes, battery, tires, etc.\n\n"
-            "Just type naturally and I'll do my best to help!"
+            f"Of course, {sir}. My current protocols include:\n\n"
+            "• **Symptom scan** — describe the noise, leak, or behaviour\n"
+            "• **Repair protocol** — ask how to fix a known issue\n"
+            "• **Parts inventory** — ask what you need, or say 'list all parts'\n"
+            "• **Archive stats** — 'how many symptoms', 'how many parts'\n"
+            "• **General systems** — oil, brakes, battery, tyres, cooling, ignition\n\n"
+            "Speak naturally. I shall do the rest."
         )
 
-    # Stats queries
     if any(k in msg for k in ['how many symptoms', 'total symptoms', 'count symptoms']):
         count = DiagnosticSymptom.objects.count()
-        return f"There are currently **{count} diagnostic symptoms** in the system."
+        return (
+            f"I've queried the diagnostic archive, {sir}. "
+            f"There are currently **{count}** known symptoms on file."
+        )
 
     if any(k in msg for k in ['how many parts', 'total parts', 'count parts']):
         count = Part.objects.count()
-        return f"There are currently **{count} parts** in the parts database."
+        return (
+            f"Parts catalogue reports **{count}** entries, {sir}."
+        )
 
     if any(k in msg for k in ['how many guides', 'total guides', 'troubleshooting count']):
         count = TroubleshootingGuide.objects.count()
-        return f"There are currently **{count} troubleshooting guides** available."
+        return (
+            f"I have **{count}** troubleshooting protocols ready, {sir}."
+        )
 
-    # List all symptoms
     if any(k in msg for k in ['list symptoms', 'show symptoms', 'all symptoms', 'symptoms list']):
         symptoms = DiagnosticSymptom.objects.values_list('symptom_name', flat=True)[:20]
         if symptoms:
             symptom_list = '\n'.join(f"• {s}" for s in symptoms)
-            return f"Here are the diagnostic symptoms I know about:\n\n{symptom_list}"
-        return "No diagnostic symptoms found in the database yet."
+            return (
+                f"Pulling the symptom index now, {sir}:\n\n{symptom_list}"
+            )
+        return f"The diagnostic archive is empty, {sir}. Nothing on file yet."
 
-    # List all parts
     if any(k in msg for k in ['list parts', 'show parts', 'all parts', 'parts list']):
         parts = Part.objects.values('part_name', 'category', 'estimated_cost')[:20]
         if parts:
@@ -308,10 +316,9 @@ def _jarvis_response(message, user):
                 f"• {p['part_name']} ({p['category'] or 'General'}) — ${p['estimated_cost']}"
                 for p in parts
             )
-            return f"Here are parts in the database:\n\n{parts_list}"
-        return "No parts found in the database yet."
+            return f"Here is the parts inventory, {sir}:\n\n{parts_list}"
+        return f"No parts are catalogued yet, {sir}."
 
-    # Symptom / troubleshooting lookup — search by keyword
     symptoms = DiagnosticSymptom.objects.all()
     matched_symptom = None
     for symptom in symptoms:
@@ -328,34 +335,37 @@ def _jarvis_response(message, user):
         ).prefetch_related('required_parts__part')[:5]
 
         response_lines = [
-            f"I found information about **{matched_symptom.symptom_name}** "
-            f"(Category: {matched_symptom.category}).\n"
+            f"Scan complete, {sir}. I have a match: **{matched_symptom.symptom_name}** "
+            f"(category: {matched_symptom.category}).\n"
         ]
 
         if matched_symptom.description:
-            response_lines.append(f"**Description:** {matched_symptom.description}\n")
+            response_lines.append(f"**Briefing:** {matched_symptom.description}\n")
 
         if guides:
-            response_lines.append("**Troubleshooting Guides:**\n")
+            response_lines.append("**Recommended protocol:**\n")
             for i, guide in enumerate(guides, 1):
-                response_lines.append(f"{i}. **Possible Cause:** {guide.possible_cause}")
+                response_lines.append(f"{i}. **Likely cause:** {guide.possible_cause}")
                 response_lines.append(f"   **Instructions:** {guide.repair_instructions}")
                 if guide.advice_notes:
-                    response_lines.append(f"   **Notes:** {guide.advice_notes}")
+                    response_lines.append(f"   **Caution:** {guide.advice_notes}")
                 required_parts = guide.required_parts.all()
                 if required_parts:
                     parts_str = ', '.join(
                         f"{rp.part.part_name} (×{rp.quantity_needed})"
                         for rp in required_parts
                     )
-                    response_lines.append(f"   **Required Parts:** {parts_str}")
+                    response_lines.append(f"   **Required parts:** {parts_str}")
                 response_lines.append("")
+            response_lines.append("Shall I walk you through the first step?")
         else:
-            response_lines.append("No troubleshooting guides are linked to this symptom yet.")
+            response_lines.append(
+                "I have the symptom on file, but no repair protocol is linked yet. "
+                "A qualified mechanic would be the prudent next call."
+            )
 
         return '\n'.join(response_lines)
 
-    # Parts lookup by name
     parts = Part.objects.all()
     for part in parts:
         if part.part_name.lower() in msg or any(
@@ -367,10 +377,10 @@ def _jarvis_response(message, user):
             ).select_related('symptom').distinct()[:5]
 
             lines = [
-                f"**{part.part_name}**\n",
-                f"• Part Number: {part.part_number or 'N/A'}",
+                f"Located in inventory, {sir}: **{part.part_name}**\n",
+                f"• Part number: {part.part_number or 'N/A'}",
                 f"• Category: {part.category or 'General'}",
-                f"• Estimated Cost: ${part.estimated_cost}\n",
+                f"• Estimated cost: ${part.estimated_cost}\n",
             ]
 
             if guides:
@@ -380,62 +390,61 @@ def _jarvis_response(message, user):
 
             return '\n'.join(lines)
 
-    # General motor knowledge
     general_responses = {
         ('oil', 'engine oil', 'oil change'): (
-            "**Engine Oil Tips:**\n"
-            "• Change oil every 5,000–10,000 km depending on the oil type\n"
-            "• Check oil level monthly using the dipstick\n"
-            "• Low oil pressure warning = stop the vehicle immediately\n"
-            "• Use the manufacturer-recommended viscosity grade"
+            f"Engine lubrication briefing, {sir}:\n"
+            "• Change oil every 5,000–10,000 km depending on grade\n"
+            "• Check the sight glass or dipstick monthly\n"
+            "• Low oil pressure — stop the engine immediately\n"
+            "• Use the manufacturer-specified viscosity. I do not recommend improvising."
         ),
         ('battery', 'car battery', 'dead battery'): (
-            "**Battery Diagnostics:**\n"
-            "• A healthy battery reads 12.6V when fully charged\n"
-            "• Below 12.0V means the battery needs charging\n"
-            "• Symptoms: slow cranking, dim lights, clicking sound when starting\n"
-            "• Average battery lifespan is 3–5 years"
+            f"Power-cell diagnostics, {sir}:\n"
+            "• A healthy battery reads 12.6V at rest\n"
+            "• Below 12.0V, it wants charging, or replacing\n"
+            "• Slow cranking, dim lights, a click instead of a start: classic failure mode\n"
+            "• Typical lifespan: 3–5 years"
         ),
         ('brake', 'brakes', 'braking'): (
-            "**Brake System:**\n"
-            "• Squealing brakes often mean worn brake pads\n"
-            "• Grinding means metal-on-metal — replace pads immediately\n"
-            "• Soft/spongy pedal could indicate air in brake lines or fluid leak\n"
-            "• Vibration while braking may mean warped rotors"
+            f"Braking system, {sir}. Rather important, that:\n"
+            "• Squeal usually means worn pads\n"
+            "• Grinding is metal on metal. Replace at once\n"
+            "• A soft pedal may mean air in the lines or a leak\n"
+            "• Vibration under braking often points to warped discs"
         ),
         ('tyre', 'tire', 'flat tyre', 'flat tire'): (
-            "**Tyre/Tire Advice:**\n"
-            "• Check tyre pressure monthly (usually 30–35 PSI)\n"
-            "• Tread depth below 1.6mm — replace immediately\n"
-            "• Rotate tyres every 8,000–12,000 km for even wear\n"
-            "• Vibration at speed may indicate wheel imbalance"
+            f"Tyre briefing, {sir}:\n"
+            "• Check pressure monthly, typically 30-35 PSI, confirm on the sidewall\n"
+            "• Tread below 1.6 mm: replace immediately\n"
+            "• Rotate every 8,000–12,000 km\n"
+            "• Vibration at speed may be imbalance, not the engine"
         ),
         ('coolant', 'overheating', 'temperature', 'radiator'): (
-            "**Cooling System:**\n"
-            "• Overheating can cause severe engine damage — pull over safely\n"
-            "• Check coolant level in the reservoir when the engine is cold\n"
-            "• Flush coolant every 2 years or per manufacturer schedule\n"
-            "• White smoke from exhaust may mean a coolant leak into the engine"
+            f"Thermal systems, {sir}:\n"
+            "• Overheating can destroy an engine. Pull over safely\n"
+            "• Check coolant only when the engine is cold\n"
+            "• Flush every two years, or as the manufacturer specifies\n"
+            "• White exhaust smoke may indicate coolant in the combustion chamber. That is not a good day."
         ),
         ('transmission', 'gearbox', 'gear'): (
-            "**Transmission Tips:**\n"
-            "• Slipping gears, delayed engagement, or rough shifts = inspect transmission\n"
-            "• Check transmission fluid level and colour (should be red/pink, not brown)\n"
-            "• Transmission fluid should be changed every 60,000–100,000 km\n"
-            "• Burning smell from under the car = possible transmission fluid issue"
+            f"Drivetrain notes, {sir}:\n"
+            "• Slipping, delayed engagement, or harsh shifts warrant inspection\n"
+            "• Fluid should be red or pink — brown means it has had a long, unhappy life\n"
+            "• Service interval is typically 60,000–100,000 km\n"
+            "• A burning smell from below: fluid, and urgency"
         ),
         ('alternator', 'charging', 'charge'): (
-            "**Alternator / Charging System:**\n"
-            "• Battery warning light on = alternator may not be charging\n"
-            "• A healthy alternator outputs 13.7–14.7V with the engine running\n"
-            "• Symptoms of failure: dim lights, dead battery, electrical issues"
+            f"Charging system, {sir}:\n"
+            "• Battery warning lamp on: the alternator may have retired early\n"
+            "• Healthy output: 13.7–14.7V with the engine running\n"
+            "• Dim lights and a repeatedly dead battery are the usual calling cards"
         ),
         ('spark plug', 'ignition', 'misfire'): (
-            "**Spark Plugs / Ignition:**\n"
-            "• Misfires, rough idle, or poor fuel economy = check spark plugs\n"
-            "• Standard plugs: replace every 30,000 km\n"
-            "• Iridium/platinum plugs: replace every 100,000 km\n"
-            "• A fouled plug can cause hard starting and power loss"
+            f"Ignition briefing, {sir}:\n"
+            "• Misfire, rough idle, or poor economy: inspect the plugs\n"
+            "• Standard plugs: about every 30,000 km\n"
+            "• Iridium or platinum: around 100,000 km\n"
+            "• A fouled plug will make starting theatrical, and not in a good way"
         ),
     }
 
@@ -443,17 +452,18 @@ def _jarvis_response(message, user):
         if any(k in msg for k in keywords):
             return response
 
-    # Thanks / farewell
     if any(k in msg for k in ['thank', 'thanks', 'bye', 'goodbye', 'see you']):
-        return "You're welcome! I'm always here if you need motor diagnostics help. Drive safe! 🚗"
+        return (
+            f"Always a pleasure, {sir}. I shall remain on standby. "
+            "Do try not to ignore the warning lights."
+        )
 
-    # Fallback
     return (
-        "I'm not sure about that one. Try asking me about:\n\n"
-        "• A specific symptom (e.g. 'engine knocking', 'oil leak')\n"
-        "• Parts (e.g. 'brake pads', 'alternator')\n"
-        "• Common issues (e.g. 'overheating', 'flat tyre', 'battery')\n"
-        "• Type **help** to see everything I can do."
+        f"I'm afraid that isn't in my current dataset, {sir}. Try asking about:\n\n"
+        "• A symptom: engine knocking, oil leak, smoke\n"
+        "• A part: brake pads, alternator, seals\n"
+        "• A system: overheating, battery, tyres\n"
+        "• Or say **help** and I shall list my protocols."
     )
 
 

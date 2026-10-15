@@ -52,8 +52,8 @@
   <div class="jarvis-body" id="jarvis-messages" role="log" aria-live="polite">
     <div class="jarvis-msg jarvis-msg--bot">
       <div class="jarvis-msg-bubble">
-        👋 Hello, <strong>{{ request.user.first_name|default:request.user.username }}</strong>! I'm <strong>Jarvis</strong>, your Motor Assistant AI.<br><br>
-        I can help with diagnostic symptoms, troubleshooting guides, and parts information. Type <code>help</code> to see what I can do.
+        At your service, <strong>{{ request.user.first_name|default:"sir" }}</strong>. I am <strong>J.A.R.V.I.S.</strong> — systems online.<br><br>
+        I can run diagnostics, retrieve repair protocols, and look up parts. Say <code>help</code> if you would like the full briefing.
       </div>
       <div class="jarvis-msg-time">Now</div>
     </div>
@@ -572,7 +572,7 @@
   clearBtn.addEventListener('click', () => {
     messages.innerHTML = '';
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    const clearMsg = '🔄 Chat cleared. I\'m Jarvis, your Motor Assistant AI — still here and ready to help!';
+    const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
     _renderBotMsg(clearMsg);
     saveHistory([{ role: 'bot', text: clearMsg, time: getTime() }]);
   });
@@ -702,12 +702,12 @@
         body: JSON.stringify({ message: text }),
       });
       removeTyping();
-      if (!res.ok) { appendBotMessage('⚠️ Something went wrong on my end. Please try again.'); return; }
+      if (!res.ok) { appendBotMessage('A momentary malfunction, sir. Please try that again.'); return; }
       const data = await res.json();
-      appendBotMessage(data.reply || 'I had trouble generating a response. Please try again.');
+      appendBotMessage(data.reply || 'I appear to have lost that thought, sir. One more time, if you would.');
     } catch (err) {
       removeTyping();
-      appendBotMessage('⚠️ Network error. Please check your connection and try again.');
+      appendBotMessage('I cannot reach the network, sir. Check the connection and I shall try again.');
     } finally {
       setLoading(false);
       input.focus();

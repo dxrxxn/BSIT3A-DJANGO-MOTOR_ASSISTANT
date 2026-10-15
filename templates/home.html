@@ -4,26 +4,28 @@
 <link href="{% static 'css/dashboard.css' %}" rel="stylesheet"/>
 {% endblock %}
 
+{% block jarvis_widget %}{% endblock %}
+
 {% block content %}
 <main class="diagnostic-dashboard">
   {% if query %}
     <section class="diagnostic-search-bar" aria-label="Search diagnostics">
-      <a class="diagnostic-brand" href="{% url 'dashboard' %}" aria-label="MotoFix Assist home">
-        <span class="diagnostic-brand-mark"><i class="fa-solid fa-motorcycle"></i></span>
-        <span>MotoFix<span class="diagnostic-brand-accent">Assist</span></span>
+      <a class="diagnostic-brand" href="{% url 'dashboard' %}" aria-label="Jarvis AI home">
+        <span class="diagnostic-brand-mark"><i class="fa-solid fa-circle-nodes"></i></span>
+        <span>J.A.R.V.I.S.</span>
       </a>
       <form class="diagnostic-search-form diagnostic-search-form--compact" method="get" action="{% url 'dashboard' %}">
         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" name="q" value="{{ query }}" placeholder="Search a symptom, part, or issue..." aria-label="Search a symptom, part, or issue">
+        <input type="search" name="q" value="{{ query }}" placeholder="Ask Jarvis a symptom, part, or issue..." aria-label="Search a symptom, part, or issue">
         <button type="submit" aria-label="Search"><i class="fa-solid fa-arrow-right"></i></button>
       </form>
-      <a class="diagnostic-home-link" href="{% url 'dashboard' %}">New search</a>
+      <a class="diagnostic-home-link" href="{% url 'dashboard' %}">Return to Jarvis</a>
     </section>
 
     <section class="diagnostic-results-heading">
-      <p class="diagnostic-eyebrow">DIAGNOSTIC ASSISTANT</p>
-      <h1>Here’s what we found</h1>
-      <p class="diagnostic-muted">Results for <strong>“{{ query }}”</strong>. Review the possible cause and follow the repair steps carefully.</p>
+      <p class="diagnostic-eyebrow">J.A.R.V.I.S. · DIAGNOSTIC SCAN</p>
+      <h1>Scan complete, sir</h1>
+      <p class="diagnostic-muted">Results for <strong>“{{ query }}”</strong>. Review the likely cause and follow the protocol carefully.</p>
     </section>
 
     {% if diagnostic_results %}
@@ -34,7 +36,7 @@
               <p class="diagnostic-eyebrow">MATCH {{ forloop.counter }} · {{ result.symptom.category|upper }}</p>
               <h2>{{ result.symptom.symptom_name }}</h2>
             </div>
-            <span class="diagnostic-match"><i class="fa-solid fa-circle-check"></i> Saved guide</span>
+            <span class="diagnostic-match"><i class="fa-solid fa-circle-check"></i> On file</span>
           </header>
 
           <div class="diagnostic-overview-grid">
@@ -78,7 +80,7 @@
             <section class="diagnostic-cause-panel">
               <div class="diagnostic-section-heading">
                 <div>
-                  <p class="diagnostic-eyebrow">SYMPTOM SUMMARY</p>
+                  <p class="diagnostic-eyebrow">SYMPTOM BRIEFING</p>
                   <h3>{{ result.symptom.symptom_name }}</h3>
                 </div>
                 <span class="category-pill">{{ result.symptom.category }}</span>
@@ -90,7 +92,7 @@
               {% if result.guides %}
                 {% for guide_item in result.guides %}
                   <div class="cause-block">
-                    <p class="diagnostic-eyebrow">POSSIBLE CAUSE</p>
+                    <p class="diagnostic-eyebrow">LIKELY CAUSE</p>
                     <p>{{ guide_item.guide.possible_cause }}</p>
                   </div>
                   {% if guide_item.guide.advice_notes %}
@@ -98,7 +100,7 @@
                   {% endif %}
                 {% endfor %}
               {% else %}
-                <div class="advice-block"><i class="fa-solid fa-circle-info"></i><span>There is no saved repair guide for this symptom yet. Ask Jarvis for general guidance or consult a qualified mechanic.</span></div>
+                <div class="advice-block"><i class="fa-solid fa-circle-info"></i><span>No repair protocol is linked to this symptom yet. Ask Jarvis for general guidance, or consult a qualified mechanic.</span></div>
               {% endif %}
             </section>
           </div>
@@ -108,7 +110,7 @@
               <section class="repair-guide">
                 <div class="repair-guide-heading">
                   <div>
-                    <p class="diagnostic-eyebrow">STEP-BY-STEP TROUBLESHOOTING</p>
+                    <p class="diagnostic-eyebrow">STEP-BY-STEP PROTOCOL</p>
                     <h3>Repair guide{% if result.guides|length > 1 %} {{ forloop.counter }}{% endif %}</h3>
                   </div>
                   <span class="guide-step-count">{{ guide_item.repair_steps|length }} steps</span>
@@ -141,38 +143,220 @@
       {% endfor %}
     {% else %}
       <section class="diagnostic-empty-state">
-        <span class="empty-state-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <h2>No saved guide matches that search</h2>
-        <p>Try a symptom, component, or likely cause using different words. You can also describe the problem to Jarvis for help.</p>
-        <a class="diagnostic-primary-button" href="{% url 'dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Try another search</a>
+        <span class="empty-state-icon"><i class="fa-solid fa-satellite-dish"></i></span>
+        <h2>Nothing on file for that query, sir</h2>
+        <p>Try another symptom, component, or likely cause. You may also ask Jarvis directly from the console.</p>
+        <a class="diagnostic-primary-button" href="{% url 'dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Return to Jarvis</a>
       </section>
     {% endif %}
   {% else %}
-    <section class="diagnostic-welcome">
-      <div class="welcome-emblem"><i class="fa-solid fa-motorcycle"></i></div>
-      <p class="diagnostic-eyebrow">MOTOFIX ASSIST · MOTORCYCLE DIAGNOSTICS</p>
-      <h1>Where should we start?</h1>
-      <p class="welcome-description">Describe what your motorcycle is doing. We’ll look for a matching symptom and show you the relevant repair steps.</p>
+    <section class="jarvis-console" aria-label="Jarvis AI">
+      <header class="jarvis-console-header">
+        <div class="jarvis-reactor" aria-hidden="true">
+          <span class="jarvis-reactor-ring"></span>
+          <span class="jarvis-reactor-core"></span>
+        </div>
+        <div>
+          <p class="diagnostic-eyebrow">JUST A RATHER VERY INTELLIGENT SYSTEM</p>
+          <h1>J.A.R.V.I.S.</h1>
+          <p class="jarvis-console-status">
+            <span class="jarvis-online-dot"></span>
+            Online · at your service, {{ request.user.first_name|default:"sir" }}
+          </p>
+        </div>
+        <button type="button" class="jarvis-console-clear" id="jarvis-console-clear">Clear logs</button>
+      </header>
 
-      <form class="diagnostic-search-form" method="get" action="{% url 'dashboard' %}">
-        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" name="q" placeholder="Search a symptom, part, or issue..." aria-label="Search a symptom, part, or issue" required autofocus>
-        <button type="submit" aria-label="Search diagnostics"><i class="fa-solid fa-arrow-right"></i></button>
-      </form>
-
-      {% if quick_symptoms %}
-        <div class="quick-searches">
-          <p><i class="fa-solid fa-wand-magic-sparkles"></i> Try a saved symptom</p>
-          <div class="quick-search-list">
-            {% for symptom in quick_symptoms %}
-              <a class="quick-search-chip" href="{% url 'dashboard' %}?q={{ symptom.symptom_name|urlencode }}">{{ symptom.symptom_name }}</a>
-            {% endfor %}
+      <div class="jarvis-console-body" id="jarvis-console-messages" role="log" aria-live="polite">
+        <div class="jarvis-console-msg jarvis-console-msg--bot">
+          <div class="jarvis-console-bubble">
+            Good day, <strong>{{ request.user.first_name|default:"sir" }}</strong>. J.A.R.V.I.S. is online and systems are nominal.<br><br>
+            Describe the motorcycle’s behaviour and I shall scan the diagnostic archive — knocking, smoke, leaks, starting faults, parts, the usual drama. How may I assist?
           </div>
         </div>
-      {% else %}
-        <p class="welcome-hint"><i class="fa-solid fa-circle-info"></i> Search saved symptoms, causes, repair steps, and parts.</p>
+      </div>
+
+      {% if quick_symptoms %}
+        <div class="jarvis-console-chips" id="jarvis-console-chips">
+          {% for symptom in quick_symptoms %}
+            <button type="button" class="quick-search-chip" data-jarvis-prompt="{{ symptom.symptom_name }}">{{ symptom.symptom_name }}</button>
+          {% endfor %}
+          <button type="button" class="quick-search-chip" data-jarvis-prompt="What can you do?">What can you do?</button>
+        </div>
       {% endif %}
+
+      <form class="jarvis-console-form" id="jarvis-console-form">
+        <textarea
+          id="jarvis-console-input"
+          rows="1"
+          maxlength="1000"
+          placeholder="How may I assist you, sir?"
+          aria-label="Ask Jarvis"
+          required
+          autofocus
+        ></textarea>
+        <button type="submit" id="jarvis-console-send" aria-label="Send to Jarvis">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
     </section>
   {% endif %}
 </main>
+{% endblock %}
+
+{% block extra_js %}
+{% if not query %}
+<script>
+(function () {
+  const form = document.getElementById('jarvis-console-form');
+  const input = document.getElementById('jarvis-console-input');
+  const sendBtn = document.getElementById('jarvis-console-send');
+  const messages = document.getElementById('jarvis-console-messages');
+  const clearBtn = document.getElementById('jarvis-console-clear');
+  const chips = document.getElementById('jarvis-console-chips');
+  const CHAT_URL = "{% url 'jarvis_chat' %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+  const STORAGE_KEY = 'jarvis_console_{{ request.user.pk }}';
+  let isLoading = false;
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
+  }
+
+  function saveHistory(history) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-80))); } catch {}
+  }
+
+  function scrollToBottom() {
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function renderMarkdown(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = 'jarvis-console-msg jarvis-console-msg--' + role;
+    const bubble = role === 'user' ? escapeHtml(text) : renderMarkdown(text);
+    div.innerHTML = '<div class="jarvis-console-bubble">' + bubble + '</div>';
+    messages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function persist(role, text) {
+    const history = loadHistory();
+    history.push({ role, text });
+    saveHistory(history);
+  }
+
+  function restoreHistory() {
+    const history = loadHistory();
+    if (!history.length) return;
+    messages.innerHTML = '';
+    history.forEach(({ role, text }) => appendMsg(role === 'user' ? 'user' : 'bot', text));
+  }
+
+  function setLoading(val) {
+    isLoading = val;
+    sendBtn.disabled = val;
+    input.disabled = val;
+  }
+
+  function appendTyping() {
+    const div = document.createElement('div');
+    div.className = 'jarvis-console-msg jarvis-console-msg--bot';
+    div.id = 'jarvis-console-typing';
+    div.innerHTML = '<div class="jarvis-console-bubble jarvis-console-typing"><span></span><span></span><span></span></div>';
+    messages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('jarvis-console-typing');
+    if (t) t.remove();
+  }
+
+  async function sendMessage(text) {
+    const value = (text || input.value).trim();
+    if (!value || isLoading) return;
+    input.value = '';
+    input.style.height = 'auto';
+    appendMsg('user', value);
+    persist('user', value);
+    setLoading(true);
+    appendTyping();
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ message: value }),
+      });
+      removeTyping();
+      let reply = 'A momentary malfunction, sir. Please try that again.';
+      if (res.ok) {
+        const data = await res.json();
+        reply = data.reply || reply;
+      }
+      appendMsg('bot', reply);
+      persist('bot', reply);
+    } catch (err) {
+      removeTyping();
+      const fail = 'I cannot reach the network, sir. Check the connection and I shall try again.';
+      appendMsg('bot', fail);
+      persist('bot', fail);
+    } finally {
+      setLoading(false);
+      input.focus();
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  if (chips) {
+    chips.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-jarvis-prompt]');
+      if (!btn) return;
+      sendMessage(btn.getAttribute('data-jarvis-prompt'));
+    });
+  }
+
+  clearBtn.addEventListener('click', () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    messages.innerHTML = '';
+    const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
+    appendMsg('bot', clearMsg);
+    persist('bot', clearMsg);
+    input.focus();
+  });
+
+  restoreHistory();
+})();
+</script>
+{% endif %}
 {% endblock %}
