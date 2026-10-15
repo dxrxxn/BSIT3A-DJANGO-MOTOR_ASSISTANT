@@ -1,16 +1,27 @@
 {% load static %}
-<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
-  <div class="container-fluid">
-    <div class="navbar-brand navbar-brand-autodark dh-brand">
-      <a href="{% url 'login' %}" class="d-flex align-items-center gap-2 text-decoration-none">
-        <span class="dh-brand-mark">
-          <i class="fa-solid fa-shield-halved"></i>
-        </span>
-        <span class="lh-1">
-          <span class="dh-brand-name">Motor Assistant</span>
-          <span class="dh-brand-sub">Management System</span>
-        </span>
-      </a>
+<aside class="jarvis-sidebar">
+  <a href="{% url 'login' %}" class="jarvis-sidebar-brand">
+    <div class="jarvis-brand-icon-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
     </div>
-  </div>
+    <div class="jarvis-brand-text">
+      <span class="jarvis-brand-title">Motor Assistant</span>
+      <span class="jarvis-brand-subtitle">Management System</span>
+    </div>
+  </a>
+
+  <div class="jarvis-sidebar-section">Account</div>
+
+  <ul class="jarvis-sidebar-nav">
+    <li class="jarvis-nav-item">
+      <a href="{% url 'login' %}" class="jarvis-nav-link active">
+        <div class="jarvis-nav-link-left">
+          <span class="jarvis-nav-link-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+          <span>Sign In</span>
+        </div>
+      </a>
+    </li>
+  </ul>
 </aside>

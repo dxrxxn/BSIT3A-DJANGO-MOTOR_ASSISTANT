@@ -32,9 +32,15 @@
         </span>
       </div>
       <div>
-        <div class="jarvis-title">JARVIS</div>
+        <div class="jarvis-title-row" style="display: flex; align-items: center; gap: 0.45rem;">
+          <div class="jarvis-title">JARVIS</div>
+          <span class="jarvis-quota-pill" id="jarvis-quota-pill" title="Gemini API Quota: 100% remaining today">
+            <i class="fa-solid fa-bolt" style="font-size: 0.62rem;"></i>
+            <span id="jarvis-quota-val">100%</span>
+          </span>
+        </div>
         <div class="jarvis-subtitle">
-          <span class="jarvis-online-dot"></span> Motor Assistant AI
+          <span class="jarvis-online-dot"></span> Motor Assistant AI · <span id="jarvis-quota-sub" style="opacity: 0.85;">1500 req left</span>
         </div>
       </div>
     </div>
@@ -78,7 +84,7 @@
     <div class="jarvis-msg jarvis-msg--bot">
       <div class="jarvis-msg-bubble">
         At your service, <strong>{{ request.user.first_name|default:"sir" }}</strong>. I am <strong>J.A.R.V.I.S.</strong> — systems online.<br><br>
-        I can run diagnostics, retrieve repair protocols, and look up parts. Say <code>help</code> if you would like the full briefing.
+        I can assist you in <strong>English</strong>, <strong>Tagalog</strong>, or <strong>Hiligaynon</strong>. Say <code>help</code> or ask about any motorcycle repair or diagnostic to begin.
       </div>
       <div class="jarvis-msg-time">Now</div>
     </div>
@@ -99,7 +105,7 @@
         <i class="fa-solid fa-paper-plane"></i>
       </button>
     </div>
-    <div class="jarvis-footer-hint">Motor Assistant AI · Powered by Jarvis</div>
+    <div class="jarvis-footer-hint">Motor Assistant AI · Powered by J.A.R.V.I.S. &amp; Gemini</div>
   </div>
 </div>
 
@@ -275,6 +281,28 @@
   text-transform: uppercase;
 }
 
+.jarvis-quota-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: help;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.jarvis-quota-pill:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.35);
+}
+
 .jarvis-subtitle {
   display: flex;
   align-items: center;
@@ -420,6 +448,89 @@
   border-radius: 4px;
   font-size: 0.8em;
   font-family: monospace;
+}
+
+/* Interactive Diagnostic Action Chips */
+.jarvis-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+  margin-top: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.jarvis-chip-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 999px;
+  color: #c7d2fe;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.jarvis-chip-btn:hover {
+  background: linear-gradient(135deg, var(--jarvis-primary) 0%, #8b5cf6 100%);
+  color: #ffffff;
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.jarvis-chip-btn:active {
+  transform: translateY(0);
+}
+
+/* Interactive Diagnostic Checklists */
+.jarvis-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  cursor: pointer;
+  line-height: 1.4;
+  user-select: none;
+  font-size: 0.8rem;
+}
+
+.jarvis-checklist-item input[type="checkbox"] {
+  accent-color: #6366f1;
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-top: 0.15rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jarvis-checklist-item span {
+  flex: 1;
+  color: #e2e8f0;
+  transition: all 0.15s ease;
+}
+
+/* Safety Warning Alert Callouts */
+.jarvis-safety-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.65rem 0;
+  font-size: 0.79rem;
+  color: #fca5a5;
+  line-height: 1.45;
+}
+
+.jarvis-safety-alert strong {
+  color: #f87171 !important;
 }
 
 /* Footer / input */
@@ -738,7 +849,53 @@
   const notifDot = document.getElementById('jarvis-notif-dot');
 
   const CHAT_URL    = "{% url 'jarvis_chat' %}";
+  const STATUS_URL  = "{% url 'jarvis_status' %}";
   const CSRF_TOKEN  = "{{ csrf_token }}";
+
+  function updateQuotaUI(quota) {
+    if (!quota) return;
+    const pill = document.getElementById('jarvis-quota-pill');
+    const valEl = document.getElementById('jarvis-quota-val');
+    const subEl = document.getElementById('jarvis-quota-sub');
+    if (!pill || !valEl) return;
+
+    const pct = quota.percent_left != null ? quota.percent_left : 100;
+    valEl.textContent = pct + '%';
+
+    if (pct > 50) {
+      pill.style.background = 'rgba(34, 197, 94, 0.15)';
+      pill.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      pill.style.color = '#4ade80';
+    } else if (pct > 20) {
+      pill.style.background = 'rgba(245, 158, 11, 0.15)';
+      pill.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+      pill.style.color = '#fbbf24';
+    } else {
+      pill.style.background = 'rgba(239, 68, 68, 0.15)';
+      pill.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      pill.style.color = '#f87171';
+    }
+
+    const used = quota.requests_used || 0;
+    const left = quota.requests_left != null ? quota.requests_left : 1500;
+    const max = quota.requests_limit || 1500;
+    const tokens = (quota.tokens_today || 0).toLocaleString();
+
+    pill.title = `Gemini API Daily Quota: ${pct}% left (${left} / ${max} requests remaining today · ${tokens} tokens used)`;
+    if (subEl) {
+      subEl.textContent = `${left} req left`;
+    }
+  }
+
+  async function fetchStatus() {
+    try {
+      const res = await fetch(STATUS_URL);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.quota) updateQuotaUI(data.quota);
+      }
+    } catch {}
+  }
   // Shared localStorage key across the entire application
   const STORAGE_KEY = 'jarvis_shared_chat_{{ request.user.pk }}';
   const OPEN_KEY    = 'jarvis_open_{{ request.user.pk }}';
@@ -940,6 +1097,7 @@
     toggle.setAttribute('aria-expanded', 'true');
     notifDot.classList.remove('show');
     saveOpenState(true);
+    fetchStatus();
     setTimeout(() => input.focus(), 280);
     scrollToBottom();
   }
@@ -975,8 +1133,38 @@
     appendBotMessage(clearMsg);
   });
 
-  // Delete message handler (event delegation for any record from inline chat button)
+  // Click handlers for inline delete buttons and interactive diagnostic chips
   messages.addEventListener('click', (e) => {
+    // 1. Handle interactive chip clicks
+    const chipBtn = e.target.closest('.jarvis-chip-btn');
+    if (chipBtn) {
+      if (chipBtn.classList.contains('w-vf-submit')) {
+        const card = chipBtn.closest('.jarvis-vehicle-form-card');
+        if (card) {
+          const make = (card.querySelector('.w-vf-make')?.value || '').trim();
+          const model = (card.querySelector('.w-vf-model')?.value || '').trim();
+          const year = (card.querySelector('.w-vf-year')?.value || '').trim();
+          const fuel = card.querySelector('.w-vf-fuel')?.value || 'Not sure';
+          const symptom = card.querySelector('.w-vf-symptom')?.value || '';
+          const veh = [year, make, model].filter(Boolean).join(' ') || 'Vehicle';
+          const msg = `Vehicle: ${veh} (${fuel}). Symptom: ${symptom}`;
+          chipBtn.disabled = true;
+          chipBtn.innerHTML = '<i class="fa-solid fa-check"></i> Submitted';
+          chipBtn.style.background = '#15803d';
+          chipBtn.style.color = '#ffffff';
+          sendMessage(msg);
+        }
+        return;
+      }
+
+      const chipText = chipBtn.dataset.chip;
+      if (chipText && !isLoading) {
+        sendMessage(chipText);
+      }
+      return;
+    }
+
+    // 2. Handle message deletion
     const delBtn = e.target.closest('.jarvis-delete-btn');
     if (!delBtn) return;
     const msgDiv = delBtn.closest('.jarvis-msg');
@@ -986,6 +1174,18 @@
     const history = loadHistory();
     const filtered = history.filter(item => (item.id || item.msgId) !== id);
     saveHistory(filtered);
+  });
+
+  // Handle interactive checklist checkbox toggles
+  messages.addEventListener('change', (e) => {
+    const chk = e.target.closest('.jarvis-checklist-item input[type="checkbox"]');
+    if (chk) {
+      const span = chk.nextElementSibling;
+      if (span) {
+        span.style.textDecoration = chk.checked ? 'line-through' : 'none';
+        span.style.opacity = chk.checked ? '0.6' : '1';
+      }
+    }
   });
 
   // ─────────────────────────────────────────────────────
@@ -1003,7 +1203,7 @@
     }
   });
 
-  sendBtn.addEventListener('click', sendMessage);
+  sendBtn.addEventListener('click', () => sendMessage());
 
   // ─────────────────────────────────────────────────────
   // Render helpers
@@ -1017,10 +1217,26 @@
   }
 
   function renderMarkdown(text) {
-    return escapeHtml(text)
+    let html = escapeHtml(text)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Interactive mechanic checklists
+    html = html.replace(/-\s*\[ \]\s*(\d+[\.\)]\s*[^\n<]+)/g, '<label class="jarvis-checklist-item"><input type="checkbox"><span>$1</span></label>');
+    html = html.replace(/-\s*\[x\]\s*(\d+[\.\)]\s*[^\n<]+)/gi, '<label class="jarvis-checklist-item"><input type="checkbox" checked><span style="text-decoration:line-through;opacity:0.6;">$1</span></label>');
+    html = html.replace(/-\s*\[ \]\s*([^\n<]+)/g, '<label class="jarvis-checklist-item"><input type="checkbox"><span>$1</span></label>');
+    html = html.replace(/-\s*\[x\]\s*([^\n<]+)/gi, '<label class="jarvis-checklist-item"><input type="checkbox" checked><span style="text-decoration:line-through;opacity:0.6;">$1</span></label>');
+
+    // Line breaks
+    html = html.replace(/\n/g, '<br>');
+
+    // Safety Warning Alert Styling
+    html = html.replace(
+      /(<br>|^)(\s*<strong>(?:SAFETY WARNING|CRITICAL SAFETY WARNING|CRITICAL WARNING|BABALA SA KALIGTASAN|PAHALIDLONG SA KALIGTASAN):?<\/strong>[\s\S]*?)(?=(?:<br><br>|<label|<div|$))/gi,
+      '$1<div class="jarvis-safety-alert"><i class="fa-solid fa-triangle-exclamation" style="margin-right:0.35rem;"></i>$2</div>'
+    );
+
+    return html;
   }
 
   function escapeHtml(str) {
@@ -1048,7 +1264,106 @@
     div.className = 'jarvis-msg jarvis-msg--bot';
     div.dataset.id = msgId;
     div.id = 'widget-msg-el-' + msgId;
-    div.innerHTML = `<div class="jarvis-msg-bubble">${renderMarkdown(text)}<button class="jarvis-delete-btn" data-id="${msgId}" title="Delete record"><i class="fa-solid fa-trash-can"></i></button></div><div class="jarvis-msg-time">${t}</div>`;
+
+    let displayText = text;
+    let formHtml = '';
+    const formMatch = text.match(/\[vehicle-form(?::\s*([^\]]+))?\]/i);
+    if (formMatch) {
+      displayText = displayText.replace(formMatch[0], '').trim();
+      let cat = 'start';
+      try {
+        if (formMatch[1] && formMatch[1].trim().startsWith('{')) {
+          cat = JSON.parse(formMatch[1].trim()).category || 'start';
+        } else if (formMatch[1]) {
+          cat = formMatch[1].trim();
+        }
+      } catch (e) {}
+      cat = cat.toLowerCase();
+
+      // Quick prefill from history
+      const histText = loadHistory().map(h => h.text || '').join(' ').toLowerCase();
+      let preMake = '';
+      ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota'].forEach(m => {
+        if (histText.includes(m.toLowerCase()) && !preMake) preMake = m;
+      });
+      let preModel = '';
+      ['Click 125i', 'Click', 'NMAX', 'Aerox', 'Mio', 'Beat', 'Vios', 'Wigo'].forEach(m => {
+        if (histText.includes(m.toLowerCase()) && !preModel) preModel = m;
+      });
+      const yM = histText.match(/\b(20[012]\d)\b/);
+      const preYear = yM ? yM[1] : '';
+
+      const fId = 'w-vf-' + msgId;
+      formHtml = `
+        <div class="jarvis-vehicle-form-card" id="${fId}" style="margin: 0.6rem 0; padding: 12px; font-size: 0.8rem; background: rgba(6, 11, 19, 0.95); border: 1px solid var(--jarvis-border-card); border-left: 3px solid var(--jarvis-cyan); border-radius: 8px;">
+          <div style="font-weight: 700; color: #fff; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-screwdriver-wrench" style="color: var(--jarvis-cyan, #00f0ff); margin-right: 4px;"></i> Vehicle Diagnostic Intake</span>
+            <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(0,240,255,0.15); color: #00f0ff;">Fast Form</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+            <div>
+              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Make / Brand</label>
+              <input type="text" class="jarvis-form-input w-vf-make" placeholder="e.g. Honda" value="${escapeHtml(preMake)}" style="padding: 4px 8px; font-size: 0.75rem;">
+            </div>
+            <div>
+              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Model</label>
+              <input type="text" class="jarvis-form-input w-vf-model" placeholder="e.g. Click 125i" value="${escapeHtml(preModel)}" style="padding: 4px 8px; font-size: 0.75rem;">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+            <div>
+              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Year</label>
+              <input type="text" class="jarvis-form-input w-vf-year" placeholder="e.g. 2022" value="${escapeHtml(preYear)}" style="padding: 4px 8px; font-size: 0.75rem;">
+            </div>
+            <div>
+              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Fuel</label>
+              <select class="jarvis-form-input w-vf-fuel" style="padding: 4px 8px; font-size: 0.75rem;">
+                <option value="Fuel-injected (FI)">Fuel-injected (FI)</option>
+                <option value="Carburetor">Carburetor</option>
+                <option value="Not sure" selected>Not sure</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Symptom</label>
+            <select class="jarvis-form-input w-vf-symptom" style="padding: 4px 8px; font-size: 0.75rem;">
+              ${cat === 'brake' ? `
+                <option value="Brake lever feels soft or spongy">Soft or spongy brake lever</option>
+                <option value="Brake lever goes all the way down without stopping">Lever goes all the way down (Warning!)</option>
+                <option value="Hard brake lever but weak stopping power">Hard lever but weak stopping</option>
+                <option value="Fluid leak near caliper or squealing noise">Fluid leak or unusual noise</option>
+                <option value="Other brake problem">Other brake problem</option>
+              ` : `
+                <option value="Rapid clicking sound when pressing starter">Rapid clicking sound when starting</option>
+                <option value="Engine cranks normally but will not start">Engine cranks normally but won't start</option>
+                <option value="Engine cranks slowly / heavy drag">Engine cranks slowly / sluggish</option>
+                <option value="Completely dead — no lights or electrical response">Completely dead — no lights</option>
+                <option value="Engine starts briefly then shuts off">Starts briefly, then shuts off</option>
+                <option value="Starter does not respond, but dashboard lights work">Starter won't crank, but lights work</option>
+                <option value="Other starting issue">Other starting problem</option>
+              `}
+            </select>
+          </div>
+          <button type="button" class="jarvis-chip-btn w-vf-submit" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #00f0ff, #0284c7); color: #060b13; font-weight: 700; padding: 6px; cursor: pointer;">
+            <i class="fa-solid fa-wrench" style="margin-right: 4px;"></i> Submit Vehicle Details
+          </button>
+        </div>
+      `;
+    }
+
+    let chipsHtml = '';
+    const match = displayText.match(/\[chips:\s*(.*?)\]/i);
+    if (match) {
+      displayText = displayText.replace(match[0], '').trim();
+      const rawChips = match[1].split('|').map(s => s.trim()).filter(Boolean);
+      if (rawChips.length > 0) {
+        chipsHtml = `<div class="jarvis-chips-container">` +
+          rawChips.map(c => `<button type="button" class="jarvis-chip-btn" data-chip="${escapeHtml(c)}"><i class="fa-solid fa-angle-right" style="font-size:0.58rem;opacity:0.75;"></i> ${escapeHtml(c)}</button>`).join('') +
+          `</div>`;
+      }
+    }
+
+    div.innerHTML = `<div class="jarvis-msg-bubble">${renderMarkdown(displayText)}${formHtml}${chipsHtml}<button class="jarvis-delete-btn" data-id="${msgId}" title="Delete record"><i class="fa-solid fa-trash-can"></i></button></div><div class="jarvis-msg-time">${t}</div>`;
     messages.appendChild(div);
     scrollToBottom();
     if (!isOpen) notifDot.classList.add('show');
@@ -1102,27 +1417,36 @@
   // ─────────────────────────────────────────────────────
   // Send message
   // ─────────────────────────────────────────────────────
-  async function sendMessage() {
-    const text = input.value.trim();
+  async function sendMessage(customText) {
+    const text = (customText !== undefined ? customText : input.value).trim();
     if (!text || isLoading) return;
 
     input.value = '';
     input.style.height = 'auto';
+
+    // Capture recent history before adding the new message
+    const rawHistory = loadHistory();
+    const recentHistory = rawHistory.slice(-8).map(m => ({
+      role: m.role,
+      text: m.text
+    }));
+
     appendUserMessage(text);
     setLoading(true);
     appendTyping();
 
-    await new Promise(r => setTimeout(r, 350 + Math.random() * 350));
+    await new Promise(r => setTimeout(r, 250));
 
     try {
       const res = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history: recentHistory }),
       });
       removeTyping();
       if (!res.ok) { appendBotMessage('A momentary malfunction, sir. Please try that again.'); return; }
       const data = await res.json();
+      if (data.quota) updateQuotaUI(data.quota);
       appendBotMessage(data.reply || 'I appear to have lost that thought, sir. One more time, if you would.');
     } catch (err) {
       removeTyping();
@@ -1144,6 +1468,7 @@
   // Boot — restore history & panel state
   // ─────────────────────────────────────────────────────
   restoreHistory();
+  fetchStatus();
   if (loadOpenState()) openPanel();
 
 })();

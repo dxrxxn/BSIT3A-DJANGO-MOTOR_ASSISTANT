@@ -1,6 +1,6 @@
 import django
 import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'motor_assistant_projectv3.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mysite.settings'
 django.setup()
 
 from apps.core.views import _jarvis_response

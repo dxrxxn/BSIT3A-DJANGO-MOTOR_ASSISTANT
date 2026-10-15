@@ -1,368 +1,1251 @@
 {% extends "theme/base.html" %}
 {% load static %}
-{% block extra_css %}
-<link href="{% static 'css/dashboard.css' %}" rel="stylesheet"/>
-{% endblock %}
 
-{% block jarvis_widget %}
-  {% if query %}
-    {% if request.user.is_authenticated %}
-      {% include 'theme/jarvis.html' %}
-    {% endif %}
-  {% endif %}
+{% block extra_css %}
+<style>
+.jarvis-quota-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 26, 40, 0.9);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  font-size: 0.74rem;
+  color: #86efac;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.15);
+}
+.jarvis-quota-pill:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.35);
+}
+.jarvis-quota-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
+  box-shadow: 0 0 6px #22c55e;
+}
+.jarvis-safety-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.65rem 0;
+  font-size: 0.8rem;
+  color: #fca5a5;
+  line-height: 1.45;
+}
+.jarvis-safety-alert strong {
+  color: #f87171 !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<main class="diagnostic-dashboard">
-  {% if query %}
-    <section class="diagnostic-search-bar" aria-label="Search diagnostics">
-      <a class="diagnostic-brand" href="{% url 'dashboard' %}" aria-label="Jarvis AI home">
-        <span class="diagnostic-brand-mark"><i class="fa-solid fa-circle-nodes"></i></span>
-        <span>J.A.R.V.I.S.</span>
-      </a>
-      <form class="diagnostic-search-form diagnostic-search-form--compact" method="get" action="{% url 'dashboard' %}">
-        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" name="q" value="{{ query }}" placeholder="Ask Jarvis a symptom, part, or issue..." aria-label="Search a symptom, part, or issue">
-        <button type="submit" aria-label="Search"><i class="fa-solid fa-arrow-right"></i></button>
-      </form>
-      <a class="diagnostic-home-link" href="{% url 'dashboard' %}">Return to Jarvis</a>
-    </section>
+<div class="jarvis-workspace" id="jarvis-workspace-root">
 
-    <section class="diagnostic-results-heading">
-      <p class="diagnostic-eyebrow">J.A.R.V.I.S. · DIAGNOSTIC SCAN</p>
-      <h1>Scan complete, sir</h1>
-      <p class="diagnostic-muted">Results for <strong>“{{ query }}”</strong>. Review the likely cause and follow the protocol carefully.</p>
-    </section>
-
-    {% if diagnostic_results %}
-      {% for result in diagnostic_results %}
-        <article class="diagnostic-result-card">
-          <header class="diagnostic-result-header">
-            <div>
-              <p class="diagnostic-eyebrow">MATCH {{ forloop.counter }} · {{ result.symptom.category|upper }}</p>
-              <h2>{{ result.symptom.symptom_name }}</h2>
-            </div>
-            <span class="diagnostic-match"><i class="fa-solid fa-circle-check"></i> On file</span>
-          </header>
-
-          <div class="diagnostic-overview-grid">
-            <section class="motor-map-panel" aria-label="Motorcycle inspection reference">
-              <div class="diagnostic-section-heading">
-                <div>
-                  <p class="diagnostic-eyebrow">VISUAL REFERENCE</p>
-                  <h3>Motorcycle inspection areas</h3>
-                </div>
-                <span class="map-note">Reference only</span>
-              </div>
-              <div class="motor-map">
-                <svg viewBox="0 0 720 300" role="img" aria-labelledby="motor-map-title-{{ forloop.counter }} motor-map-description-{{ forloop.counter }}">
-                  <title id="motor-map-title-{{ forloop.counter }}">Motorcycle side-view inspection reference</title>
-                  <desc id="motor-map-description-{{ forloop.counter }}">A simplified motorcycle outline showing the wheels, frame, engine, and drive chain for general inspection.</desc>
-                  <g fill="none" stroke="#56647a" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="154" cy="221" r="62" stroke-width="10"/>
-                    <circle cx="154" cy="221" r="43" stroke-width="2"/>
-                    <circle cx="558" cy="221" r="62" stroke-width="10"/>
-                    <circle cx="558" cy="221" r="43" stroke-width="2"/>
-                    <path d="M154 221 283 213 360 139 455 148 558 221M283 213 360 139 394 217 283 213M394 217 455 148 558 221" stroke-width="8"/>
-                    <path d="M350 141 324 118 259 105 245 135 280 154M455 148 485 116 531 119 558 221M342 132l-10-33M319 99h-32M249 135l-20 4" stroke-width="7"/>
-                    <path d="M271 182h124l-12 68H268z" fill="#172235" stroke="#52617a" stroke-width="4"/>
-                    <path d="M284 174h91v11h-91zM381 191l113 24" stroke="#f5a313" stroke-width="4" stroke-dasharray="7 7"/>
-                    <circle cx="394" cy="217" r="12" fill="#f5a313" stroke="#f5a313" stroke-width="3"/>
-                    <circle cx="360" cy="199" r="6" fill="#25c79a" stroke="#25c79a" stroke-width="2"/>
-                    <circle cx="154" cy="221" r="8" fill="#15b8d5" stroke="#15b8d5" stroke-width="2"/>
-                    <circle cx="558" cy="221" r="8" fill="#15b8d5" stroke="#15b8d5" stroke-width="2"/>
-                  </g>
-                  <g fill="#aab6c9" font-family="inherit" font-size="12">
-                    <text x="294" y="270">ENGINE</text>
-                    <text x="425" y="246" fill="#f5a313">DRIVE CHAIN</text>
-                    <text x="120" y="294">FRONT WHEEL</text>
-                    <text x="523" y="294">REAR WHEEL</text>
-                  </g>
-                </svg>
-              </div>
-              <p class="map-caption"><i class="fa-solid fa-circle-info"></i> Use this illustration as a general reference. Motorcycle layouts vary by model.</p>
-            </section>
-
-            <section class="diagnostic-cause-panel">
-              <div class="diagnostic-section-heading">
-                <div>
-                  <p class="diagnostic-eyebrow">SYMPTOM BRIEFING</p>
-                  <h3>{{ result.symptom.symptom_name }}</h3>
-                </div>
-                <span class="category-pill">{{ result.symptom.category }}</span>
-              </div>
-              {% if result.symptom.description %}
-                <p class="diagnostic-description">{{ result.symptom.description }}</p>
-              {% endif %}
-
-              {% if result.guides %}
-                {% for guide_item in result.guides %}
-                  <div class="cause-block">
-                    <p class="diagnostic-eyebrow">LIKELY CAUSE</p>
-                    <p>{{ guide_item.guide.possible_cause }}</p>
-                  </div>
-                  {% if guide_item.guide.advice_notes %}
-                    <div class="advice-block"><i class="fa-solid fa-triangle-exclamation"></i><span>{{ guide_item.guide.advice_notes }}</span></div>
-                  {% endif %}
-                {% endfor %}
-              {% else %}
-                <div class="advice-block"><i class="fa-solid fa-circle-info"></i><span>No repair protocol is linked to this symptom yet. Ask Jarvis for general guidance, or consult a qualified mechanic.</span></div>
-              {% endif %}
-            </section>
-          </div>
-
-          {% if result.guides %}
-            {% for guide_item in result.guides %}
-              <section class="repair-guide">
-                <div class="repair-guide-heading">
-                  <div>
-                    <p class="diagnostic-eyebrow">STEP-BY-STEP PROTOCOL</p>
-                    <h3>Repair guide{% if result.guides|length > 1 %} {{ forloop.counter }}{% endif %}</h3>
-                  </div>
-                  <span class="guide-step-count">{{ guide_item.repair_steps|length }} steps</span>
-                </div>
-
-                {% if guide_item.required_parts %}
-                  <div class="parts-checklist">
-                    <h4><i class="fa-solid fa-screwdriver-wrench"></i> Tools &amp; parts to prepare</h4>
-                    <ul>
-                      {% for requirement in guide_item.required_parts %}
-                        <li><span>{{ requirement.part.part_name }}{% if requirement.quantity_needed %} <small>× {{ requirement.quantity_needed }}</small>{% endif %}</span><i class="fa-solid fa-check"></i></li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                {% endif %}
-
-                {% if guide_item.repair_steps %}
-                  <ol class="repair-steps">
-                    {% for step in guide_item.repair_steps %}
-                      <li><span class="step-number">{{ forloop.counter }}</span><span>{{ step }}</span></li>
-                    {% endfor %}
-                  </ol>
-                {% else %}
-                  <p class="diagnostic-muted">Detailed repair steps have not been added to this guide yet.</p>
-                {% endif %}
-              </section>
-            {% endfor %}
-          {% endif %}
-        </article>
-      {% endfor %}
-    {% else %}
-      <section class="diagnostic-empty-state">
-        <span class="empty-state-icon"><i class="fa-solid fa-satellite-dish"></i></span>
-        <h2>Nothing on file for that query, sir</h2>
-        <p>Try another symptom, component, or likely cause. You may also ask Jarvis directly from the console.</p>
-        <a class="diagnostic-primary-button" href="{% url 'dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Return to Jarvis</a>
-      </section>
-    {% endif %}
-  {% else %}
-    <section class="jarvis-console" aria-label="Jarvis AI">
-      <header class="jarvis-console-header">
-        <div class="jarvis-reactor" aria-hidden="true">
-          <span class="jarvis-reactor-ring"></span>
-          <span class="jarvis-reactor-core"></span>
-        </div>
-        <div>
-          <p class="diagnostic-eyebrow">JUST A RATHER VERY INTELLIGENT SYSTEM</p>
-          <h1>J.A.R.V.I.S.</h1>
-          <p class="jarvis-console-status">
-            <span class="jarvis-online-dot"></span>
-            Online · at your service, {{ request.user.first_name|default:"sir" }}
-          </p>
-        </div>
-        <button type="button" class="jarvis-console-clear" id="jarvis-console-clear">Clear logs</button>
-      </header>
-
-      <div class="jarvis-console-body" id="jarvis-console-messages" role="log" aria-live="polite">
-        <div class="jarvis-console-msg jarvis-console-msg--bot">
-          <div class="jarvis-console-bubble">
-            Good day, <strong>{{ request.user.first_name|default:"sir" }}</strong>. J.A.R.V.I.S. is online and systems are nominal.<br><br>
-            Describe the motorcycle’s behaviour and I shall scan the diagnostic archive — knocking, smoke, leaks, starting faults, parts, the usual drama. How may I assist?
+  <!-- Chat Header -->
+  <header class="jarvis-chat-header">
+    <div class="jarvis-chat-header-left">
+      <div class="jarvis-avatar-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+          <path d="M2 10v4"/>
+          <path d="M6 6v12"/>
+          <path d="M10 3v18"/>
+          <path d="M14 8v8"/>
+          <path d="M18 5v14"/>
+          <path d="M22 10v4"/>
+        </svg>
+      </div>
+      <div class="jarvis-header-text">
+        <span class="jarvis-header-eyebrow">JUST A RATHER VERY INTELLIGENT SYSTEM</span>
+        <div class="jarvis-header-title-row">
+          <h1 class="jarvis-header-title">J.A.R.V.I.S.</h1>
+          <div class="jarvis-header-status">
+            <span class="jarvis-header-status-dot"></span>
+            <span>Online · at your service, sir</span>
           </div>
         </div>
       </div>
+    </div>
 
-      {% if quick_symptoms %}
-        <div class="jarvis-console-chips" id="jarvis-console-chips">
-          {% for symptom in quick_symptoms %}
-            <button type="button" class="quick-search-chip" data-jarvis-prompt="{{ symptom.symptom_name }}">{{ symptom.symptom_name }}</button>
-          {% endfor %}
-          <button type="button" class="quick-search-chip" data-jarvis-prompt="What can you do?">What can you do?</button>
-        </div>
-      {% endif %}
+    <div class="jarvis-chat-header-actions">
+      <!-- Live API Quota & Token Badge -->
+      <div class="jarvis-quota-pill" id="jarvis-quota-pill" title="Gemini 3.1 API Quota remaining today">
+        <span class="jarvis-quota-dot" id="jarvis-quota-dot"></span>
+        <i class="fa-solid fa-bolt" style="font-size: 0.7rem; color: #4ade80;"></i>
+        <span id="jarvis-quota-val" style="font-weight: 700;">Quota: 100% left</span>
+        <span id="jarvis-quota-sub" style="font-size: 0.68rem; opacity: 0.8; margin-left: 2px;">(1,500 reqs)</span>
+      </div>
 
-      <form class="jarvis-console-form" id="jarvis-console-form">
+      <!-- History Button -->
+      <button type="button" class="jarvis-header-btn" id="btn-chat-history" title="View chat history" aria-label="Open chat history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 14 14"/>
+          <path d="M4 12a8 8 0 0 1 8-8"/>
+        </svg>
+        <span>History</span>
+      </button>
+
+      <!-- Clear logs Button -->
+      <button type="button" class="jarvis-header-btn" id="btn-clear-logs" title="Clear chat history" aria-label="Clear chat logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <path d="M3 6h18"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        <span>Clear logs</span>
+      </button>
+
+      <!-- Reset / Close Button -->
+      <button type="button" class="jarvis-header-icon-btn" id="btn-reset-chat" title="Reset view" aria-label="Reset view">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Chat Messages Container -->
+  <div class="jarvis-chat-messages" id="jarvis-chat-messages" role="log" aria-live="polite">
+    <!-- Messages injected by JavaScript -->
+  </div>
+
+  <!-- Chat History Slide-out Drawer -->
+  <aside class="jarvis-history-drawer" id="jarvis-history-drawer" aria-label="Chat History Drawer">
+    <div class="jarvis-history-header">
+      <div class="jarvis-history-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Chat History</span>
+      </div>
+      <button type="button" class="jarvis-header-icon-btn" id="btn-close-history" title="Close history" aria-label="Close history">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="jarvis-history-search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="history-search-input" placeholder="Search history..." aria-label="Search chat history">
+    </div>
+    <div class="jarvis-history-list" id="jarvis-history-list">
+      <!-- History records rendered by JavaScript -->
+    </div>
+    <div class="jarvis-history-footer">
+      <button type="button" class="jarvis-history-clear-btn" id="btn-history-clear-all">
+        <i class="fa-solid fa-trash-can"></i> Clear All History
+      </button>
+    </div>
+  </aside>
+
+  <!-- Bottom Input Area -->
+  <div class="jarvis-input-section">
+    <form id="jarvis-chat-form" onsubmit="return false;">
+      <div class="jarvis-input-container">
         <textarea
-          id="jarvis-console-input"
+          id="jarvis-user-input"
+          class="jarvis-textarea"
           rows="1"
           maxlength="1000"
-          placeholder="How may I assist you, sir?"
-          aria-label="Ask Jarvis"
-          required
+          placeholder="| How may I assist you, sir?"
+          aria-label="Message Jarvis"
           autofocus
         ></textarea>
-        <button type="submit" id="jarvis-console-send" aria-label="Send to Jarvis">
-          <i class="fa-solid fa-paper-plane"></i>
+        <button type="submit" id="jarvis-btn-send" class="jarvis-send-btn" aria-label="Send message">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
         </button>
-      </form>
-    </section>
-  {% endif %}
-</main>
+      </div>
+    </form>
+    <div class="jarvis-input-footer-hints">
+      <span class="jarvis-input-hint-left">Describe a symptom or choose a diagnostic shortcut above.</span>
+      <span class="jarvis-input-hint-right">Enter to send</span>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
 
 {% block extra_js %}
-{% if not query %}
 <script>
-(function () {
-  const form = document.getElementById('jarvis-console-form');
-  const input = document.getElementById('jarvis-console-input');
-  const sendBtn = document.getElementById('jarvis-console-send');
-  const messages = document.getElementById('jarvis-console-messages');
-  const clearBtn = document.getElementById('jarvis-console-clear');
-  const chips = document.getElementById('jarvis-console-chips');
+(function() {
+  'use strict';
+
   const CHAT_URL = "{% url 'jarvis_chat' %}";
   const CSRF_TOKEN = "{{ csrf_token }}";
-  const STORAGE_KEY = 'jarvis_console_{{ request.user.pk }}';
+  const STORAGE_KEY = 'jarvis_ui_history_{{ request.user.pk|default:"default" }}';
+
+  const messagesContainer = document.getElementById('jarvis-chat-messages');
+  const inputEl = document.getElementById('jarvis-user-input');
+  const sendBtn = document.getElementById('jarvis-btn-send');
+  const clearBtn = document.getElementById('btn-clear-logs');
+  const resetBtn = document.getElementById('btn-reset-chat');
+  const historyToggleBtn = document.getElementById('btn-chat-history');
+  const historyDrawer = document.getElementById('jarvis-history-drawer');
+  const historyCloseBtn = document.getElementById('btn-close-history');
+  const historySearchInput = document.getElementById('history-search-input');
+  const historyListEl = document.getElementById('jarvis-history-list');
+  const historyClearAllBtn = document.getElementById('btn-history-clear-all');
+
   let isLoading = false;
 
+  function getTimeStr() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ── Default Initial / Seed State ──────────────────
+  const DEFAULT_INITIAL_STATE = [
+    {
+      id: 'init-1',
+      role: 'bot',
+      text: "At your service, sir. J.A.R.V.I.S. online. Systems nominal. I am your master vehicle diagnostic assistant. What symptom or issue are you experiencing with your vehicle today?\n\n[chips: Engine won't start | Front brake not working | Engine overheating | Motorcycle won't accelerate properly]",
+      time: getTimeStr()
+    }
+  ];
+
   function loadHistory() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn("Storage load error:", e);
+    }
+    return DEFAULT_INITIAL_STATE;
   }
 
   function saveHistory(history) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-80))); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-80)));
+    } catch (e) {}
+    updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
   }
 
   function scrollToBottom() {
-    messages.scrollTop = messages.scrollHeight;
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
   function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    return (str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
-  function renderMarkdown(text) {
+  function renderMarkdownInline(text) {
+    if (!text) return '';
     return escapeHtml(text)
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
+      .replace(/`([^`\n]+)`/g, '<code>$1</code>');
   }
 
-  function appendMsg(role, text) {
-    const div = document.createElement('div');
-    div.className = 'jarvis-console-msg jarvis-console-msg--' + role;
-    const bubble = role === 'user' ? escapeHtml(text) : renderMarkdown(text);
-    div.innerHTML = '<div class="jarvis-console-bubble">' + bubble + '</div>';
-    messages.appendChild(div);
-    scrollToBottom();
-  }
-
-  function persist(role, text) {
+  // ── Vehicle Information Auto-Extraction from History ───────────────────────
+  function extractKnownVehicleInfo() {
     const history = loadHistory();
-    history.push({ role, text });
-    saveHistory(history);
-  }
+    const corpus = history.map(h => h.text || '').join(' ').toLowerCase();
 
-  function restoreHistory() {
-    const history = loadHistory();
-    if (!history.length) return;
-    messages.innerHTML = '';
-    history.forEach(({ role, text }) => appendMsg(role === 'user' ? 'user' : 'bot', text));
-  }
+    const info = {
+      make: '',
+      model: '',
+      year: '',
+      type: 'Motorcycle',
+      displacement: '',
+      fuel: 'Not sure'
+    };
 
-  function setLoading(val) {
-    isLoading = val;
-    sendBtn.disabled = val;
-    input.disabled = val;
-  }
-
-  function appendTyping() {
-    const div = document.createElement('div');
-    div.className = 'jarvis-console-msg jarvis-console-msg--bot';
-    div.id = 'jarvis-console-typing';
-    div.innerHTML = '<div class="jarvis-console-bubble jarvis-console-typing"><span></span><span></span><span></span></div>';
-    messages.appendChild(div);
-    scrollToBottom();
-  }
-
-  function removeTyping() {
-    const t = document.getElementById('jarvis-console-typing');
-    if (t) t.remove();
-  }
-
-  async function sendMessage(text) {
-    const value = (text || input.value).trim();
-    if (!value || isLoading) return;
-    input.value = '';
-    input.style.height = 'auto';
-    appendMsg('user', value);
-    persist('user', value);
-    setLoading(true);
-    appendTyping();
-    try {
-      const res = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ message: value }),
-      });
-      removeTyping();
-      let reply = 'A momentary malfunction, sir. Please try that again.';
-      if (res.ok) {
-        const data = await res.json();
-        reply = data.reply || reply;
+    // Check make
+    const makes = ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota', 'Mitsubishi', 'Nissan', 'Ford', 'Hyundai', 'Isuzu', 'Mazda', 'Kymco', 'Rusi', 'Bajaj', 'TVS', 'Vespa'];
+    for (const m of makes) {
+      if (new RegExp('\\b' + m.toLowerCase() + '\\b').test(corpus)) {
+        info.make = m;
+        break;
       }
-      appendMsg('bot', reply);
-      persist('bot', reply);
-    } catch (err) {
-      removeTyping();
-      const fail = 'I cannot reach the network, sir. Check the connection and I shall try again.';
-      appendMsg('bot', fail);
-      persist('bot', fail);
-    } finally {
-      setLoading(false);
-      input.focus();
+    }
+
+    // Check common models
+    const models = [
+      'Click 125i', 'Click 150i', 'Click 160', 'Click',
+      'Aerox 155', 'Aerox', 'NMAX 155', 'NMAX',
+      'Raider 150', 'Raider', 'Mio Sporty', 'Mio i 125', 'Mio Gear', 'Mio Soul', 'Mio',
+      'Fazzio', 'Gravis', 'Burgman', 'Beat', 'PCX 160', 'PCX', 'ADV 160', 'ADV',
+      'Sniper 155', 'Sniper', 'Wave 110', 'Wave 125', 'Wave', 'XRM 125', 'XRM', 'Smash 115', 'Smash',
+      'Vios', 'Mirage G4', 'Mirage', 'Wigo', 'Innova', 'Fortuner', 'Hilux', 'Civic', 'City'
+    ];
+    for (const mdl of models) {
+      if (corpus.includes(mdl.toLowerCase())) {
+        info.model = mdl;
+        break;
+      }
+    }
+
+    // Check year
+    const yMatch = corpus.match(/\b(19[9]\d|20[012]\d)\b/);
+    if (yMatch) info.year = yMatch[1];
+
+    // Check type
+    if (corpus.includes('scooter') || corpus.includes('click') || corpus.includes('nmax') || corpus.includes('aerox') || corpus.includes('mio') || corpus.includes('beat') || corpus.includes('pcx') || corpus.includes('fazzio')) {
+      info.type = 'Scooter';
+    } else if (corpus.includes('car') || corpus.includes('sedan') || corpus.includes('suv') || corpus.includes('vios') || corpus.includes('wigo')) {
+      info.type = 'Car';
+    } else if (corpus.includes('trike') || corpus.includes('tricycle')) {
+      info.type = 'Other';
+    }
+
+    // Check displacement
+    const dMatch = corpus.match(/\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b/i);
+    if (dMatch) info.displacement = dMatch[1].toUpperCase();
+
+    // Check fuel
+    if (corpus.includes('fi') || corpus.includes('fuel inject') || corpus.includes('injected')) {
+      info.fuel = 'Fuel-injected (FI)';
+    } else if (corpus.includes('carb') || corpus.includes('carburetor')) {
+      info.fuel = 'Carburetor';
+    }
+
+    return info;
+  }
+
+  // ── Smart Parser for Bot Messages ─────────────────────────────────────────
+  function parseBotMessage(rawText, activeChipName, followupChips) {
+    let cleanText = rawText || '';
+    let vehicleFormData = null;
+
+    // Detect Vehicle Form Tag: [vehicle-form: {...}] or [vehicle-form: start]
+    const formMatch = cleanText.match(/\[vehicle-form(?::\s*([^\]]+))?\]/i);
+    if (formMatch) {
+      const rawPayload = formMatch[1] ? formMatch[1].trim() : 'general';
+      try {
+        if (rawPayload.startsWith('{')) {
+          vehicleFormData = JSON.parse(rawPayload);
+        } else {
+          vehicleFormData = { category: rawPayload || 'general' };
+        }
+      } catch (e) {
+        vehicleFormData = { category: rawPayload || 'general' };
+      }
+      cleanText = cleanText.replace(formMatch[0], '').trim();
+    }
+
+    const lines = cleanText.split('\n');
+    let title = '';
+    let introText = [];
+    let checklistItems = [];
+    let chips = [];
+    let outroText = [];
+
+    let readingChecklist = false;
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+
+      // Skip any leftover tip lines (💡) so they don't bleed into other sections
+      if (trimmed.startsWith('💡')) return;
+
+      // Detect Chips: [chips: a | b | c]
+      const chipMatch = trimmed.match(/^\[chips:\s*(.+?)\]$/i);
+      if (chipMatch) {
+        const rawOptions = chipMatch[1].split('|');
+        chips = rawOptions.map(c => c.trim()).filter(Boolean);
+        return;
+      }
+
+      // Detect Checklist item: - [ ] 1. Text... or - [ ] Text...
+      const checkMatch = trimmed.match(/^-\s*\[\s*\]\s*(?:\d+[\.\):\-]\s*)?(.*)$/i);
+      if (checkMatch) {
+        readingChecklist = true;
+        checklistItems.push(checkMatch[1].trim());
+        return;
+      }
+
+      // Detect Protocol Title: ends with :, e.g. "Drivetrain protocol, sir:"
+      if (!readingChecklist && checklistItems.length === 0 && (trimmed.endsWith(':') || trimmed.toLowerCase().includes('protocol') || trimmed.toLowerCase().includes('checklist'))) {
+        title = trimmed;
+        return;
+      }
+
+      if (trimmed) {
+        if (checklistItems.length === 0) {
+          introText.push(trimmed);
+        } else {
+          outroText.push(trimmed);
+        }
+      }
+    });
+
+    return {
+      title,
+      intro: introText.join(' '),
+      checklist: checklistItems,
+      chips,
+      outro: outroText.join(' '),
+      vehicleForm: vehicleFormData,
+      activeChip: activeChipName || null,
+      followupChips: followupChips || []
+    };
+  }
+
+  // ── Render Interactive Vehicle Intake Form ────────────────────────────────
+  function renderVehicleForm(formData, parentCard, messageId) {
+    const known = extractKnownVehicleInfo();
+    const cat = (formData && formData.category) ? formData.category.toLowerCase() : 'start';
+
+    // Merge pre-known information
+    const initMake = (formData && formData.make) || known.make || '';
+    const initModel = (formData && formData.model) || known.model || '';
+    const initYear = (formData && formData.year) || known.year || '';
+    const initType = (formData && formData.type) || known.type || 'Motorcycle';
+    const initDisp = (formData && formData.displacement) || known.displacement || '';
+    const initFuel = (formData && formData.engine_fuel) || known.fuel || 'Not sure';
+
+    const formUid = 'vf-' + (messageId || Date.now());
+    const formContainer = document.createElement('div');
+    formContainer.className = 'jarvis-vehicle-form-card';
+    formContainer.id = formUid;
+
+    // Determine symptom options based on category
+    let symptomSectionTitle = "What happens when you try to start the engine?";
+    let symptoms = [
+      { id: 'A', text: "Completely dead — no dashboard lights or electrical response", isDanger: false },
+      { id: 'B', text: "Rapid clicking sound when pressing the starter button", isDanger: false },
+      { id: 'C', text: "Engine cranks slowly (sluggish / heavy mechanical drag)", isDanger: false },
+      { id: 'D', text: "Engine cranks normally but will not start (no combustion)", isDanger: false },
+      { id: 'E', text: "Engine starts briefly, then shuts off immediately", isDanger: false },
+      { id: 'F', text: "Starter does not respond, but dashboard lights work", isDanger: false },
+      { id: 'G', text: "Other — let me describe the symptom in detail", isOther: true }
+    ];
+
+    if (cat === 'brake') {
+      symptomSectionTitle = "What happens when you apply the front/rear brake?";
+      symptoms = [
+        { id: 'A', text: "Brake lever or pedal feels soft or spongy", isDanger: false },
+        { id: 'B', text: "Lever or pedal goes all the way down without stopping", isDanger: true, dangerMsg: "CRITICAL SAFETY WARNING: Severe hydraulic loss. Do not ride or drive the vehicle! Have it transported to a mechanic." },
+        { id: 'C', text: "Lever feels hard, but the brake does not stop the wheel", isDanger: false },
+        { id: 'D', text: "Brake works weakly or takes too long to stop", isDanger: false },
+        { id: 'E', text: "Fluid leak, burning smell, or grinding/squealing noise", isDanger: true, dangerMsg: "SAFETY WARNING: Brake fluid leak or pad metal grinding detected. Stop riding immediately to prevent total brake failure." },
+        { id: 'F', text: "Other — let me describe the symptom in detail", isOther: true }
+      ];
+    } else if (cat === 'overheat') {
+      symptomSectionTitle = "When does the overheating occur and what are the symptoms?";
+      symptoms = [
+        { id: 'A', text: "Temperature warning light on / gauge red in traffic or idle", isDanger: false },
+        { id: 'B', text: "Radiator electric fan is not spinning when engine is hot", isDanger: false },
+        { id: 'C', text: "Coolant boiling over, steam, or visible coolant leak", isDanger: true, dangerMsg: "CRITICAL SAFETY WARNING: Never open a hot radiator cap! Pressurized boiling coolant causes severe scald burns. Allow 45 minutes to cool down." },
+        { id: 'D', text: "Overheating occurs at high highway cruising speeds", isDanger: false },
+        { id: 'E', text: "Air-cooled motorcycle cylinder head getting excessively hot", isDanger: false },
+        { id: 'F', text: "Other — let me describe the symptom in detail", isOther: true }
+      ];
+    } else if (cat === 'accel') {
+      symptomSectionTitle = "What happens when you accelerate or twist the throttle?";
+      symptoms = [
+        { id: 'A', text: "Engine revs high but vehicle won't speed up (slipping clutch / CVT belt)", isDanger: false },
+        { id: 'B', text: "Engine sputters, bogs down, or hesitates on throttle", isDanger: false },
+        { id: 'C', text: "Severe loss of power / sluggish when climbing hills", isDanger: false },
+        { id: 'D', text: "Jerking or heavy vibration at initial take-off", isDanger: false },
+        { id: 'E', text: "Other — let me describe the symptom in detail", isOther: true }
+      ];
+    }
+
+    const popularYears = [];
+    for (let y = 2026; y >= 1995; y--) popularYears.push(y);
+
+    formContainer.innerHTML = `
+      <div class="jarvis-form-header-row">
+        <div class="jarvis-form-header-title">
+          <i class="fa-solid fa-screwdriver-wrench"></i>
+          <span>Vehicle Diagnostic Intake</span>
+        </div>
+        <span class="jarvis-form-badge">Fast Intake</span>
+      </div>
+      <div class="jarvis-form-subtitle">
+        Enter or confirm your vehicle details and symptom below so J.A.R.V.I.S. can isolate the root cause immediately without separate questions.
+      </div>
+
+      <!-- Vehicle Type -->
+      <div class="jarvis-form-group">
+        <label class="jarvis-form-label">
+          <span>Vehicle Type</span>
+          <span class="jarvis-form-label-hint">Select category</span>
+        </label>
+        <div class="jarvis-form-pills" id="${formUid}-type-pills">
+          ${['Motorcycle', 'Scooter', 'Car', 'Other'].map(t => `
+            <button type="button" class="jarvis-form-pill-btn ${t.toLowerCase() === initType.toLowerCase() ? 'active' : ''}" data-val="${t}">${t}</button>
+          `).join('')}
+        </div>
+        <input type="hidden" id="${formUid}-type" value="${escapeHtml(initType)}">
+      </div>
+
+      <!-- Make & Model Grid -->
+      <div class="jarvis-form-grid-2">
+        <div class="jarvis-form-group">
+          <label class="jarvis-form-label" for="${formUid}-make">
+            <span>Make / Brand</span>
+            <span class="jarvis-form-label-hint">Select or type</span>
+          </label>
+          <input type="text" id="${formUid}-make" list="${formUid}-makes-dl" class="jarvis-form-input" placeholder="e.g. Honda, Yamaha, Toyota..." value="${escapeHtml(initMake)}">
+          <datalist id="${formUid}-makes-dl">
+            <option value="Honda">
+            <option value="Yamaha">
+            <option value="Suzuki">
+            <option value="Kawasaki">
+            <option value="Toyota">
+            <option value="Mitsubishi">
+            <option value="Nissan">
+            <option value="Ford">
+            <option value="Kymco">
+            <option value="Rusi">
+            <option value="Bajaj">
+            <option value="Vespa">
+            <option value="Other">
+          </datalist>
+          <div class="jarvis-form-pills" style="margin-top: 4px;">
+            ${['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota'].map(m => `
+              <button type="button" class="jarvis-form-pill-btn quick-make-btn" data-target="${formUid}-make" data-val="${m}" style="padding: 2px 7px; font-size: 10px;">${m}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="jarvis-form-group">
+          <label class="jarvis-form-label" for="${formUid}-model">
+            <span>Exact Model</span>
+            <span class="jarvis-form-label-hint">Type any model</span>
+          </label>
+          <input type="text" id="${formUid}-model" class="jarvis-form-input" placeholder="e.g. Click 125i, Vios, Aerox..." value="${escapeHtml(initModel)}">
+        </div>
+      </div>
+
+      <!-- Year & Engine Size Grid -->
+      <div class="jarvis-form-grid-2">
+        <div class="jarvis-form-group">
+          <label class="jarvis-form-label" for="${formUid}-year">
+            <span>Year of Manufacture</span>
+            <span class="jarvis-form-label-hint">Type or select</span>
+          </label>
+          <input type="text" id="${formUid}-year" list="${formUid}-years-dl" class="jarvis-form-input" placeholder="e.g. 2022" value="${escapeHtml(initYear)}">
+          <datalist id="${formUid}-years-dl">
+            ${popularYears.map(y => `<option value="${y}">`).join('')}
+          </datalist>
+        </div>
+
+        <div class="jarvis-form-group">
+          <label class="jarvis-form-label" for="${formUid}-disp">
+            <span>Engine Size / Displacement</span>
+            <span class="jarvis-form-label-hint">Optional</span>
+          </label>
+          <input type="text" id="${formUid}-disp" class="jarvis-form-input" placeholder="e.g. 125cc or 1.5L" value="${escapeHtml(initDisp)}">
+        </div>
+      </div>
+
+      <!-- Fuel System -->
+      <div class="jarvis-form-group">
+        <label class="jarvis-form-label">
+          <span>Fuel System</span>
+          <span class="jarvis-form-label-hint">Select one</span>
+        </label>
+        <div class="jarvis-form-pills" id="${formUid}-fuel-pills">
+          ${['Fuel-injected (FI)', 'Carburetor', 'Not sure'].map(f => {
+            const isAct = (initFuel && (f.toLowerCase().includes(initFuel.toLowerCase()) || (initFuel === 'FI' && f.includes('FI')))) || (!initFuel && f === 'Not sure');
+            return `<button type="button" class="jarvis-form-pill-btn ${isAct ? 'active' : ''}" data-val="${f}">${f}</button>`;
+          }).join('')}
+        </div>
+        <input type="hidden" id="${formUid}-fuel" value="${escapeHtml(initFuel || 'Not sure')}">
+      </div>
+
+      <!-- Symptom Selector Section -->
+      <div class="jarvis-symptom-section">
+        <div class="jarvis-symptom-title">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>${escapeHtml(symptomSectionTitle)}</span>
+        </div>
+        <div class="jarvis-symptom-list" id="${formUid}-symptom-list">
+          ${symptoms.map((s, idx) => `
+            <div class="jarvis-symptom-item ${idx === 0 ? 'selected' : ''}" data-id="${s.id}" data-danger="${s.isDanger ? 'true' : 'false'}" data-danger-msg="${escapeHtml(s.dangerMsg || '')}" data-is-other="${s.isOther ? 'true' : 'false'}">
+              <div class="jarvis-symptom-radio">
+                <span class="jarvis-symptom-radio-dot"></span>
+              </div>
+              <span class="jarvis-symptom-letter">${s.id}.</span>
+              <span class="jarvis-symptom-text">${escapeHtml(s.text)}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="jarvis-custom-symptom-box" id="${formUid}-custom-box">
+          <textarea id="${formUid}-custom-desc" class="jarvis-form-textarea" placeholder="Type your custom symptom or problem description here..."></textarea>
+        </div>
+
+        <!-- Dynamic Safety Warning Alert Box -->
+        <div class="jarvis-form-safety-box" id="${formUid}-safety-box">
+          <i class="fa-solid fa-triangle-exclamation" style="font-size: 14px; margin-top: 1px; color: #ef4444; flex-shrink: 0;"></i>
+          <span id="${formUid}-safety-msg"></span>
+        </div>
+      </div>
+
+      <!-- Form Footer & Submit -->
+      <div class="jarvis-form-footer">
+        <button type="button" class="jarvis-form-submit-btn" id="${formUid}-submit-btn">
+          <i class="fa-solid fa-wrench"></i> Submit Vehicle & Diagnostic Details
+        </button>
+        <span class="jarvis-form-footer-hint">J.A.R.V.I.S. will generate targeted diagnostic checklist</span>
+      </div>
+    `;
+
+    // 1. Vehicle Type Pills interaction
+    const typePills = formContainer.querySelectorAll(`#${formUid}-type-pills .jarvis-form-pill-btn`);
+    const typeHidden = formContainer.querySelector(`#${formUid}-type`);
+    typePills.forEach(btn => {
+      btn.addEventListener('click', () => {
+        typePills.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        typeHidden.value = btn.dataset.val;
+      });
+    });
+
+    // 2. Quick Make Buttons
+    const quickMakeBtns = formContainer.querySelectorAll('.quick-make-btn');
+    const makeInput = formContainer.querySelector(`#${formUid}-make`);
+    quickMakeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        makeInput.value = btn.dataset.val;
+        makeInput.focus();
+      });
+    });
+
+    // 3. Fuel Pills interaction
+    const fuelPills = formContainer.querySelectorAll(`#${formUid}-fuel-pills .jarvis-form-pill-btn`);
+    const fuelHidden = formContainer.querySelector(`#${formUid}-fuel`);
+    fuelPills.forEach(btn => {
+      btn.addEventListener('click', () => {
+        fuelPills.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        fuelHidden.value = btn.dataset.val;
+      });
+    });
+
+    // 4. Symptom Items interaction
+    const symptomItems = formContainer.querySelectorAll(`#${formUid}-symptom-list .jarvis-symptom-item`);
+    const customBox = formContainer.querySelector(`#${formUid}-custom-box`);
+    const safetyBox = formContainer.querySelector(`#${formUid}-safety-box`);
+    const safetyMsg = formContainer.querySelector(`#${formUid}-safety-msg`);
+
+    function updateSymptomUI(selectedItem) {
+      symptomItems.forEach(i => i.classList.remove('selected'));
+      selectedItem.classList.add('selected');
+
+      const isOther = selectedItem.dataset.isOther === 'true';
+      if (isOther) {
+        customBox.classList.add('show');
+        const customArea = customBox.querySelector('textarea');
+        if (customArea) customArea.focus();
+      } else {
+        customBox.classList.remove('show');
+      }
+
+      const isDanger = selectedItem.dataset.danger === 'true';
+      const msg = selectedItem.dataset.dangerMsg;
+      if (isDanger && msg) {
+        safetyMsg.innerHTML = msg;
+        safetyBox.classList.add('show');
+      } else {
+        safetyBox.classList.remove('show');
+      }
+    }
+
+    symptomItems.forEach(item => {
+      item.addEventListener('click', () => {
+        updateSymptomUI(item);
+      });
+    });
+
+    const initialSelected = formContainer.querySelector(`#${formUid}-symptom-list .jarvis-symptom-item.selected`);
+    if (initialSelected) updateSymptomUI(initialSelected);
+
+    // 5. Submit Action
+    const submitBtn = formContainer.querySelector(`#${formUid}-submit-btn`);
+    submitBtn.addEventListener('click', () => {
+      const typeVal = typeHidden.value || 'Motorcycle';
+      const makeVal = (makeInput.value || '').trim();
+      const modelInput = formContainer.querySelector(`#${formUid}-model`);
+      const modelVal = (modelInput.value || '').trim();
+      const yearInput = formContainer.querySelector(`#${formUid}-year`);
+      const yearVal = (yearInput.value || '').trim();
+      const dispInput = formContainer.querySelector(`#${formUid}-disp`);
+      const dispVal = (dispInput.value || '').trim();
+      const fuelVal = fuelHidden.value || 'Not sure';
+
+      const selectedSymptom = formContainer.querySelector(`#${formUid}-symptom-list .jarvis-symptom-item.selected`);
+      const isOther = selectedSymptom && selectedSymptom.dataset.isOther === 'true';
+      let symptomText = '';
+      if (isOther) {
+        const customArea = formContainer.querySelector(`#${formUid}-custom-desc`);
+        symptomText = (customArea && customArea.value.trim()) ? customArea.value.trim() : 'Custom vehicle symptom described';
+      } else if (selectedSymptom) {
+        const textSpan = selectedSymptom.querySelector('.jarvis-symptom-text');
+        symptomText = textSpan ? textSpan.textContent.trim() : '';
+      }
+
+      // Build structured message
+      const vehicleParts = [];
+      if (yearVal) vehicleParts.push(yearVal);
+      if (makeVal) vehicleParts.push(makeVal);
+      if (modelVal) vehicleParts.push(modelVal);
+      const vehicleName = vehicleParts.length > 0 ? vehicleParts.join(' ') : 'Vehicle';
+
+      const details = [];
+      details.push(typeVal);
+      if (dispVal) details.push(dispVal);
+      if (fuelVal && fuelVal !== 'Not sure') details.push(fuelVal);
+
+      const composedMessage = `Vehicle: ${vehicleName} (${details.join(', ')}). Symptom: ${symptomText}`;
+
+      // Update submit button state
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Details Submitted';
+      submitBtn.style.background = '#15803d';
+      submitBtn.style.color = '#ffffff';
+
+      // Send through chat
+      sendMessage(composedMessage);
+    });
+
+    parentCard.appendChild(formContainer);
+  }
+
+  // ── DOM Renderer for User Message ─────────────────────────────────────────
+  function renderUserMessage(text, id) {
+    const block = document.createElement('div');
+    block.className = 'jarvis-msg-block jarvis-msg-block--user';
+    if (id) block.id = 'msg-node-' + id;
+
+    const badge = document.createElement('div');
+    badge.className = 'jarvis-msg-badge jarvis-msg-badge--user';
+    badge.textContent = 'YOU';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'jarvis-user-bubble';
+    bubble.textContent = text;
+
+    block.appendChild(badge);
+    block.appendChild(bubble);
+    messagesContainer.appendChild(block);
+  }
+
+  // ── DOM Renderer for Bot Message Card ─────────────────────────────────────
+  function renderBotMessage(parsed, id) {
+    const block = document.createElement('div');
+    block.className = 'jarvis-msg-block jarvis-msg-block--bot';
+    if (id) block.id = 'msg-node-' + id;
+
+    // Bot Badge
+    const badge = document.createElement('div');
+    badge.className = 'jarvis-msg-badge jarvis-msg-badge--bot';
+    badge.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+        <path d="M2 10v4"/>
+        <path d="M6 6v12"/>
+        <path d="M10 3v18"/>
+        <path d="M14 8v8"/>
+        <path d="M18 5v14"/>
+        <path d="M22 10v4"/>
+      </svg>
+      <span>J.A.R.V.I.S.</span>
+    `;
+    block.appendChild(badge);
+
+    // Card Container
+    const card = document.createElement('div');
+    card.className = 'jarvis-card';
+
+    // Title / Progress Header (if title or checklist exists)
+    let progressSpan = null;
+    if (parsed.title || parsed.checklist.length > 0) {
+      const headerRow = document.createElement('div');
+      headerRow.className = 'jarvis-card-header-row';
+
+      const titleEl = document.createElement('h3');
+      titleEl.className = 'jarvis-card-title';
+      titleEl.textContent = parsed.title || 'Diagnostic protocol, sir:';
+      headerRow.appendChild(titleEl);
+
+      if (parsed.checklist.length > 0) {
+        progressSpan = document.createElement('span');
+        progressSpan.className = 'jarvis-card-progress';
+        progressSpan.textContent = `0 / ${parsed.checklist.length} checks complete`;
+        headerRow.appendChild(progressSpan);
+      }
+
+      card.appendChild(headerRow);
+    }
+
+    // Intro Text (e.g. "I'm afraid I didn't recognize that specific phrasing...")
+    if (parsed.intro) {
+      const introP = document.createElement('p');
+      introP.className = 'jarvis-card-text';
+      introP.innerHTML = renderMarkdownInline(parsed.intro);
+      card.appendChild(introP);
+    }
+
+    // Interactive Checklist
+    if (parsed.checklist.length > 0) {
+      const checklistContainer = document.createElement('div');
+      checklistContainer.className = 'jarvis-checklist';
+
+      let checkedCount = 0;
+      const totalChecks = parsed.checklist.length;
+
+      parsed.checklist.forEach((stepText, idx) => {
+        const item = document.createElement('div');
+        item.className = 'jarvis-check-item';
+
+        const numFormatted = String(idx + 1).padStart(2, '0');
+
+        item.innerHTML = `
+          <div class="jarvis-check-box">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <span class="jarvis-check-num">${numFormatted}</span>
+          <span class="jarvis-check-label">${renderMarkdownInline(stepText)}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          const isChecked = item.classList.toggle('checked');
+          checkedCount += isChecked ? 1 : -1;
+          if (progressSpan) {
+            progressSpan.textContent = `${checkedCount} / ${totalChecks} checks complete`;
+          }
+        });
+
+        checklistContainer.appendChild(item);
+      });
+
+      card.appendChild(checklistContainer);
+    }
+
+    // Outro Text
+    if (parsed.outro) {
+      const outroP = document.createElement('p');
+      outroP.className = 'jarvis-card-text';
+      outroP.style.marginTop = '10px';
+      outroP.innerHTML = renderMarkdownInline(parsed.outro);
+      card.appendChild(outroP);
+    }
+
+    // Interactive Vehicle Diagnostic Intake Form
+    if (parsed.vehicleForm) {
+      renderVehicleForm(parsed.vehicleForm, card, id);
+    }
+
+    // Inside-card Diagnostic Chips
+    if (parsed.chips && parsed.chips.length > 0) {
+      const chipsContainer = document.createElement('div');
+      chipsContainer.className = 'jarvis-chips-grid';
+
+      parsed.chips.forEach(chipText => {
+        const chipBtn = document.createElement('button');
+        chipBtn.type = 'button';
+        chipBtn.className = 'jarvis-chip';
+        chipBtn.textContent = chipText;
+
+        // If this chip was selected/active
+        if (parsed.activeChip && parsed.activeChip.toLowerCase() === chipText.toLowerCase()) {
+          chipBtn.classList.add('active');
+        }
+
+        chipBtn.addEventListener('click', () => {
+          // Highlight this clicked chip
+          chipsContainer.querySelectorAll('.jarvis-chip').forEach(c => c.classList.remove('active'));
+          chipBtn.classList.add('active');
+          sendMessage(chipText);
+        });
+
+        chipsContainer.appendChild(chipBtn);
+      });
+
+      card.appendChild(chipsContainer);
+    }
+
+    block.appendChild(card);
+
+    // Outer Follow-up Chips (below the card)
+    if (parsed.followupChips && parsed.followupChips.length > 0) {
+      const followupDiv = document.createElement('div');
+      followupDiv.className = 'jarvis-followup-chips';
+
+      parsed.followupChips.forEach(text => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'jarvis-chip';
+        btn.textContent = text;
+        btn.addEventListener('click', () => {
+          sendMessage(text);
+        });
+        followupDiv.appendChild(btn);
+      });
+
+      block.appendChild(followupDiv);
+    }
+
+    messagesContainer.appendChild(block);
+  }
+
+  // ── Typing Indicator ──────────────────────────────────────────────────────
+  let typingEl = null;
+
+  function showTyping() {
+    if (typingEl) return;
+    typingEl = document.createElement('div');
+    typingEl.className = 'jarvis-msg-block jarvis-msg-block--bot';
+    typingEl.innerHTML = `
+      <div class="jarvis-msg-badge jarvis-msg-badge--bot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/>
+        </svg>
+        <span>J.A.R.V.I.S.</span>
+      </div>
+      <div class="jarvis-typing-card">
+        <span class="jarvis-typing-dot"></span>
+        <span class="jarvis-typing-dot"></span>
+        <span class="jarvis-typing-dot"></span>
+      </div>
+    `;
+    messagesContainer.appendChild(typingEl);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    if (typingEl) {
+      typingEl.remove();
+      typingEl = null;
     }
   }
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    sendMessage();
-  });
+  // ── Render Full History ───────────────────────────────────────────────────
+  function renderAll(history) {
+    messagesContainer.innerHTML = '';
+    history.forEach(item => {
+      if (item.role === 'user') {
+        renderUserMessage(item.text, item.id);
+      } else {
+        const parsed = parseBotMessage(item.text, item.activeChip, item.followupChips);
+        renderBotMessage(parsed, item.id);
+      }
+    });
+    scrollToBottom();
+  }
 
-  input.addEventListener('input', () => {
-    input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-  });
+  // ── History Drawer Rendering & Handlers ───────────────────────────────────
+  function updateHistoryDrawerUI(filterTerm = '') {
+    if (!historyListEl) return;
+    const history = loadHistory();
+    const query = (filterTerm || '').toLowerCase().trim();
+    const filtered = query
+      ? history.filter(item => (item.text || '').toLowerCase().includes(query))
+      : history;
 
-  input.addEventListener('keydown', (e) => {
+    if (filtered.length === 0) {
+      historyListEl.innerHTML = `
+        <div class="jarvis-history-empty">
+          <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.6rem; opacity: 0.35; margin-bottom: 0.6rem; display: block;"></i>
+          ${query ? 'No matching records.' : 'No chat records found.'}
+        </div>`;
+      return;
+    }
+
+    const reversed = [...filtered].reverse();
+    historyListEl.innerHTML = reversed.map(item => {
+      const isBot = item.role === 'bot';
+      const roleLabel = isBot ? 'J.A.R.V.I.S. Protocol' : 'Your Query';
+      const roleClass = isBot ? 'bot' : '';
+      const textPreview = escapeHtml((item.text || '').replace(/\[chips:.*?\]/gi, '').trim());
+
+      return `
+        <div class="jarvis-history-item" data-id="${item.id}">
+          <div class="jarvis-history-item-top">
+            <span class="jarvis-history-role ${roleClass}">${roleLabel}</span>
+            <span class="jarvis-history-time">${item.time || ''}</span>
+          </div>
+          <div class="jarvis-history-item-text">${textPreview}</div>
+          <div class="jarvis-history-item-actions">
+            ${!isBot ? `<button type="button" class="jarvis-history-item-btn item-ask-btn" data-text="${escapeHtml(item.text)}" title="Ask again"><i class="fa-solid fa-arrow-turn-up"></i> Ask again</button>` : ''}
+            <button type="button" class="jarvis-history-item-btn item-view-btn" data-id="${item.id}" title="Jump to in chat"><i class="fa-solid fa-eye"></i> View</button>
+            <button type="button" class="jarvis-history-item-btn delete item-del-btn" data-id="${item.id}" title="Delete entry"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleHistoryDrawer(show) {
+    if (show === undefined) {
+      historyDrawer.classList.toggle('open');
+    } else if (show) {
+      historyDrawer.classList.add('open');
+    } else {
+      historyDrawer.classList.remove('open');
+    }
+
+    if (historyDrawer.classList.contains('open')) {
+      updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
+      if (historySearchInput) setTimeout(() => historySearchInput.focus(), 150);
+    }
+  }
+
+  // ── Send Message Routine ──────────────────────────────────────────────────
+  async function sendMessage(manualText) {
+    const text = (manualText || inputEl.value).trim();
+    if (!text || isLoading) return;
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+
+    const userId = 'msg-u-' + Date.now();
+    const userTime = getTimeStr();
+
+    // 1. Render user message
+    renderUserMessage(text, userId);
+    scrollToBottom();
+
+    const history = loadHistory();
+    history.push({ id: userId, role: 'user', text, time: userTime });
+    saveHistory(history);
+
+    // 2. Set loading & typing state
+    isLoading = true;
+    sendBtn.disabled = true;
+    inputEl.disabled = true;
+    showTyping();
+
+    // Natural assistant latency
+    await new Promise(r => setTimeout(r, 380));
+
+    try {
+      const recentHistory = history.slice(-8).map(h => ({
+        role: h.role,
+        text: (h.text || '').replace(/\[chips:.*?\]/gi, '').trim()
+      }));
+
+      const res = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ message: text, history: recentHistory })
+      });
+
+      hideTyping();
+
+      let reply = "A momentary network fluctuation, sir. Systems are attempting re-calibration.";
+      if (res.ok) {
+        const data = await res.json();
+        reply = data.reply || reply;
+        if (data.quota) {
+          updateQuotaUI(data.quota);
+        }
+      }
+
+      const botId = 'msg-b-' + Date.now();
+      const botTime = getTimeStr();
+      const parsed = parseBotMessage(reply, null, []);
+      renderBotMessage(parsed, botId);
+      scrollToBottom();
+
+      history.push({
+        id: botId,
+        role: 'bot',
+        text: reply,
+        time: botTime
+      });
+      saveHistory(history);
+
+    } catch (err) {
+      hideTyping();
+      const failMsg = "Diagnostic network communication offline, sir. Please check server link.";
+      renderBotMessage({
+        title: "Communication fault, sir:",
+        intro: failMsg,
+        checklist: [],
+        chips: ["Help & capabilities", "Engine won't start", "List all parts"]
+      });
+      scrollToBottom();
+    } finally {
+      isLoading = false;
+      sendBtn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
+    }
+  }
+
+  // ── Event Listeners ───────────────────────────────────────────────────────
+
+  // History Drawer Toggles
+  historyToggleBtn.addEventListener('click', () => toggleHistoryDrawer());
+  historyCloseBtn.addEventListener('click', () => toggleHistoryDrawer(false));
+
+  if (historySearchInput) {
+    historySearchInput.addEventListener('input', (e) => {
+      updateHistoryDrawerUI(e.target.value);
+    });
+  }
+
+  // History List Actions (Event Delegation)
+  if (historyListEl) {
+    historyListEl.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('.item-del-btn');
+      if (delBtn) {
+        const id = delBtn.dataset.id;
+        const history = loadHistory();
+        const filtered = history.filter(item => item.id !== id);
+        saveHistory(filtered);
+        const node = document.getElementById('msg-node-' + id);
+        if (node) node.remove();
+        updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
+        return;
+      }
+
+      const viewBtn = e.target.closest('.item-view-btn');
+      if (viewBtn) {
+        const id = viewBtn.dataset.id;
+        toggleHistoryDrawer(false);
+        const node = document.getElementById('msg-node-' + id);
+        if (node) {
+          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          node.style.transition = 'box-shadow 0.3s ease';
+          node.style.boxShadow = '0 0 0 2px var(--jarvis-cyan)';
+          setTimeout(() => { node.style.boxShadow = ''; }, 1600);
+        }
+        return;
+      }
+
+      const askBtn = e.target.closest('.item-ask-btn');
+      if (askBtn) {
+        const promptText = askBtn.dataset.text;
+        toggleHistoryDrawer(false);
+        sendMessage(promptText);
+        return;
+      }
+    });
+  }
+
+  if (historyClearAllBtn) {
+    historyClearAllBtn.addEventListener('click', () => {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+      messagesContainer.innerHTML = '';
+      const clearMsg = [
+        {
+          id: 'cleared-1',
+          role: 'bot',
+          text: "Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.\n\n[chips: Engine won't start | Spongy brakes | Strange engine noise | Smoke from exhaust | Battery dead | Oil change | Tyre check | Coolant leak | Spark plug foul | Clutch adjustment | List all symptoms | List all parts | Help & capabilities]",
+          time: getTimeStr()
+        }
+      ];
+      saveHistory(clearMsg);
+      renderAll(clearMsg);
+      toggleHistoryDrawer(false);
+      inputEl.focus();
+    });
+  }
+
+  // Enter to send (Shift+Enter for newline)
+  inputEl.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  if (chips) {
-    chips.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-jarvis-prompt]');
-      if (!btn) return;
-      sendMessage(btn.getAttribute('data-jarvis-prompt'));
-    });
-  }
-
-  clearBtn.addEventListener('click', () => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    messages.innerHTML = '';
-    const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
-    appendMsg('bot', clearMsg);
-    persist('bot', clearMsg);
-    input.focus();
+  // Auto-resize textarea
+  inputEl.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 88) + 'px';
   });
 
-  restoreHistory();
+  // Send button click
+  sendBtn.addEventListener('click', function() {
+    sendMessage();
+  });
+
+  // Clear logs button
+  clearBtn.addEventListener('click', function() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch(e) {}
+
+    // Reset to the master diagnostic mechanic welcome state
+    const welcomeState = [
+      {
+        id: 'welcome-1',
+        role: 'bot',
+        text: "At your service, sir. J.A.R.V.I.S. online. Systems nominal. I am your master vehicle diagnostic assistant. What symptom or issue are you experiencing with your vehicle today?\n\n[chips: Engine won't start | Front brake not working | Engine overheating | Motorcycle won't accelerate properly]",
+        time: getTimeStr()
+      }
+    ];
+    saveHistory(welcomeState);
+    renderAll(welcomeState);
+    inputEl.focus();
+  });
+
+  // Reset chat button (✕)
+  resetBtn.addEventListener('click', function() {
+    clearBtn.click();
+  });
+
+  // ── Real-Time API Quota & Token Badge ─────────────────────────────────────
+  function updateQuotaUI(quota) {
+    if (!quota) return;
+    const pill = document.getElementById('jarvis-quota-pill');
+    const valEl = document.getElementById('jarvis-quota-val');
+    const subEl = document.getElementById('jarvis-quota-sub');
+    const dot = document.getElementById('jarvis-quota-dot');
+    if (!valEl) return;
+
+    const pct = quota.percent_left != null ? quota.percent_left : 100;
+    const reqLeft = quota.requests_left != null ? quota.requests_left : 1500;
+    const tokensToday = quota.tokens_today || 0;
+
+    valEl.textContent = `Quota: ${pct}% left`;
+    if (subEl) subEl.textContent = `(${reqLeft.toLocaleString()} reqs)`;
+
+    if (pill) {
+      pill.title = `Gemini API Free Tier: ${reqLeft.toLocaleString()} / 1,500 requests remaining today (${tokensToday.toLocaleString()} tokens used today)`;
+      if (pct > 50) {
+        pill.style.borderColor = 'rgba(74, 222, 128, 0.4)';
+        pill.style.color = '#86efac';
+        if (dot) dot.style.background = '#22c55e';
+      } else if (pct > 20) {
+        pill.style.borderColor = 'rgba(251, 191, 36, 0.4)';
+        pill.style.color = '#fde047';
+        if (dot) dot.style.background = '#f59e0b';
+      } else {
+        pill.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+        pill.style.color = '#fca5a5';
+        if (dot) dot.style.background = '#ef4444';
+      }
+    }
+  }
+
+  async function fetchQuotaStatus() {
+    try {
+      const res = await fetch('/jarvis/status/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.quota) updateQuotaUI(data.quota);
+      }
+    } catch (e) {}
+  }
+
+  // Initial boot
+  const initialHistory = loadHistory();
+  renderAll(initialHistory);
+  fetchQuotaStatus();
+
 })();
 </script>
-{% endif %}
 {% endblock %}
