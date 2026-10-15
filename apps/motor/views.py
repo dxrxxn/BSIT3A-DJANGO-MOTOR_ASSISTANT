@@ -4,6 +4,7 @@ Motor app views — 3D viewer + image-to-GLB reconstruction.
 import os
 import json
 import logging
+import re
 import uuid
 from pathlib import Path
 
@@ -100,6 +101,63 @@ def upload_model(request):
         'name': safe_name,
         'label': os.path.splitext(safe_name)[0].replace('_', ' ').replace('-', ' ').title(),
         'is_image': is_image,
+    })
+
+
+@login_required(login_url='login')
+@require_POST
+def delete_model_image(request):
+    """Delete an image and any 3D reconstruction generated from it."""
+    name = request.POST.get('name', '')
+    if (
+        not name
+        or name in ('.', '..')
+        or _safe_name(name) != name
+        or Path(name).suffix.lower() not in ('.jpg', '.jpeg', '.png')
+    ):
+        return JsonResponse({'error': 'Invalid image name.'}, status=400)
+
+    models_dir = (Path(settings.MEDIA_ROOT) / 'models').resolve()
+    image_path = models_dir / name
+    if image_path.is_symlink():
+        return JsonResponse({'error': 'Invalid image path.'}, status=400)
+    if not image_path.is_file():
+        return JsonResponse({'error': 'Image not found.'}, status=404)
+
+    related_paths = []
+    generated_source = re.fullmatch(r'src_([0-9a-f]{8})_(.+)', name, re.IGNORECASE)
+    if generated_source:
+        uid, source_name = generated_source.groups()
+        related_paths.append(models_dir / f'recon_{uid}_{Path(source_name).stem}.glb')
+    else:
+        source_pattern = re.compile(
+            rf'^src_([0-9a-f]{{8}})_{re.escape(name)}$',
+            re.IGNORECASE,
+        )
+        for candidate in models_dir.iterdir():
+            match = source_pattern.fullmatch(candidate.name)
+            if match:
+                uid = match.group(1)
+                related_paths.extend((
+                    candidate,
+                    models_dir / f'recon_{uid}_{Path(name).stem}.glb',
+                ))
+
+    paths_to_delete = [image_path, *dict.fromkeys(related_paths)]
+    if any(path.is_symlink() for path in paths_to_delete):
+        return JsonResponse({'error': 'Invalid image path.'}, status=400)
+
+    try:
+        for path in paths_to_delete:
+            if path.is_file():
+                path.unlink()
+    except OSError:
+        log.exception('Failed to delete viewer image or reconstruction for %s', image_path)
+        return JsonResponse({'error': 'Could not delete the image and its 3D reconstruction.'}, status=500)
+
+    return JsonResponse({
+        'status': 'ok',
+        'deleted_names': [path.name for path in paths_to_delete],
     })
 
 

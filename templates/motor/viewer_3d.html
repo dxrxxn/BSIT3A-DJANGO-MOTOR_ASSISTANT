@@ -795,7 +795,16 @@ function buildModelList(models) {
     const item  = document.createElement('div');
     item.className   = 'list-group-item';
     item.dataset.name = m.name;
-    item.innerHTML   = `<i class="fas ${isImg ? 'fa-image text-warning' : 'fa-cube text-primary'}" style="font-size:.8rem;"></i><span class="flex-grow-1 text-truncate">${m.label}</span>`;
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.gap = '.5rem';
+    const icon = document.createElement('i');
+    icon.className = `fas ${isImg ? 'fa-image text-warning' : 'fa-cube text-primary'}`;
+    icon.style.fontSize = '.8rem';
+    const label = document.createElement('span');
+    label.className = 'flex-grow-1 text-truncate';
+    label.textContent = m.label;
+    item.append(icon, label);
     item.addEventListener('click', () => {
       modelListEl.querySelectorAll('.list-group-item').forEach(x => x.classList.remove('active'));
       item.classList.add('active');
@@ -806,8 +815,72 @@ function buildModelList(models) {
         loadGLTF(m.url, m.label, m.name.startsWith('recon_'));
       }
     });
+    if (isImg) {
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0';
+      deleteButton.title = `Delete ${m.label}`;
+      deleteButton.setAttribute('aria-label', `Delete ${m.label}`);
+      deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      deleteButton.addEventListener('click', event => {
+        event.stopPropagation();
+        deleteViewerImage(m, item, deleteButton);
+      });
+      item.appendChild(deleteButton);
+    }
     modelListEl.appendChild(item);
   });
+}
+
+async function deleteViewerImage(model, item, button) {
+  if (!window.confirm(`Delete "${model.label}"?`)) return;
+
+  button.disabled = true;
+  const formData = new FormData();
+  formData.append('name', model.name);
+  try {
+    const response = await fetch('{% url "motor:delete_model_image" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Could not delete the image.');
+    }
+
+    const deletedNames = new Set(data.deleted_names || [model.name]);
+    const removedActive = [...modelListEl.querySelectorAll('.list-group-item.active')]
+      .some(activeItem => deletedNames.has(activeItem.dataset.name));
+    SERVER_MODELS = SERVER_MODELS.filter(entry => !deletedNames.has(entry.name));
+    if (_lastImageEntry && deletedNames.has(_lastImageEntry.name)) {
+      _lastImageEntry = null;
+    }
+    if (_lastGlbUrl && SERVER_MODELS.every(entry => entry.url !== _lastGlbUrl)) {
+      _lastGlbUrl = null;
+    }
+    buildModelList(SERVER_MODELS);
+
+    if (removedActive) {
+      clearScene();
+      placeholder.style.display = '';
+      canvas.style.display = 'none';
+      toolbar.classList.add('d-none');
+      statsEl.classList.add('d-none');
+      hintBar.classList.add('d-none');
+      reconCard.style.display = 'none';
+      partsList.innerHTML = '';
+      partsEmpty.style.display = 'block';
+      selInfo.classList.add('d-none');
+      btnDownload.style.display = 'none';
+      statFaces.textContent = '—';
+      statVerts.textContent = '—';
+    }
+    showAlert('success', 'Image and its converted 3D model deleted.');
+  } catch (error) {
+    button.disabled = false;
+    showAlert('danger', 'Could not delete image: ' + error.message);
+  }
 }
 
 function _markActive(name) {

@@ -1,0 +1,176 @@
+{% extends "theme/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-xl">
+
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="page-pretitle">AI Tools</div>
+          <h2 class="page-title mb-0"><i class="fas fa-cube me-2"></i>PictureTo3D Studio</h2>
+        </div>
+        <div class="col-auto ms-auto">
+          <span id="hw-badge" class="badge {% if ai_ready %}bg-success-lt text-success{% else %}bg-warning-lt text-warning{% endif %}">
+            {% if ai_ready %}✓ AI ready{% else %}⚠ AI venv not set up{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  {% if not ai_ready %}
+  <div class="alert alert-warning mb-3">
+    <strong>AI engine not available:</strong> {{ ai_msg }}<br>
+    <small>The mesh repair, validation, and export pipeline still works — only TripoSR AI reconstruction is unavailable.</small>
+  </div>
+  {% endif %}
+
+  <link rel="stylesheet" href="{% static 'studio/style.css' %}">
+
+  <div class="studio-app-main">
+
+    <!-- LEFT -->
+    <section class="panel panel-left">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-upload"></i> Upload Image</div>
+        <div id="drop-zone" class="drop-zone">
+          <i class="fas fa-image drop-icon"></i>
+          <p>Drag &amp; drop a JPG / PNG / WebP</p>
+          <p class="drop-sub">or</p>
+          <label class="btn btn-primary" for="file-input">Choose File</label>
+          <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp" hidden>
+        </div>
+        <div id="preview-wrap" class="preview-wrap d-none">
+          <img id="preview-img" alt="Uploaded image preview">
+          <button class="btn btn-sm btn-outline-secondary" id="btn-change-image">
+            <i class="fas fa-redo"></i> Change
+          </button>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-title"><i class="fas fa-sliders-h"></i> Settings</div>
+        <label class="field-label">AI Device</label>
+        <select id="sel-device" class="form-select form-select-sm mb-2">
+          <option value="auto">Auto-detect</option>
+          <option value="cuda">GPU (CUDA)</option>
+          <option value="cpu">CPU (slow ~10 min)</option>
+        </select>
+        <label class="field-label">Output Unit</label>
+        <select id="sel-unit" class="form-select form-select-sm mb-2">
+          <option value="mm">Millimeters (mm)</option>
+          <option value="cm">Centimeters (cm)</option>
+          <option value="in">Inches (in)</option>
+        </select>
+        <div class="dim-row mb-2">
+          <div class="dim-group"><label class="field-label">X</label><input type="number" id="dim-x" class="form-control form-control-sm" placeholder="auto" min="0.1" step="0.1"></div>
+          <div class="dim-group"><label class="field-label">Y</label><input type="number" id="dim-y" class="form-control form-control-sm" placeholder="auto" min="0.1" step="0.1"></div>
+          <div class="dim-group"><label class="field-label">Z</label><input type="number" id="dim-z" class="form-control form-control-sm" placeholder="auto" min="0.1" step="0.1"></div>
+        </div>
+        <p class="hint small text-muted">⚠ Single photos have no scale info — set a desired size or leave blank for 100 mm default.</p>
+        <label class="field-label mt-2">Export Formats</label>
+        <div class="fmt-row">
+          <label class="me-3"><input type="checkbox" name="fmt" value="stl" checked> STL</label>
+          <label class="me-3"><input type="checkbox" name="fmt" value="obj" checked> OBJ</label>
+          <label class="me-3"><input type="checkbox" name="fmt" value="ply"> PLY</label>
+          <label><input type="checkbox" name="fmt" value="glb" checked> GLB</label>
+        </div>
+        <p class="hint small text-muted mt-1">STL does not preserve texture or color.</p>
+      </div>
+
+      <button class="btn btn-primary w-100 mt-2" id="btn-start" disabled>
+        <i class="fas fa-magic me-1"></i> Convert to 3D
+      </button>
+    </section>
+
+    <!-- MIDDLE -->
+    <section class="panel panel-middle">
+      <div class="card mb-3" id="progress-card" style="display:none">
+        <div class="card-title"><i class="fas fa-cog fa-spin"></i> Processing</div>
+        <div class="progress mb-2"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+        <div id="progress-log" class="studio-log"></div>
+      </div>
+
+      <div class="card studio-viewer-card" id="viewer-card">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fw-semibold"><i class="fas fa-cube me-1 text-primary"></i>3D Viewer</span>
+          <div id="viewer-tabs" style="display:none">
+            <button class="btn btn-sm btn-outline-primary vtab active" data-model="repaired">Repaired</button>
+            <button class="btn btn-sm btn-outline-secondary vtab" data-model="original">Raw</button>
+          </div>
+        </div>
+        <div id="viewer-wrap">
+          <div id="viewer-placeholder" class="viewer-ph">
+            <i class="fas fa-cube ph-icon"></i>
+            <p>3D model will appear here</p>
+          </div>
+          <canvas id="viewer-canvas" style="display:none"></canvas>
+          <div id="viewer-stats" class="viewer-stats d-none">
+            <span id="stat-faces">—</span> · <span id="stat-verts">—</span>
+          </div>
+          <div class="viewer-toolbar" id="viewer-toolbar" style="display:none">
+            <button class="vtbtn" id="btn-shade-clay" title="Clay"><i class="fas fa-circle-half-stroke"></i></button>
+            <button class="vtbtn" id="btn-shade-tex"  title="Texture"><i class="fas fa-palette"></i></button>
+            <button class="vtbtn" id="btn-shade-wire" title="Wireframe"><i class="fas fa-draw-polygon"></i></button>
+            <div class="vtsep"></div>
+            <button class="vtbtn" id="btn-spin"      title="Auto-rotate"><i class="fas fa-sync-alt"></i></button>
+            <button class="vtbtn" id="btn-reset-cam" title="Reset camera"><i class="fas fa-home"></i></button>
+            <button class="vtbtn" id="btn-fullscreen" title="Fullscreen"><i class="fas fa-expand"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="panel panel-right">
+      <div class="card mb-3" id="validation-card" style="display:none">
+        <div class="card-title"><i class="fas fa-clipboard-check me-1 text-primary"></i>Printability Report</div>
+        <div id="validation-overall" class="overall-badge mb-2"></div>
+        <div id="validation-checks" class="check-list"></div>
+        <div id="validation-dims" class="val-dims mt-2"></div>
+      </div>
+
+      <div class="card mb-3" id="downloads-card" style="display:none">
+        <div class="card-title"><i class="fas fa-download me-1 text-primary"></i>Downloads</div>
+        <div id="download-buttons"></div>
+      </div>
+
+      <div class="card">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fw-semibold small"><i class="fas fa-history me-1 text-primary"></i>Recent Jobs</span>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-clear-history">Clear</button>
+        </div>
+        <div id="history-list"><p class="text-muted small">No jobs yet.</p></div>
+      </div>
+    </section>
+
+  </div><!-- .studio-app-main -->
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<!-- Pass Django URLs and CSRF to JS -->
+<script>
+window.STUDIO = {
+  csrfToken:    '{{ csrf_token }}',
+  uploadUrl:    '{% url "studio:upload" %}',
+  startJobUrl:  '{% url "studio:start_job" %}',
+  pollJobUrl:   '/studio/jobs/',       // append {job_id}/
+  streamJobUrl: '/studio/jobs/',       // append {job_id}/stream/
+  historyUrl:   '{% url "studio:job_history" %}',
+  downloadUrl:  '/studio/jobs/',       // append {job_id}/download/{fmt}/
+  healthUrl:    '{% url "studio:health" %}',
+};
+</script>
+<script type="module" src="{% static 'studio/app.js' %}"></script>
+{% endblock %}
