@@ -1,0 +1,23 @@
+/* login.css – minimal styling for the login page */
+
+/* Center the card vertically */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+/* Card shadow and max width */
+.login-container .card {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 0.5rem;
+}
+
+/* Optional: tweak input focus */
+.login-container .form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+}

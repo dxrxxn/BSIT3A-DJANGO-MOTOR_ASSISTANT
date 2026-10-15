@@ -39,11 +39,36 @@
       </div>
     </div>
     <div class="jarvis-header-actions">
+      <button class="jarvis-icon-btn" id="jarvis-widget-history-toggle" title="View Chat History" type="button">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </button>
       <button class="jarvis-icon-btn" id="jarvis-clear" title="Clear chat" type="button">
         <i class="fa-solid fa-rotate-left"></i>
       </button>
       <button class="jarvis-icon-btn" id="jarvis-close" title="Close" type="button">
         <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Widget History View Overlay -->
+  <div class="jarvis-widget-history" id="jarvis-widget-history" style="display: none;">
+    <div class="jarvis-widget-history-header">
+      <div class="jarvis-history-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: #818cf8;"></i> Chat History
+      </div>
+      <button type="button" class="jarvis-icon-btn" id="jarvis-widget-history-back" title="Back to chat">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+    </div>
+    <div class="jarvis-widget-history-search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="jarvis-widget-history-search" placeholder="Search history..." aria-label="Search chat history">
+    </div>
+    <div class="jarvis-widget-history-list" id="jarvis-widget-history-list"></div>
+    <div class="jarvis-history-footer">
+      <button type="button" class="jarvis-history-clear-all" id="jarvis-widget-history-clear-all">
+        <i class="fa-solid fa-trash-can"></i> Clear All History
       </button>
     </div>
   </div>
@@ -101,8 +126,9 @@
 /* FAB button */
 .jarvis-fab {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1.75rem;
+  left: calc(15rem + 1.5rem);
+  right: auto;
   z-index: 1050;
   display: flex;
   align-items: center;
@@ -159,8 +185,9 @@
 /* Panel */
 .jarvis-panel {
   position: fixed;
-  bottom: 5.5rem;
-  right: 2rem;
+  bottom: 5.25rem;
+  left: calc(15rem + 1.5rem);
+  right: auto;
   z-index: 1049;
   width: var(--jarvis-w);
   height: var(--jarvis-h);
@@ -177,7 +204,7 @@
   transform: scale(0.92) translateY(20px);
   opacity: 0;
   pointer-events: none;
-  transform-origin: bottom right;
+  transform-origin: bottom left;
   transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
 }
 
@@ -466,14 +493,234 @@
   letter-spacing: 0.04em;
 }
 
+/* Delete button on messages */
+.jarvis-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.25rem;
+  margin-left: 0.4rem;
+  line-height: 1;
+  transition: color 0.15s, opacity 0.15s;
+  vertical-align: middle;
+  opacity: 0.65;
+}
+
+.jarvis-delete-btn:hover {
+  color: #f87171;
+  opacity: 1;
+}
+
+/* History overlay inside floating widget */
+.jarvis-widget-history {
+  position: absolute;
+  inset: 0;
+  background: var(--jarvis-bg);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-widget-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, #1a1d3b 0%, #12142e 100%);
+  border-bottom: 1px solid var(--jarvis-border);
+}
+
+.jarvis-widget-history-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--jarvis-bg-2);
+  border-bottom: 1px solid var(--jarvis-border);
+}
+
+.jarvis-widget-history-search-bar i {
+  color: var(--jarvis-text-muted);
+  font-size: 0.8rem;
+}
+
+.jarvis-widget-history-search-bar input {
+  background: none;
+  border: none;
+  color: var(--jarvis-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  width: 100%;
+}
+
+.jarvis-widget-history-search-bar input::placeholder {
+  color: var(--jarvis-text-muted);
+}
+
+.jarvis-widget-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.jarvis-widget-history-list::-webkit-scrollbar { width: 4px; }
+.jarvis-widget-history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+.jarvis-history-empty {
+  color: var(--jarvis-text-muted);
+  font-size: 0.82rem;
+  margin: auto;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.jarvis-history-card {
+  background: var(--jarvis-bg-2);
+  border: 1px solid var(--jarvis-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.7rem 0.8rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.jarvis-history-card:hover {
+  background: var(--jarvis-bg-3);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.jarvis-history-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+}
+
+.jarvis-history-card-role {
+  color: #818cf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.jarvis-history-card-role--bot {
+  color: #c084fc;
+}
+
+.jarvis-history-card-time {
+  color: var(--jarvis-text-muted);
+}
+
+.jarvis-history-card-text {
+  color: var(--jarvis-text);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  word-break: break-word;
+  max-height: 3.8em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.jarvis-history-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--jarvis-border);
+}
+
+.jarvis-history-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--jarvis-text-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.jarvis-history-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.jarvis-history-action-del:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.jarvis-history-footer {
+  background: var(--jarvis-bg-2);
+  border-top: 1px solid var(--jarvis-border);
+  padding: 0.7rem 0.9rem;
+}
+
+.jarvis-history-clear-all {
+  align-items: center;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  justify-content: center;
+  padding: 0.45rem;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.jarvis-history-clear-all:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fff;
+}
+
 /* Responsive */
+@media (max-width: 991.98px) {
+  .jarvis-fab {
+    left: 1.25rem;
+    bottom: 1.25rem;
+  }
+  .jarvis-panel {
+    left: 1.25rem;
+    bottom: 4.75rem;
+    width: calc(100vw - 2.5rem);
+    max-width: 370px;
+  }
+}
+
 @media (max-width: 480px) {
   :root {
     --jarvis-w: calc(100vw - 2rem);
-    --jarvis-h: 480px;
+    --jarvis-h: 460px;
   }
-  .jarvis-panel { right: 1rem; }
-  .jarvis-fab { right: 1rem; bottom: 1.5rem; }
+  .jarvis-panel {
+    left: 1rem;
+    bottom: 4.25rem;
+  }
+  .jarvis-fab {
+    left: 1rem;
+    bottom: 1rem;
+  }
 }
 </style>
 
@@ -492,8 +739,8 @@
 
   const CHAT_URL    = "{% url 'jarvis_chat' %}";
   const CSRF_TOKEN  = "{{ csrf_token }}";
-  // localStorage key — scoped to the logged-in user so different users don't share history
-  const STORAGE_KEY = 'jarvis_history_{{ request.user.pk }}';
+  // Shared localStorage key across the entire application
+  const STORAGE_KEY = 'jarvis_shared_chat_{{ request.user.pk }}';
   const OPEN_KEY    = 'jarvis_open_{{ request.user.pk }}';
   const MAX_STORED  = 80;   // max messages kept in storage
 
@@ -505,14 +752,39 @@
   // ─────────────────────────────────────────────────────
   function loadHistory() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) return JSON.parse(data);
+
+      // Auto-migrate from any older keys if present
+      const oldConsole = localStorage.getItem('jarvis_console_{{ request.user.pk }}');
+      const oldHistory = localStorage.getItem('jarvis_history_{{ request.user.pk }}');
+      const raw = oldConsole || oldHistory;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const migrated = parsed.map((m, idx) => ({
+          id: m.id || m.msgId || ('migrated-' + idx + '-' + Date.now()),
+          role: m.role || 'bot',
+          text: m.text || '',
+          time: m.time || getTime()
+        }));
+        saveHistory(migrated);
+        return migrated;
+      }
+      return [];
     } catch { return []; }
   }
 
+  const widgetHistoryOverlay = document.getElementById('jarvis-widget-history');
+  const widgetHistoryToggle  = document.getElementById('jarvis-widget-history-toggle');
+  const widgetHistoryBack    = document.getElementById('jarvis-widget-history-back');
+  const widgetHistorySearch  = document.getElementById('jarvis-widget-history-search');
+  const widgetHistoryList    = document.getElementById('jarvis-widget-history-list');
+  const widgetHistoryClearAll= document.getElementById('jarvis-widget-history-clear-all');
+
   function saveHistory(history) {
-    // Keep only the last MAX_STORED entries to avoid bloating storage
     const trimmed = history.slice(-MAX_STORED);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed)); } catch {}
+    updateWidgetHistoryUI(widgetHistorySearch ? widgetHistorySearch.value : '');
   }
 
   function loadOpenState() {
@@ -528,14 +800,134 @@
   // ─────────────────────────────────────────────────────
   function restoreHistory() {
     const history = loadHistory();
-    if (history.length === 0) return;   // keep the default welcome message
+    if (history.length === 0) {
+      updateWidgetHistoryUI();
+      return;
+    }
 
-    // Clear the server-rendered welcome message
     messages.innerHTML = '';
+    history.forEach((item) => {
+      const id = item.id || item.msgId;
+      if (item.role === 'user') _renderUserMsg(item.text, item.time, id);
+      else                     _renderBotMsg(item.text, item.time, id);
+    });
+    updateWidgetHistoryUI(widgetHistorySearch ? widgetHistorySearch.value : '');
+  }
 
-    history.forEach(({ role, text, time }) => {
-      if (role === 'user') _renderUserMsg(text, time);
-      else                 _renderBotMsg(text, time);
+  // ─────────────────────────────────────────────────────
+  // Widget History Drawer UI
+  // ─────────────────────────────────────────────────────
+  function updateWidgetHistoryUI(filterText = '') {
+    if (!widgetHistoryList) return;
+    const history = loadHistory();
+    const term = (filterText || '').toLowerCase().trim();
+    const filtered = term
+      ? history.filter(item => (item.text || '').toLowerCase().includes(term))
+      : history;
+
+    if (filtered.length === 0) {
+      widgetHistoryList.innerHTML = `
+        <div class="jarvis-history-empty">
+          <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.5rem; opacity: 0.35; margin-bottom: 0.5rem; display: block;"></i>
+          ${term ? 'No matching records found.' : 'No chat history recorded yet.'}
+        </div>`;
+      return;
+    }
+
+    const reversed = [...filtered].reverse();
+    widgetHistoryList.innerHTML = reversed.map(item => {
+      const isUser = item.role === 'user';
+      const roleLabel = isUser ? '<i class="fa-solid fa-user"></i> Question' : '<i class="fa-solid fa-robot"></i> Answer';
+      const roleClass = isUser ? '' : 'jarvis-history-card-role--bot';
+      const id = item.id || item.msgId;
+      return `
+        <div class="jarvis-history-card" data-id="${id}">
+          <div class="jarvis-history-card-top">
+            <span class="jarvis-history-card-role ${roleClass}">${roleLabel}</span>
+            <span class="jarvis-history-card-time">${item.time || ''}</span>
+          </div>
+          <div class="jarvis-history-card-text">${escapeHtml(item.text)}</div>
+          <div class="jarvis-history-card-actions">
+            <button type="button" class="jarvis-history-action-btn jarvis-widget-history-view" data-id="${id}" title="Focus in chat">
+              <i class="fa-solid fa-eye"></i> View
+            </button>
+            <button type="button" class="jarvis-history-action-btn jarvis-widget-history-del" data-id="${id}" title="Delete this record">
+              <i class="fa-solid fa-trash-can"></i> Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openWidgetHistory() {
+    if (widgetHistoryOverlay) {
+      widgetHistoryOverlay.style.display = 'flex';
+      updateWidgetHistoryUI(widgetHistorySearch ? widgetHistorySearch.value : '');
+      if (widgetHistorySearch) setTimeout(() => widgetHistorySearch.focus(), 120);
+    }
+  }
+
+  function closeWidgetHistory() {
+    if (widgetHistoryOverlay) {
+      widgetHistoryOverlay.style.display = 'none';
+    }
+  }
+
+  if (widgetHistoryToggle) {
+    widgetHistoryToggle.addEventListener('click', () => {
+      if (widgetHistoryOverlay.style.display === 'flex') {
+        closeWidgetHistory();
+      } else {
+        openWidgetHistory();
+      }
+    });
+  }
+
+  if (widgetHistoryBack) {
+    widgetHistoryBack.addEventListener('click', closeWidgetHistory);
+  }
+
+  if (widgetHistorySearch) {
+    widgetHistorySearch.addEventListener('input', (e) => {
+      updateWidgetHistoryUI(e.target.value);
+    });
+  }
+
+  if (widgetHistoryList) {
+    widgetHistoryList.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('.jarvis-widget-history-del');
+      if (delBtn) {
+        const id = delBtn.dataset.id;
+        const msgEl = document.getElementById('widget-msg-el-' + id);
+        if (msgEl) msgEl.remove();
+        const history = loadHistory();
+        saveHistory(history.filter(item => (item.id || item.msgId) !== id));
+        return;
+      }
+
+      const viewBtn = e.target.closest('.jarvis-widget-history-view') || e.target.closest('.jarvis-history-card');
+      if (viewBtn) {
+        const id = viewBtn.dataset.id;
+        closeWidgetHistory();
+        const msgEl = document.getElementById('widget-msg-el-' + id);
+        if (msgEl) {
+          msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          msgEl.style.transition = 'box-shadow 0.3s ease';
+          msgEl.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.6)';
+          setTimeout(() => { msgEl.style.boxShadow = ''; }, 1600);
+        }
+      }
+    });
+  }
+
+  if (widgetHistoryClearAll) {
+    widgetHistoryClearAll.addEventListener('click', () => {
+      messages.innerHTML = '';
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
+      appendBotMessage(clearMsg);
+      closeWidgetHistory();
     });
   }
 
@@ -557,13 +949,20 @@
     panel.classList.remove('open');
     toggle.setAttribute('aria-expanded', 'false');
     saveOpenState(false);
+    closeWidgetHistory();
   }
 
   toggle.addEventListener('click', () => isOpen ? closePanel() : openPanel());
   closeBtn.addEventListener('click', closePanel);
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isOpen) closePanel();
+    if (e.key === 'Escape' && isOpen) {
+      if (widgetHistoryOverlay && widgetHistoryOverlay.style.display === 'flex') {
+        closeWidgetHistory();
+      } else {
+        closePanel();
+      }
+    }
   });
 
   // ─────────────────────────────────────────────────────
@@ -573,8 +972,20 @@
     messages.innerHTML = '';
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
-    _renderBotMsg(clearMsg);
-    saveHistory([{ role: 'bot', text: clearMsg, time: getTime() }]);
+    appendBotMessage(clearMsg);
+  });
+
+  // Delete message handler (event delegation for any record from inline chat button)
+  messages.addEventListener('click', (e) => {
+    const delBtn = e.target.closest('.jarvis-delete-btn');
+    if (!delBtn) return;
+    const msgDiv = delBtn.closest('.jarvis-msg');
+    if (!msgDiv) return;
+    const id = delBtn.dataset.id;
+    msgDiv.remove();
+    const history = loadHistory();
+    const filtered = history.filter(item => (item.id || item.msgId) !== id);
+    saveHistory(filtered);
   });
 
   // ─────────────────────────────────────────────────────
@@ -595,7 +1006,7 @@
   sendBtn.addEventListener('click', sendMessage);
 
   // ─────────────────────────────────────────────────────
-  // Render helpers (no storage side-effects)
+  // Render helpers
   // ─────────────────────────────────────────────────────
   function scrollToBottom() {
     messages.scrollTop = messages.scrollHeight;
@@ -606,7 +1017,7 @@
   }
 
   function renderMarkdown(text) {
-    return text
+    return escapeHtml(text)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>');
@@ -618,41 +1029,49 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
-  function _renderUserMsg(text, time) {
+  function _renderUserMsg(text, time, id) {
     const t = time || getTime();
+    const msgId = id || ('msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
     const div = document.createElement('div');
     div.className = 'jarvis-msg jarvis-msg--user';
-    div.innerHTML = `<div class="jarvis-msg-bubble">${escapeHtml(text)}</div><div class="jarvis-msg-time">${t}</div>`;
+    div.dataset.id = msgId;
+    div.id = 'widget-msg-el-' + msgId;
+    div.innerHTML = `<div class="jarvis-msg-bubble">${escapeHtml(text)}<button class="jarvis-delete-btn" data-id="${msgId}" title="Delete record"><i class="fa-solid fa-trash-can"></i></button></div><div class="jarvis-msg-time">${t}</div>`;
     messages.appendChild(div);
     scrollToBottom();
   }
 
-  function _renderBotMsg(text, time) {
+  function _renderBotMsg(text, time, id) {
     const t = time || getTime();
+    const msgId = id || ('msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
     const div = document.createElement('div');
     div.className = 'jarvis-msg jarvis-msg--bot';
-    div.innerHTML = `<div class="jarvis-msg-bubble">${renderMarkdown(text)}</div><div class="jarvis-msg-time">${t}</div>`;
+    div.dataset.id = msgId;
+    div.id = 'widget-msg-el-' + msgId;
+    div.innerHTML = `<div class="jarvis-msg-bubble">${renderMarkdown(text)}<button class="jarvis-delete-btn" data-id="${msgId}" title="Delete record"><i class="fa-solid fa-trash-can"></i></button></div><div class="jarvis-msg-time">${t}</div>`;
     messages.appendChild(div);
     scrollToBottom();
     if (!isOpen) notifDot.classList.add('show');
   }
 
   // ─────────────────────────────────────────────────────
-  // Public append helpers (also persist to storage)
+  // Public append helpers (persists to shared storage)
   // ─────────────────────────────────────────────────────
   function appendUserMessage(text) {
     const time = getTime();
-    _renderUserMsg(text, time);
+    const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    _renderUserMsg(text, time, id);
     const history = loadHistory();
-    history.push({ role: 'user', text, time });
+    history.push({ id, role: 'user', text, time });
     saveHistory(history);
   }
 
   function appendBotMessage(text) {
     const time = getTime();
-    _renderBotMsg(text, time);
+    const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    _renderBotMsg(text, time, id);
     const history = loadHistory();
-    history.push({ role: 'bot', text, time });
+    history.push({ id, role: 'bot', text, time });
     saveHistory(history);
   }
 
@@ -713,6 +1132,13 @@
       input.focus();
     }
   }
+
+  // Sync across tabs/pages if localStorage changes
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      restoreHistory();
+    }
+  });
 
   // ─────────────────────────────────────────────────────
   // Boot — restore history & panel state

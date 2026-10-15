@@ -667,6 +667,48 @@
   to { transform: rotate(360deg); }
 }
 
+.jarvis-console {
+  position: relative;
+}
+
+.jarvis-console-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin-left: auto;
+}
+
+.jarvis-console-history-btn {
+  align-items: center;
+  background: #101d2d;
+  border: 1px solid var(--diag-border);
+  border-radius: 999px;
+  color: #7dd3fc;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: .75rem;
+  font-weight: 600;
+  gap: .4rem;
+  padding: .42rem .8rem;
+  transition: all .15s ease;
+}
+
+.jarvis-console-history-btn:hover {
+  background: #172c42;
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.jarvis-history-badge {
+  background: #0284c7;
+  border-radius: 999px;
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: .15rem .45rem;
+}
+
 .jarvis-console-clear {
   background: #141f30;
   border: 1px solid var(--diag-border);
@@ -674,12 +716,238 @@
   color: #c9d4e4;
   cursor: pointer;
   font-size: .75rem;
-  margin-left: auto;
-  padding: .45rem .8rem;
+  padding: .42rem .8rem;
+  transition: all .15s ease;
 }
 
 .jarvis-console-clear:hover {
   border-color: #3c5871;
+  color: #fff;
+}
+
+/* History Drawer on Console */
+.jarvis-history-drawer {
+  background: #0b1320;
+  border-left: 1px solid var(--diag-border);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(0.16, 1, 0.3, 1);
+  width: min(390px, 92vw);
+  z-index: 25;
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.7);
+}
+
+.jarvis-history-drawer.open {
+  transform: translateX(0);
+}
+
+.jarvis-history-header {
+  align-items: center;
+  background: #111c2e;
+  border-bottom: 1px solid var(--diag-border);
+  display: flex;
+  justify-content: space-between;
+  padding: .95rem 1.15rem;
+}
+
+.jarvis-history-title {
+  align-items: center;
+  color: #fff;
+  display: flex;
+  font-size: .92rem;
+  font-weight: 700;
+  gap: .5rem;
+  letter-spacing: .02em;
+}
+
+.jarvis-history-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  transition: all .15s;
+}
+
+.jarvis-history-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.jarvis-history-search-bar {
+  align-items: center;
+  background: #0d1726;
+  border-bottom: 1px solid var(--diag-border);
+  display: flex;
+  gap: .6rem;
+  padding: .65rem 1rem;
+}
+
+.jarvis-history-search-bar i {
+  color: #64748b;
+  font-size: .8rem;
+}
+
+.jarvis-history-search-bar input {
+  background: none;
+  border: none;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: .82rem;
+  outline: none;
+  width: 100%;
+}
+
+.jarvis-history-search-bar input::placeholder {
+  color: #64748b;
+}
+
+.jarvis-history-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: .75rem;
+  overflow-y: auto;
+  padding: .9rem 1rem;
+}
+
+.jarvis-history-body::-webkit-scrollbar {
+  width: 5px;
+}
+.jarvis-history-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.jarvis-history-empty {
+  color: #64748b;
+  font-size: .84rem;
+  margin: auto;
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+.jarvis-history-card {
+  background: #111c2e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .75rem .85rem;
+  transition: border-color .15s, background .15s;
+}
+
+.jarvis-history-card:hover {
+  background: #152238;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.jarvis-history-card-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  font-size: .7rem;
+}
+
+.jarvis-history-card-role {
+  color: #38bdf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.jarvis-history-card-role--bot {
+  color: #a78bfa;
+}
+
+.jarvis-history-card-time {
+  color: #64748b;
+}
+
+.jarvis-history-card-text {
+  color: #e2e8f0;
+  font-size: .82rem;
+  line-height: 1.45;
+  word-break: break-word;
+  max-height: 4.2em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.jarvis-history-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .4rem;
+  margin-top: .3rem;
+  padding-top: .4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.jarvis-history-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.jarvis-history-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.jarvis-history-action-del:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+.jarvis-history-footer {
+  background: #0d1726;
+  border-top: 1px solid var(--diag-border);
+  padding: .75rem 1rem;
+}
+
+.jarvis-history-clear-all {
+  align-items: center;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  font-size: .75rem;
+  font-weight: 600;
+  gap: .45rem;
+  justify-content: center;
+  padding: .5rem;
+  transition: all .15s;
+  width: 100%;
+}
+
+.jarvis-history-clear-all:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
   color: #fff;
 }
 
@@ -711,12 +979,33 @@
   line-height: 1.65;
   max-width: min(92%, 640px);
   padding: .85rem 1rem;
+  position: relative;
 }
 
 .jarvis-console-msg--user .jarvis-console-bubble {
   background: linear-gradient(135deg, #12384a, #0d5f72);
   border-color: #1d7a90;
   border-radius: 16px 16px 6px 16px;
+}
+
+/* Delete button on console messages */
+.jarvis-console-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: .75rem;
+  line-height: 1;
+  margin-left: .5rem;
+  padding: .15rem .25rem;
+  transition: color .15s, opacity .15s;
+  vertical-align: middle;
+  opacity: 0.65;
+}
+
+.jarvis-console-delete-btn:hover {
+  color: #f87171;
+  opacity: 1;
 }
 
 .jarvis-console-bubble code {

@@ -4,7 +4,13 @@
 <link href="{% static 'css/dashboard.css' %}" rel="stylesheet"/>
 {% endblock %}
 
-{% block jarvis_widget %}{% endblock %}
+{% block jarvis_widget %}
+  {% if query %}
+    {% if request.user.is_authenticated %}
+      {% include 'theme/jarvis.html' %}
+    {% endif %}
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <main class="diagnostic-dashboard">
