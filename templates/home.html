@@ -1,26 +1,178 @@
 {% extends "theme/base.html" %}
+{% load static %}
+{% block extra_css %}
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet"/>
+{% endblock %}
+
 {% block content %}
-<div class="container-xl">
-  <div class="page-header d-print-none" aria-label="Page header">
-    <div class="container-xl">
-      <div class="row align-items-center">
-        <div class="col">
-          <div class="page-pretitle">Overview</div>
-          <div class="d-flex align-items-center gap-3 flex-wrap d-none d-md-flex">
-            <h2 class="page-title mb-0">Dashboard</h2>
+<main class="diagnostic-dashboard">
+  {% if query %}
+    <section class="diagnostic-search-bar" aria-label="Search diagnostics">
+      <a class="diagnostic-brand" href="{% url 'dashboard' %}" aria-label="MotoFix Assist home">
+        <span class="diagnostic-brand-mark"><i class="fa-solid fa-motorcycle"></i></span>
+        <span>MotoFix<span class="diagnostic-brand-accent">Assist</span></span>
+      </a>
+      <form class="diagnostic-search-form diagnostic-search-form--compact" method="get" action="{% url 'dashboard' %}">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" name="q" value="{{ query }}" placeholder="Search a symptom, part, or issue..." aria-label="Search a symptom, part, or issue">
+        <button type="submit" aria-label="Search"><i class="fa-solid fa-arrow-right"></i></button>
+      </form>
+      <a class="diagnostic-home-link" href="{% url 'dashboard' %}">New search</a>
+    </section>
+
+    <section class="diagnostic-results-heading">
+      <p class="diagnostic-eyebrow">DIAGNOSTIC ASSISTANT</p>
+      <h1>Here’s what we found</h1>
+      <p class="diagnostic-muted">Results for <strong>“{{ query }}”</strong>. Review the possible cause and follow the repair steps carefully.</p>
+    </section>
+
+    {% if diagnostic_results %}
+      {% for result in diagnostic_results %}
+        <article class="diagnostic-result-card">
+          <header class="diagnostic-result-header">
+            <div>
+              <p class="diagnostic-eyebrow">MATCH {{ forloop.counter }} · {{ result.symptom.category|upper }}</p>
+              <h2>{{ result.symptom.symptom_name }}</h2>
+            </div>
+            <span class="diagnostic-match"><i class="fa-solid fa-circle-check"></i> Saved guide</span>
+          </header>
+
+          <div class="diagnostic-overview-grid">
+            <section class="motor-map-panel" aria-label="Motorcycle inspection reference">
+              <div class="diagnostic-section-heading">
+                <div>
+                  <p class="diagnostic-eyebrow">VISUAL REFERENCE</p>
+                  <h3>Motorcycle inspection areas</h3>
+                </div>
+                <span class="map-note">Reference only</span>
+              </div>
+              <div class="motor-map">
+                <svg viewBox="0 0 720 300" role="img" aria-labelledby="motor-map-title-{{ forloop.counter }} motor-map-description-{{ forloop.counter }}">
+                  <title id="motor-map-title-{{ forloop.counter }}">Motorcycle side-view inspection reference</title>
+                  <desc id="motor-map-description-{{ forloop.counter }}">A simplified motorcycle outline showing the wheels, frame, engine, and drive chain for general inspection.</desc>
+                  <g fill="none" stroke="#56647a" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="154" cy="221" r="62" stroke-width="10"/>
+                    <circle cx="154" cy="221" r="43" stroke-width="2"/>
+                    <circle cx="558" cy="221" r="62" stroke-width="10"/>
+                    <circle cx="558" cy="221" r="43" stroke-width="2"/>
+                    <path d="M154 221 283 213 360 139 455 148 558 221M283 213 360 139 394 217 283 213M394 217 455 148 558 221" stroke-width="8"/>
+                    <path d="M350 141 324 118 259 105 245 135 280 154M455 148 485 116 531 119 558 221M342 132l-10-33M319 99h-32M249 135l-20 4" stroke-width="7"/>
+                    <path d="M271 182h124l-12 68H268z" fill="#172235" stroke="#52617a" stroke-width="4"/>
+                    <path d="M284 174h91v11h-91zM381 191l113 24" stroke="#f5a313" stroke-width="4" stroke-dasharray="7 7"/>
+                    <circle cx="394" cy="217" r="12" fill="#f5a313" stroke="#f5a313" stroke-width="3"/>
+                    <circle cx="360" cy="199" r="6" fill="#25c79a" stroke="#25c79a" stroke-width="2"/>
+                    <circle cx="154" cy="221" r="8" fill="#15b8d5" stroke="#15b8d5" stroke-width="2"/>
+                    <circle cx="558" cy="221" r="8" fill="#15b8d5" stroke="#15b8d5" stroke-width="2"/>
+                  </g>
+                  <g fill="#aab6c9" font-family="inherit" font-size="12">
+                    <text x="294" y="270">ENGINE</text>
+                    <text x="425" y="246" fill="#f5a313">DRIVE CHAIN</text>
+                    <text x="120" y="294">FRONT WHEEL</text>
+                    <text x="523" y="294">REAR WHEEL</text>
+                  </g>
+                </svg>
+              </div>
+              <p class="map-caption"><i class="fa-solid fa-circle-info"></i> Use this illustration as a general reference. Motorcycle layouts vary by model.</p>
+            </section>
+
+            <section class="diagnostic-cause-panel">
+              <div class="diagnostic-section-heading">
+                <div>
+                  <p class="diagnostic-eyebrow">SYMPTOM SUMMARY</p>
+                  <h3>{{ result.symptom.symptom_name }}</h3>
+                </div>
+                <span class="category-pill">{{ result.symptom.category }}</span>
+              </div>
+              {% if result.symptom.description %}
+                <p class="diagnostic-description">{{ result.symptom.description }}</p>
+              {% endif %}
+
+              {% if result.guides %}
+                {% for guide_item in result.guides %}
+                  <div class="cause-block">
+                    <p class="diagnostic-eyebrow">POSSIBLE CAUSE</p>
+                    <p>{{ guide_item.guide.possible_cause }}</p>
+                  </div>
+                  {% if guide_item.guide.advice_notes %}
+                    <div class="advice-block"><i class="fa-solid fa-triangle-exclamation"></i><span>{{ guide_item.guide.advice_notes }}</span></div>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <div class="advice-block"><i class="fa-solid fa-circle-info"></i><span>There is no saved repair guide for this symptom yet. Ask Jarvis for general guidance or consult a qualified mechanic.</span></div>
+              {% endif %}
+            </section>
           </div>
-          <h2 class="page-title mb-0 d-md-none">Dashboard</h2>
+
+          {% if result.guides %}
+            {% for guide_item in result.guides %}
+              <section class="repair-guide">
+                <div class="repair-guide-heading">
+                  <div>
+                    <p class="diagnostic-eyebrow">STEP-BY-STEP TROUBLESHOOTING</p>
+                    <h3>Repair guide{% if result.guides|length > 1 %} {{ forloop.counter }}{% endif %}</h3>
+                  </div>
+                  <span class="guide-step-count">{{ guide_item.repair_steps|length }} steps</span>
+                </div>
+
+                {% if guide_item.required_parts %}
+                  <div class="parts-checklist">
+                    <h4><i class="fa-solid fa-screwdriver-wrench"></i> Tools &amp; parts to prepare</h4>
+                    <ul>
+                      {% for requirement in guide_item.required_parts %}
+                        <li><span>{{ requirement.part.part_name }}{% if requirement.quantity_needed %} <small>× {{ requirement.quantity_needed }}</small>{% endif %}</span><i class="fa-solid fa-check"></i></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+
+                {% if guide_item.repair_steps %}
+                  <ol class="repair-steps">
+                    {% for step in guide_item.repair_steps %}
+                      <li><span class="step-number">{{ forloop.counter }}</span><span>{{ step }}</span></li>
+                    {% endfor %}
+                  </ol>
+                {% else %}
+                  <p class="diagnostic-muted">Detailed repair steps have not been added to this guide yet.</p>
+                {% endif %}
+              </section>
+            {% endfor %}
+          {% endif %}
+        </article>
+      {% endfor %}
+    {% else %}
+      <section class="diagnostic-empty-state">
+        <span class="empty-state-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <h2>No saved guide matches that search</h2>
+        <p>Try a symptom, component, or likely cause using different words. You can also describe the problem to Jarvis for help.</p>
+        <a class="diagnostic-primary-button" href="{% url 'dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Try another search</a>
+      </section>
+    {% endif %}
+  {% else %}
+    <section class="diagnostic-welcome">
+      <div class="welcome-emblem"><i class="fa-solid fa-motorcycle"></i></div>
+      <p class="diagnostic-eyebrow">MOTOFIX ASSIST · MOTORCYCLE DIAGNOSTICS</p>
+      <h1>Where should we start?</h1>
+      <p class="welcome-description">Describe what your motorcycle is doing. We’ll look for a matching symptom and show you the relevant repair steps.</p>
+
+      <form class="diagnostic-search-form" method="get" action="{% url 'dashboard' %}">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" name="q" placeholder="Search a symptom, part, or issue..." aria-label="Search a symptom, part, or issue" required autofocus>
+        <button type="submit" aria-label="Search diagnostics"><i class="fa-solid fa-arrow-right"></i></button>
+      </form>
+
+      {% if quick_symptoms %}
+        <div class="quick-searches">
+          <p><i class="fa-solid fa-wand-magic-sparkles"></i> Try a saved symptom</p>
+          <div class="quick-search-list">
+            {% for symptom in quick_symptoms %}
+              <a class="quick-search-chip" href="{% url 'dashboard' %}?q={{ symptom.symptom_name|urlencode }}">{{ symptom.symptom_name }}</a>
+            {% endfor %}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-  <br>
-
-  <div class="card">
-    <div class="card-body text-muted">
-      Dashboard
-    </div>
-  </div>
-
-</div>
+      {% else %}
+        <p class="welcome-hint"><i class="fa-solid fa-circle-info"></i> Search saved symptoms, causes, repair steps, and parts.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+</main>
 {% endblock %}

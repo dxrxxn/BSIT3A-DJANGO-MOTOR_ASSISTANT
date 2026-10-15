@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import timedelta
 
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -143,7 +145,62 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    return render(request, 'home.html')
+    from apps.motor.models import DiagnosticSymptom
+
+    query = request.GET.get('q', '').strip()[:150]
+    symptoms = DiagnosticSymptom.objects.all()
+    diagnostic_results = []
+
+    if query:
+        matched_symptoms = symptoms.filter(
+            Q(symptom_name__icontains=query)
+            | Q(category__icontains=query)
+            | Q(description__icontains=query)
+            | Q(troubleshooting_guides__possible_cause__icontains=query)
+            | Q(troubleshooting_guides__repair_instructions__icontains=query)
+            | Q(troubleshooting_guides__advice_notes__icontains=query)
+            | Q(
+                troubleshooting_guides__required_parts__part__part_name__icontains=query
+            )
+        ).distinct().prefetch_related(
+            'troubleshooting_guides__required_parts__part'
+        )
+
+        for symptom in matched_symptoms:
+            guides = []
+            for guide in symptom.troubleshooting_guides.all():
+                repair_steps = [
+                    re.sub(
+                        r'^\s*(?:step\s*)?\d+[\.\):\-]\s*',
+                        '',
+                        step.strip(),
+                        flags=re.IGNORECASE,
+                    )
+                    for step in guide.repair_instructions.splitlines()
+                    if step.strip()
+                ]
+                if not repair_steps and guide.repair_instructions.strip():
+                    repair_steps = [guide.repair_instructions.strip()]
+
+                guides.append({
+                    'guide': guide,
+                    'repair_steps': repair_steps,
+                    'required_parts': [
+                        requirement
+                        for requirement in guide.required_parts.all()
+                    ],
+                })
+
+            diagnostic_results.append({
+                'symptom': symptom,
+                'guides': guides,
+            })
+
+    return render(request, 'home.html', {
+        'query': query,
+        'diagnostic_results': diagnostic_results,
+        'quick_symptoms': symptoms.order_by('symptom_name')[:3],
+    })
 
 
 @require_http_methods(['GET', 'POST'])
