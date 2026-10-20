@@ -21,12 +21,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
 
-# Gemini AI API Key
+# Gemini AI API Key & Configurable AI Engine Settings
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()  # 'gemini', 'ollama', 'openai_compatible'
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.8-flash')
+AI_API_BASE_URL = os.getenv('AI_API_BASE_URL', '')  # e.g., 'http://localhost:11434/v1' for Ollama
+AI_API_KEY = os.getenv('AI_API_KEY', GEMINI_API_KEY)
+AI_EXPLANATION_LEVEL = os.getenv('AI_EXPLANATION_LEVEL', 'beginner').lower()  # 'beginner' or 'mechanic'
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+
+import sys
+IS_TESTING = ('test' in sys.argv) or ('pytest' in sys.modules)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-development-only')
@@ -34,7 +42,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-development-only')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition

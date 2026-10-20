@@ -1,0 +1,150 @@
+{% extends "theme/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'motor/viewer.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mv-page">
+  <div class="mv-header">
+    <div>
+      <div class="mv-pretitle">Motor Assistant</div>
+      <h2 class="mv-title"><i class="fas fa-motorcycle me-2"></i>3D Motorcycle Viewer</h2>
+    </div>
+    <div class="mv-status" id="mv-status"><span class="mv-status-dot"></span>Preparing viewer…</div>
+  </div>
+
+  <div class="mv-viewport" id="mv-viewport">
+    <canvas id="mv-canvas"></canvas>
+
+    <div class="mv-loading" id="mv-loading">
+      <div class="mv-spinner"></div>
+      <div class="mv-loading-text" id="mv-loading-text">Loading model…</div>
+      <div class="mv-progress" id="mv-progress">
+        <div class="mv-progress-bar" id="mv-progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="mv-alert d-none" id="mv-alert" role="alert">
+      <i class="fa-solid fa-triangle-exclamation me-2"></i>
+      <div>
+        <strong id="mv-alert-title">Model failed to load.</strong>
+        <span id="mv-alert-msg"></span>
+      </div>
+      <button type="button" class="mv-alert-close" id="mv-alert-close" aria-label="Dismiss">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="mv-placeholder-label d-none" id="mv-placeholder-label">
+      <i class="fa-solid fa-flask me-2"></i>
+      TEMPORARY TEST OBJECT — put your GLB at
+      <code>apps/motor/static/motor/models/motorcycle.glb</code> and reload to see the real model.
+    </div>
+
+    <div class="mv-presets" id="mv-presets" role="toolbar" aria-label="Camera presets">
+      <button type="button" class="mv-preset" data-preset="front" title="Front view">
+        <i class="fa-solid fa-arrow-up"></i><span>Front</span>
+      </button>
+      <button type="button" class="mv-preset" data-preset="rear" title="Rear view">
+        <i class="fa-solid fa-arrow-down"></i><span>Rear</span>
+      </button>
+      <button type="button" class="mv-preset" data-preset="left" title="Left view">
+        <i class="fa-solid fa-arrow-left"></i><span>Left</span>
+      </button>
+      <button type="button" class="mv-preset" data-preset="right" title="Right view">
+        <i class="fa-solid fa-arrow-right"></i><span>Right</span>
+      </button>
+      <button type="button" class="mv-preset" data-preset="top" title="Top view">
+        <i class="fa-solid fa-layer-group"></i><span>Top</span>
+      </button>
+      <button type="button" class="mv-preset" data-preset="iso" title="Isometric view">
+        <i class="fa-solid fa-cube"></i><span>Iso</span>
+      </button>
+      <span class="mv-preset-sep"></span>
+      <button type="button" class="mv-preset mv-preset-intro" id="mv-btn-intro" title="Play cinematic intro">
+        <i class="fa-solid fa-circle-play"></i><span>Intro</span>
+      </button>
+    </div>
+
+    <div class="mv-parts-bar" id="mv-parts-bar" role="toolbar" aria-label="Parts inspection">
+      <span class="mv-parts-title"><i class="fa-solid fa-crosshairs me-1"></i>Inspect:</span>
+      <button type="button" class="mv-part-btn active" data-part="overview" title="Full exterior view">
+        <i class="fa-solid fa-motorcycle"></i><span>Exterior</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="engine" title="Engine & cylinder block">
+        <i class="fa-solid fa-gear"></i><span>Engine (Inside)</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="sprocket" title="Front sprocket & drive">
+        <i class="fa-solid fa-circle-notch"></i><span>Front Sprocket</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="battery" title="Battery & electrical">
+        <i class="fa-solid fa-bolt"></i><span>Battery</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="exhaust" title="Exhaust pipe & muffler">
+        <i class="fa-solid fa-smog"></i><span>Exhaust</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="brakes" title="Brake system & calipers">
+        <i class="fa-solid fa-circle-stop"></i><span>Brakes</span>
+      </button>
+      <span class="mv-preset-sep"></span>
+      <button type="button" class="mv-part-btn mv-part-tour-btn" id="mv-btn-tour" title="Cinematic Outside-to-Inside Part Tour">
+        <i class="fa-solid fa-film"></i><span>Cinematic Tour</span>
+      </button>
+    </div>
+
+    <!-- Floating Component HUD Card -->
+    <div class="mv-part-hud d-none" id="mv-part-hud">
+      <div class="mv-part-hud-header">
+        <span class="mv-part-hud-badge" id="mv-hud-badge">COMPONENT</span>
+        <button type="button" class="mv-part-hud-close" id="mv-hud-close" aria-label="Close HUD">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <h3 class="mv-part-hud-title" id="mv-hud-title">Engine Core</h3>
+      <p class="mv-part-hud-desc" id="mv-hud-desc">Power unit inspection.</p>
+      <div class="mv-part-hud-actions">
+        <a href="{% url 'dashboard' %}" class="mv-hud-btn" id="mv-hud-diagnose" title="Consult Jarvis AI about this part">
+          <i class="fa-solid fa-robot me-1"></i>Ask Jarvis
+        </a>
+        <button type="button" class="mv-hud-btn mv-hud-btn-outline" id="mv-hud-outside" title="Return to exterior view">
+          <i class="fa-solid fa-arrow-left me-1"></i>Back Outside
+        </button>
+      </div>
+    </div>
+
+    <div class="mv-toolbar" id="mv-toolbar">
+      <button type="button" class="mv-btn" id="mv-btn-reset" title="Reset camera">
+        <i class="fa-solid fa-house"></i><span>Reset</span>
+      </button>
+      <button type="button" class="mv-btn" id="mv-btn-full" title="Toggle fullscreen">
+        <i class="fa-solid fa-expand"></i><span>Full</span>
+      </button>
+    </div>
+
+    <div class="mv-hint">Drag to rotate&ensp;·&ensp;Scroll to zoom&ensp;·&ensp;Click part to inspect</div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+<script>
+window.MOTOR_VIEWER = {
+  modelUrl: "{% static 'motor/models/motorcycle.glb' %}",
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+<script>
+if (window.anime && 'suspendWhenDocumentHidden' in window.anime) {
+  window.anime.suspendWhenDocumentHidden = false;
+}
+</script>
+<script type="module" src="{% static 'motor/viewer.js' %}"></script>
+{% endblock %}

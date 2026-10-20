@@ -833,6 +833,54 @@
     bottom: 1rem;
   }
 }
+/* Part Visual Reference Image Cards */
+.jarvis-part-img-card {
+  margin: 0.75rem 0 0.4rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(8, 8, 20, 0.7);
+}
+.jarvis-part-img-badge {
+  background: linear-gradient(90deg, rgba(99,102,241,0.25) 0%, rgba(139,92,246,0.15) 100%);
+  color: #a5b4fc;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.28rem 0.65rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.jarvis-part-img-card img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+  border-top: 1px solid rgba(99,102,241,0.15);
+  border-bottom: 1px solid rgba(99,102,241,0.15);
+}
+.jarvis-part-img-fallback {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1.5rem 1rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.jarvis-part-img-fallback i { font-size: 1.4rem; opacity: 0.4; }
+.jarvis-part-img-caption {
+  padding: 0.32rem 0.65rem;
+  font-size: 0.67rem;
+  color: rgba(255,255,255,0.45);
+  font-style: italic;
+}
+
 </style>
 
 <script>
@@ -1227,6 +1275,18 @@
     html = html.replace(/-\s*\[ \]\s*([^\n<]+)/g, '<label class="jarvis-checklist-item"><input type="checkbox"><span>$1</span></label>');
     html = html.replace(/-\s*\[x\]\s*([^\n<]+)/gi, '<label class="jarvis-checklist-item"><input type="checkbox" checked><span style="text-decoration:line-through;opacity:0.6;">$1</span></label>');
 
+    // Part image cards: [part-image: URL | Alt Text]
+    html = html.replace(/\[part-image:\s*([^|\]]+?)\s*\|\s*([^\]]+?)\s*\]/gi, function(match, url, alt) {
+      var safeUrl = url.trim().replace(/&amp;/g, '&');
+      var safeAlt = alt.trim();
+      return '<div class="jarvis-part-img-card">'
+        + '<div class="jarvis-part-img-badge"><i class="fa-solid fa-image"></i> Visual Reference</div>'
+        + '<img src="' + safeUrl + '" alt="' + safeAlt + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Image unavailable</span></div>'
+        + '<div class="jarvis-part-img-caption"><i class="fa-solid fa-tag" style="font-size:0.6rem;opacity:0.6;margin-right:3px;"></i>' + safeAlt + '</div>'
+        + '</div>';
+    });
+
     // Line breaks
     html = html.replace(/\n/g, '<br>');
 
@@ -1386,7 +1446,8 @@
     const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     _renderBotMsg(text, time, id);
     const history = loadHistory();
-    history.push({ id, role: 'bot', text, time });
+    const entry = { id, role: 'bot', text, time };
+    history.push(entry);
     saveHistory(history);
   }
 

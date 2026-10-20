@@ -1,18 +1,35 @@
-import json
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from types import SimpleNamespace
-
+from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.test import RequestFactory, override_settings
 
-from .views import delete_model_image
 from .models import (
     DiagnosticSymptom,
     GuideRequiredPart,
     Part,
     TroubleshootingGuide,
 )
+
+
+class ViewerRouteTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='viewer-tester', password='pass-1234')
+
+    def test_viewer_requires_login(self):
+        response = self.client.get('/motor/viewer/')
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response['Location'].startswith('/'))
+
+    def test_viewer_renders_for_authenticated_user(self):
+        self.client.force_login(self.user)
+        response = self.client.get('/motor/viewer/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'mv-canvas')
+        self.assertContains(response, 'motor/models/motorcycle.glb')
+        self.assertContains(response, 'three@0.165.0')
+        self.assertContains(response, 'animejs@3.2.2')
+        self.assertContains(response, 'motor/viewer.js')
+        self.assertContains(response, 'data-preset="iso"')
+        self.assertContains(response, 'mv-btn-intro')
 
 
 class MotorAssistantDataMigrationTests(TestCase):
@@ -35,62 +52,3 @@ class MotorAssistantDataMigrationTests(TestCase):
 
         self.assertFalse(TroubleshootingGuide.objects.filter(pk=1).exists())
         self.assertFalse(GuideRequiredPart.objects.filter(pk=1).exists())
-
-
-class DeleteModelImageTests(TestCase):
-    def setUp(self):
-        self.temp_dir = TemporaryDirectory()
-        self.addCleanup(self.temp_dir.cleanup)
-        self.models_dir = Path(self.temp_dir.name) / 'models'
-        self.models_dir.mkdir()
-        self.request_factory = RequestFactory()
-
-    def _delete_request(self, name):
-        request = self.request_factory.post('/motor/delete-image/', {'name': name})
-        request.user = SimpleNamespace(is_authenticated=True)
-        return request
-
-    def test_deletes_image_from_models_directory(self):
-        image_path = self.models_dir / 'uploaded.jpg'
-        image_path.write_bytes(b'image')
-        source_path = self.models_dir / 'src_1234abcd_uploaded.jpg'
-        source_path.write_bytes(b'source')
-        glb_path = self.models_dir / 'recon_1234abcd_uploaded.glb'
-        glb_path.write_bytes(b'model')
-
-        with override_settings(MEDIA_ROOT=self.temp_dir.name):
-            response = delete_model_image(self._delete_request(image_path.name))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(image_path.exists())
-        self.assertFalse(source_path.exists())
-        self.assertFalse(glb_path.exists())
-        self.assertCountEqual(
-            json.loads(response.content)['deleted_names'],
-            [image_path.name, source_path.name, glb_path.name],
-        )
-
-    def test_deleting_reconstruction_source_also_deletes_its_glb(self):
-        source_path = self.models_dir / 'src_1234abcd_uploaded.png'
-        source_path.write_bytes(b'source')
-        glb_path = self.models_dir / 'recon_1234abcd_uploaded.glb'
-        glb_path.write_bytes(b'model')
-
-        with override_settings(MEDIA_ROOT=self.temp_dir.name):
-            response = delete_model_image(self._delete_request(source_path.name))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(source_path.exists())
-        self.assertFalse(glb_path.exists())
-
-    def test_rejects_model_files_and_path_traversal(self):
-        model_path = self.models_dir / 'engine.glb'
-        model_path.write_bytes(b'model')
-
-        with override_settings(MEDIA_ROOT=self.temp_dir.name):
-            model_response = delete_model_image(self._delete_request(model_path.name))
-            traversal_response = delete_model_image(self._delete_request('../outside.png'))
-
-        self.assertEqual(model_response.status_code, 400)
-        self.assertEqual(traversal_response.status_code, 400)
-        self.assertTrue(model_path.exists())

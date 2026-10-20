@@ -17,6 +17,47 @@
   </div>
   <div class="offcanvas-body d-flex flex-column">
     <div>
+      <!-- Diagnostic Language & Level Preferences -->
+      <div class="mb-4 p-3 rounded" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25);">
+        <label class="form-label text-info fw-bold mb-1">
+          <i class="fa-solid fa-language me-1"></i> Diagnostic Language
+        </label>
+        <p class="form-hint mb-2">Motor Assistant speaks English, Tagalog, and Hiligaynon.</p>
+        <div class="d-flex flex-column gap-1 mb-3">
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-lang" value="auto" class="form-check-input" checked>
+            <span class="form-check-label">Auto-Detect (Adaptive)</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-lang" value="english" class="form-check-input">
+            <span class="form-check-label">English</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-lang" value="tagalog" class="form-check-input">
+            <span class="form-check-label">Tagalog / Filipino</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-lang" value="hiligaynon" class="form-check-input">
+            <span class="form-check-label">Hiligaynon (Ilonggo)</span>
+          </label>
+        </div>
+
+        <label class="form-label text-info fw-bold mb-1">
+          <i class="fa-solid fa-graduation-cap me-1"></i> Explanation Level
+        </label>
+        <p class="form-hint mb-2">Tailor the depth and technical complexity of repairs.</p>
+        <div class="d-flex flex-column gap-1">
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-level" value="beginner" class="form-check-input" checked>
+            <span class="form-check-label">Beginner (Step-by-step &amp; parts explained)</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-level" value="mechanic" class="form-check-input">
+            <span class="form-check-label">Mechanic (Direct technical specs &amp; tests)</span>
+          </label>
+        </div>
+      </div>
+
       <!-- Color mode (Dark / Light) -->
       <div class="mb-4">
         <label class="form-label">Color mode</label>
@@ -258,60 +299,60 @@
         </div>
       </div>
 
-      <!-- Dark Base Tone -->
+      <!-- Custom Background Color -->
       <div class="mb-4">
-        <label class="form-label">Dark background base</label>
-        <p class="form-hint">Adjust the deep darkness tone.</p>
-
-        <div>
-          <label class="form-check">
-            <div class="form-selectgroup-item">
-              <input
-                type="radio"
-                name="theme-base"
-                value="gray"
-                class="form-check-input"
-                checked
-              />
-              <div class="form-check-label">Cyber Navy (Default)</div>
-            </div>
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <label class="form-label mb-0 fw-bold">
+            <i class="fa-solid fa-fill-drip me-1 text-info"></i> Background Color
           </label>
+          <button type="button" class="btn btn-sm btn-ghost-secondary py-0 px-2" id="reset-bg-color" style="font-size: 11px;">
+            <i class="fa-solid fa-rotate-left me-1"></i>Default
+          </button>
+        </div>
+        <p class="form-hint mb-2">Adjust to any color you want — pick from quick presets or use the full spectrum color picker.</p>
 
-          <label class="form-check">
-            <div class="form-selectgroup-item">
-              <input
-                type="radio"
-                name="theme-base"
-                value="slate"
-                class="form-check-input"
-              />
-              <div class="form-check-label">Deep Slate</div>
-            </div>
-          </label>
+        <!-- Quick Presets -->
+        <div class="d-flex flex-wrap gap-2 mb-3 align-items-center" id="jarvis-bg-presets">
+          <button type="button" class="jarvis-bg-preset-btn active" data-color="#0c1017" title="Cyber Graphite (Default)" style="background-color: #0c1017;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#000000" title="OLED Pure Black" style="background-color: #000000;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#081226" title="Deep Space Navy" style="background-color: #081226;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#0f172a" title="Dark Slate" style="background-color: #0f172a;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#140a24" title="Cyberpunk Violet" style="background-color: #140a24;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#041a14" title="Matrix Emerald" style="background-color: #041a14;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#1a080c" title="Deep Crimson" style="background-color: #1a080c;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#18191c" title="Carbon Gunmetal" style="background-color: #18191c;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#121e33" title="Steel Blue" style="background-color: #121e33;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#1a1423" title="Abyssal Plum" style="background-color: #1a1423;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#1e293b" title="Twilight Slate" style="background-color: #1e293b;"></button>
+          <button type="button" class="jarvis-bg-preset-btn" data-color="#022c22" title="Deep Pine" style="background-color: #022c22;"></button>
+        </div>
 
-          <label class="form-check">
-            <div class="form-selectgroup-item">
+        <!-- Custom Color Picker + Hex Input Container -->
+        <div class="d-flex align-items-center gap-2 p-2 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div class="position-relative" style="width: 36px; height: 36px; flex-shrink: 0;">
+            <input
+              type="color"
+              id="jarvis-bg-picker"
+              value="#0c1017"
+              title="Click to pick any color with the visual palette"
+              style="width: 36px; height: 36px; padding: 0; margin: 0; border: 2px solid rgba(255, 255, 255, 0.25); border-radius: 8px; cursor: pointer; background: transparent;"
+            />
+          </div>
+          <div class="flex-grow-1">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text font-monospace text-muted" style="background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); padding: 4px 8px;">#</span>
               <input
-                type="radio"
-                name="theme-base"
-                value="zinc"
-                class="form-check-input"
+                type="text"
+                id="jarvis-bg-hex"
+                class="form-control font-monospace"
+                style="background: rgba(0,0,0,0.3); color: #ffffff; border-color: rgba(255,255,255,0.15); text-transform: uppercase;"
+                placeholder="0C1017"
+                maxlength="6"
+                value="0C1017"
               />
-              <div class="form-check-label">Zinc Black</div>
             </div>
-          </label>
-
-          <label class="form-check">
-            <div class="form-selectgroup-item">
-              <input
-                type="radio"
-                name="theme-base"
-                value="stone"
-                class="form-check-input"
-              />
-              <div class="form-check-label">Warm Stone</div>
-            </div>
-          </label>
+          </div>
+          <span class="badge bg-dark-lt text-muted text-uppercase" id="jarvis-bg-lum-badge" style="font-size: 10px; font-weight: 600; padding: 5px 8px;">DARK</span>
         </div>
       </div>
 
@@ -375,6 +416,99 @@
 
     const form = document.getElementById("offcanvasSettings");
     const resetButton = document.getElementById("reset-changes");
+    const bgPicker = document.getElementById("jarvis-bg-picker");
+    const bgHex = document.getElementById("jarvis-bg-hex");
+    const bgResetBtn = document.getElementById("reset-bg-color");
+    const bgLumBadge = document.getElementById("jarvis-bg-lum-badge");
+    const presetButtons = document.querySelectorAll(".jarvis-bg-preset-btn");
+
+    const DEFAULT_BG = "#0c1017";
+
+    function updateBgControls(hex, skipPicker) {
+      if (!hex) hex = DEFAULT_BG;
+      hex = hex.toLowerCase();
+      if (!hex.startsWith('#')) hex = '#' + hex;
+
+      if (!skipPicker && bgPicker) {
+        bgPicker.value = hex;
+      }
+      if (bgHex) {
+        bgHex.value = hex.replace('#', '').toUpperCase();
+      }
+
+      // Update lum badge
+      if (bgLumBadge && window.JarvisBg) {
+        const rgb = window.JarvisBg.hexToRgb(hex);
+        if (rgb) {
+          const lum = window.JarvisBg.getLuminance(rgb);
+          bgLumBadge.textContent = lum < 0.5 ? 'DARK' : 'LIGHT';
+          if (lum >= 0.5) {
+            bgLumBadge.classList.remove('bg-dark-lt');
+            bgLumBadge.classList.add('bg-light-lt');
+          } else {
+            bgLumBadge.classList.remove('bg-light-lt');
+            bgLumBadge.classList.add('bg-dark-lt');
+          }
+        }
+      }
+
+      // Update preset active classes
+      presetButtons.forEach(btn => {
+        const pColor = (btn.getAttribute('data-color') || '').toLowerCase();
+        if (pColor === hex) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function applyBg(hex) {
+      if (window.JarvisBg) {
+        window.JarvisBg.apply(hex);
+      }
+      updateBgControls(hex);
+    }
+
+    // Color picker live dragging & picking
+    if (bgPicker) {
+      bgPicker.addEventListener('input', function (e) {
+        applyBg(e.target.value);
+      });
+      bgPicker.addEventListener('change', function (e) {
+        applyBg(e.target.value);
+      });
+    }
+
+    // Hex input typing
+    if (bgHex) {
+      bgHex.addEventListener('input', function (e) {
+        let val = e.target.value.trim().replace('#', '');
+        if (val.length === 6 && /^[0-9A-Fa-f]{6}$/.test(val)) {
+          applyBg('#' + val);
+        }
+      });
+    }
+
+    // Preset chips
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', function () {
+        const color = this.getAttribute('data-color');
+        if (color) {
+          applyBg(color);
+        }
+      });
+    });
+
+    // Reset BG button
+    if (bgResetBtn) {
+      bgResetBtn.addEventListener('click', function () {
+        if (window.JarvisBg) {
+          window.JarvisBg.reset();
+        }
+        updateBgControls(DEFAULT_BG);
+      });
+    }
 
     function applyConfig(key, value) {
       document.documentElement.setAttribute("data-bs-" + key, value);
@@ -396,11 +530,35 @@
         });
         document.documentElement.setAttribute("data-bs-" + key, value);
       }
+
+      // Sync Language & Experience level
+      try {
+        const savedLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
+        form.querySelectorAll('[name="jarvis-pref-lang"]').forEach(r => {
+          r.checked = (r.value === savedLang);
+        });
+        const savedLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
+        form.querySelectorAll('[name="jarvis-pref-level"]').forEach(r => {
+          r.checked = (r.value === savedLevel);
+        });
+      } catch (e) {}
+
+      // Sync Background Color
+      try {
+        const savedBg = localStorage.getItem('jarvis-custom-bg') || DEFAULT_BG;
+        updateBgControls(savedBg);
+      } catch (e) {}
     }
 
     form.addEventListener("change", function (event) {
       const target = event.target;
-      if (target && target.name) {
+      if (!target || !target.name) return;
+
+      if (target.name === 'jarvis-pref-lang') {
+        try { localStorage.setItem('jarvis-pref-lang', target.value); } catch(e) {}
+      } else if (target.name === 'jarvis-pref-level') {
+        try { localStorage.setItem('jarvis-pref-level', target.value); } catch(e) {}
+      } else {
         applyConfig(target.name, target.value);
       }
     });
@@ -412,6 +570,14 @@
             localStorage.removeItem("tabler-" + key);
           } catch (e) {}
         }
+        try {
+          localStorage.removeItem('jarvis-pref-lang');
+          localStorage.removeItem('jarvis-pref-level');
+        } catch(e) {}
+        if (window.JarvisBg) {
+          window.JarvisBg.reset();
+        }
+        updateBgControls(DEFAULT_BG);
         syncRadios();
       });
     }

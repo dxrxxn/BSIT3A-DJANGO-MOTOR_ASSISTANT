@@ -14,7 +14,7 @@
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
     <!-- J.A.R.V.I.S. Theme -->
-    <link href="{% static 'css/jarvis-theme.css' %}" rel="stylesheet"/>
+    <link href="{% static 'css/jarvis-theme.css' %}?v={% now 'U' %}" rel="stylesheet"/>
     {% block extra_css %}{% endblock %}
     <style>
       @import url("https://rsms.me/inter/inter.css");
@@ -24,29 +24,9 @@
 
   <body>
     <div class="jarvis-window-shell">
-      <!-- Window Top Titlebar -->
-      <header class="jarvis-window-topbar">
-        <div class="jarvis-window-topbar-title">
-          <span>Motor Assistant — J.A.R.V.I.S.</span>
-        </div>
-        <div class="jarvis-window-topbar-actions">
-          <!-- Theme Settings Toggle Button -->
-          <button type="button" class="jarvis-window-topbar-action-icon" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSettings" aria-controls="offcanvasSettings" title="Theme Settings" aria-label="Theme Settings">
-            <i class="fa-solid fa-palette"></i>
-          </button>
-          <a href="https://github.com" target="_blank" class="jarvis-window-topbar-action-icon" title="View Source / Code" aria-label="View Source">
-            <i class="fa-solid fa-code"></i>
-          </a>
-        </div>
-      </header>
-
       <!-- App Body (Sidebar + Content Workspace) -->
       <div class="jarvis-app-body">
-        {% if request.user.is_authenticated %}
-          {% include 'theme/sidebar.html' %}
-        {% else %}
-          {% include 'theme/public_sidebar.html' %}
-        {% endif %}
+        {% include 'theme/sidebar.html' %}
 
         <div class="jarvis-workspace">
           {% block content %}

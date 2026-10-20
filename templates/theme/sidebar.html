@@ -9,12 +9,12 @@
     </div>
     <div class="jarvis-brand-text">
       <span class="jarvis-brand-title">Motor Assistant</span>
-      <span class="jarvis-brand-subtitle">Management System</span>
+      <span class="jarvis-brand-subtitle">INTELLIGENCE IN MOTION</span>
     </div>
   </a>
 
   <!-- Workspace Section -->
-  <div class="jarvis-sidebar-section">Workspace</div>
+  <div class="jarvis-sidebar-section">WORKSPACE</div>
 
   <!-- Navigation Links -->
   <ul class="jarvis-sidebar-nav">
@@ -40,10 +40,10 @@
     </li>
 
     <li class="jarvis-nav-item">
-      <a href="{% url 'motor:viewer_3d' %}" class="jarvis-nav-link {% if request.resolver_match.app_name == 'motor' %}active{% endif %}">
+      <a href="{% url 'motor:viewer' %}" class="jarvis-nav-link {% if request.resolver_match.app_name == 'motor' %}active{% endif %}">
         <div class="jarvis-nav-link-left">
           <span class="jarvis-nav-link-icon">
-            <i class="fa-solid fa-motorcycle" style="font-size: 13px;"></i>
+            <i class="fa-solid fa-cube" style="font-size: 13px;"></i>
           </span>
           <span>3D Viewer</span>
         </div>
@@ -54,6 +54,55 @@
     </li>
   </ul>
 
+  <!-- New Diagnosis Action Button -->
+  <div class="jarvis-sidebar-action-box">
+    <button type="button" class="jarvis-new-diagnosis-btn" id="sidebar-btn-new-diagnosis" title="Start new diagnosis">
+      <i class="fa-solid fa-plus"></i>
+      <span>New diagnosis</span>
+    </button>
+  </div>
+
+  <!-- Recent Sessions Section -->
+  <div class="jarvis-sidebar-section jarvis-recent-sessions-header">
+    <span>RECENT SESSIONS</span>
+    <i class="fa-regular fa-clock"></i>
+  </div>
+
+  <div class="jarvis-recent-sessions-list">
+    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Cold start check: engine struggles to turn over in the morning">
+      <span class="jarvis-recent-title">Cold start check</span>
+      <span class="jarvis-recent-time">Today · 09:41</span>
+    </button>
+    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Front brake inspection: lever feels spongy when braking">
+      <span class="jarvis-recent-title">Front brake inspection</span>
+      <span class="jarvis-recent-time">Yesterday</span>
+    </button>
+    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Routine maintenance: recommended checks for 5000 km">
+      <span class="jarvis-recent-title">Routine maintenance</span>
+      <span class="jarvis-recent-time">Oct 18</span>
+    </button>
+  </div>
+
+  <div class="jarvis-sidebar-spacer"></div>
+
+  <!-- Neu / Graphite Console Badge -->
+  <div class="jarvis-sidebar-meta-tag">
+    <span class="jarvis-meta-pill">NEU / 02</span>
+    <span class="jarvis-meta-label">GRAPHITE CONSOLE</span>
+  </div>
+
+  <!-- Diagnostic Quota Card -->
+  <div class="jarvis-sidebar-quota-card" id="sidebar-quota-widget">
+    <div class="jarvis-sidebar-quota-header">
+      <span class="jarvis-sidebar-quota-title">Diagnostic quota</span>
+      <span class="jarvis-sidebar-quota-pct" id="sidebar-quota-pct">100%</span>
+    </div>
+    <div class="jarvis-sidebar-quota-bar">
+      <div class="jarvis-sidebar-quota-fill" id="sidebar-quota-bar-fill" style="width: 100%;"></div>
+    </div>
+    <div class="jarvis-sidebar-quota-sub" id="sidebar-quota-rem">1,500 requests remaining</div>
+  </div>
+
   <!-- Bottom Profile Card -->
   <div class="jarvis-sidebar-footer">
     <div class="jarvis-user-profile">
@@ -62,7 +111,7 @@
           {{ user.username|first|upper|default:"G" }}
         </div>
         <div class="jarvis-user-details">
-          <span class="jarvis-user-name">{{ user.username|default:"glenn" }}</span>
+          <span class="jarvis-user-name">{{ user.username|default:"Glenn"|title }}</span>
           <span class="jarvis-user-role">{% if user.is_superuser %}Administrator{% elif user.is_authenticated %}Instructor{% else %}Student{% endif %}</span>
         </div>
       </div>

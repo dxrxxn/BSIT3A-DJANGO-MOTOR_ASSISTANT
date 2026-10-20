@@ -45,17 +45,65 @@
 .jarvis-safety-alert strong {
   color: #f87171 !important;
 }
+/* Part Visual Reference Image Cards */
+.jarvis-part-img-card {
+  margin: 0.9rem 0 0.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(10, 12, 26, 0.85);
+  box-shadow: 0 4px 20px -8px rgba(99,102,241,0.25);
+}
+.jarvis-part-img-badge {
+  background: linear-gradient(90deg, rgba(99,102,241,0.3) 0%, rgba(139,92,246,0.18) 100%);
+  color: #a5b4fc;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.32rem 0.75rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.jarvis-part-img-card img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+  border-top: 1px solid rgba(99,102,241,0.15);
+  border-bottom: 1px solid rgba(99,102,241,0.15);
+}
+.jarvis-part-img-fallback {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 2rem 1rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.jarvis-part-img-fallback i { font-size: 1.75rem; opacity: 0.35; }
+.jarvis-part-img-caption {
+  padding: 0.38rem 0.75rem;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="jarvis-workspace" id="jarvis-workspace-root">
+<div class="jarvis-app-workspace" id="jarvis-workspace-root">
 
-  <!-- Chat Header -->
-  <header class="jarvis-chat-header">
-    <div class="jarvis-chat-header-left">
-      <div class="jarvis-avatar-circle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+  <!-- Top Dashboard Header Bar -->
+  <header class="jarvis-dashboard-header">
+    <div class="jarvis-header-left">
+      <div class="jarvis-header-icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
           <path d="M2 10v4"/>
           <path d="M6 6v12"/>
           <path d="M10 3v18"/>
@@ -64,56 +112,244 @@
           <path d="M22 10v4"/>
         </svg>
       </div>
-      <div class="jarvis-header-text">
-        <span class="jarvis-header-eyebrow">JUST A RATHER VERY INTELLIGENT SYSTEM</span>
-        <div class="jarvis-header-title-row">
-          <h1 class="jarvis-header-title">J.A.R.V.I.S.</h1>
-          <div class="jarvis-header-status">
-            <span class="jarvis-header-status-dot"></span>
-            <span>Online · at your service, sir</span>
-          </div>
+      <div class="jarvis-header-info">
+        <h1 class="jarvis-header-title">J.A.R.V.I.S.</h1>
+        <div class="jarvis-header-status">
+          <span class="jarvis-status-dot"></span>
+          <span>Online · At your service, sir</span>
         </div>
       </div>
     </div>
 
-    <div class="jarvis-chat-header-actions">
-      <!-- Live API Quota & Token Badge -->
-      <div class="jarvis-quota-pill" id="jarvis-quota-pill" title="Gemini 3.1 API Quota remaining today">
-        <span class="jarvis-quota-dot" id="jarvis-quota-dot"></span>
-        <i class="fa-solid fa-bolt" style="font-size: 0.7rem; color: #4ade80;"></i>
-        <span id="jarvis-quota-val" style="font-weight: 700;">Quota: 100% left</span>
-        <span id="jarvis-quota-sub" style="font-size: 0.68rem; opacity: 0.8; margin-left: 2px;">(1,500 reqs)</span>
-      </div>
+    <div class="jarvis-header-actions">
+      <span class="jarvis-private-badge">PRIVATE SESSION</span>
 
       <!-- History Button -->
-      <button type="button" class="jarvis-header-btn" id="btn-chat-history" title="View chat history" aria-label="Open chat history">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 14 14"/>
-          <path d="M4 12a8 8 0 0 1 8-8"/>
-        </svg>
+      <button type="button" class="jarvis-header-action-btn" id="btn-chat-history" title="View chat history" aria-label="Open chat history">
+        <i class="fa-regular fa-clock"></i>
         <span>History</span>
       </button>
 
       <!-- Clear logs Button -->
-      <button type="button" class="jarvis-header-btn" id="btn-clear-logs" title="Clear chat history" aria-label="Clear chat logs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <path d="M3 6h18"/>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-        </svg>
+      <button type="button" class="jarvis-header-action-btn" id="btn-clear-logs" title="Clear chat history" aria-label="Clear chat logs">
+        <i class="fa-regular fa-trash-can"></i>
         <span>Clear logs</span>
       </button>
 
-      <!-- Reset / Close Button -->
-      <button type="button" class="jarvis-header-icon-btn" id="btn-reset-chat" title="Reset view" aria-label="Reset view">
-        <i class="fa-solid fa-xmark"></i>
+      <!-- Settings / Config Button -->
+      <button type="button" class="jarvis-header-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSettings" title="Settings" aria-label="Settings">
+        <i class="fa-solid fa-sliders"></i>
       </button>
+
+      <!-- Hidden trigger for reset -->
+      <button type="button" id="btn-reset-chat" style="display:none;"></button>
     </div>
   </header>
 
-  <!-- Chat Messages Container -->
-  <div class="jarvis-chat-messages" id="jarvis-chat-messages" role="log" aria-live="polite">
-    <!-- Messages injected by JavaScript -->
+  <!-- Main 2-Column Floating Card Workspace -->
+  <div class="jarvis-dashboard-grid">
+
+    <!-- Left / Center: Large Diagnostic Copilot Card -->
+    <div class="jarvis-copilot-card">
+      <div class="jarvis-copilot-scroll" id="jarvis-copilot-scroll">
+
+        <!-- Card Header: Eyebrow + New Conversation -->
+        <div class="jarvis-copilot-card-top">
+          <span class="jarvis-copilot-eyebrow">YOUR DIAGNOSTIC COPILOT</span>
+          <button type="button" class="jarvis-pill-btn" id="btn-hero-new-conversation">
+            New conversation
+          </button>
+        </div>
+
+        <!-- Hero Section: Headline, Greeting & Shortcuts (Shown when starting fresh) -->
+        <div class="jarvis-copilot-hero" id="jarvis-copilot-hero">
+          <!-- Big Headline -->
+          <h2 class="jarvis-hero-headline">
+            A clearer diagnosis.<br>
+            A more confident ride.
+          </h2>
+          <p class="jarvis-hero-subtext">
+            Tell me what's happening. We'll work through it, one check at a time.
+          </p>
+
+          <!-- Jarvis Initial Greeting Box (Nested Card) -->
+          <div class="jarvis-greeting-box">
+            <div class="jarvis-greeting-box-header">
+              <div class="jarvis-greeting-brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <path d="M2 10v4"/>
+                  <path d="M6 6v12"/>
+                  <path d="M10 3v18"/>
+                  <path d="M14 8v8"/>
+                  <path d="M18 5v14"/>
+                  <path d="M22 10v4"/>
+                </svg>
+                <span>J.A.R.V.I.S.</span>
+              </div>
+              <span class="jarvis-greeting-time">JUST NOW</span>
+            </div>
+            <p class="jarvis-greeting-text">
+              At your service, {{ user.username|default:"Glenn"|title }}. Systems nominal. I'm your vehicle diagnostic assistant. What symptom or issue are you experiencing with your motorcycle today?
+            </p>
+          </div>
+
+          <!-- Shortcut Section Subtitle -->
+          <div class="jarvis-shortcuts-intro">
+            Not sure where to start? Try a diagnostic shortcut.
+          </div>
+
+          <!-- 2x2 Diagnostic Shortcuts Grid -->
+          <div class="jarvis-shortcuts-grid">
+            <button type="button" class="jarvis-shortcut-card" data-shortcut="Engine won't start">
+              <div class="jarvis-shortcut-card-top">
+                <div class="jarvis-shortcut-title-group">
+                  <i class="fa-solid fa-key jarvis-shortcut-icon"></i>
+                  <span class="jarvis-shortcut-title">Engine won't start</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
+              </div>
+              <span class="jarvis-shortcut-sub">Battery, ignition &amp; fuel checks</span>
+            </button>
+
+            <button type="button" class="jarvis-shortcut-card" data-shortcut="Front brake not working">
+              <div class="jarvis-shortcut-card-top">
+                <div class="jarvis-shortcut-title-group">
+                  <i class="fa-regular fa-circle-dot jarvis-shortcut-icon"></i>
+                  <span class="jarvis-shortcut-title">Front brake not working</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
+              </div>
+              <span class="jarvis-shortcut-sub">Pressure, pads &amp; fluid checks</span>
+            </button>
+
+            <button type="button" class="jarvis-shortcut-card" data-shortcut="Engine overheating">
+              <div class="jarvis-shortcut-card-top">
+                <div class="jarvis-shortcut-title-group">
+                  <i class="fa-solid fa-temperature-half jarvis-shortcut-icon"></i>
+                  <span class="jarvis-shortcut-title">Engine overheating</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
+              </div>
+              <span class="jarvis-shortcut-sub">Cooling system &amp; temperature</span>
+            </button>
+
+            <button type="button" class="jarvis-shortcut-card" data-shortcut="Motorcycle won't accelerate properly">
+              <div class="jarvis-shortcut-card-top">
+                <div class="jarvis-shortcut-title-group">
+                  <i class="fa-solid fa-gauge-high jarvis-shortcut-icon"></i>
+                  <span class="jarvis-shortcut-title">Poor acceleration</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
+              </div>
+              <span class="jarvis-shortcut-sub">Motorcycle won't accelerate properly</span>
+            </button>
+          </div>
+
+          <!-- Privacy footnote -->
+          <div class="jarvis-privacy-footnote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Your conversations and vehicle data stay private.</span>
+          </div>
+        </div>
+
+        <!-- Chat Messages Container (Live Conversation / Turn-by-Turn History) -->
+        <div class="jarvis-chat-messages" id="jarvis-chat-messages" role="log" aria-live="polite">
+          <!-- Dynamically populated by JavaScript -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Side Column (2 Stacked Floating Cards) -->
+    <div class="jarvis-right-column">
+
+      <!-- Card 1: YOUR MOTORCYCLE -->
+      <div class="jarvis-card-box jarvis-moto-card">
+        <div class="jarvis-card-box-header">
+          <span class="jarvis-card-eyebrow">YOUR MOTORCYCLE</span>
+          <button type="button" class="jarvis-card-dots-btn" title="Options" aria-label="Options">
+            <i class="fa-solid fa-ellipsis"></i>
+          </button>
+        </div>
+        <div class="jarvis-moto-details">
+          <h3 class="jarvis-moto-title" id="display-vehicle-title">Yamaha MT-07</h3>
+          <p class="jarvis-moto-specs" id="display-vehicle-specs">2023 · 689 cc · Twin-cylinder</p>
+          
+          <!-- Motorcycle Standby Box (Empty state without GLB) -->
+          <div class="jarvis-moto-standby-box">
+            <div class="jarvis-moto-grid-pattern"></div>
+            <div class="jarvis-moto-standby-content">
+              <div class="jarvis-moto-standby-icon">
+                <i class="fa-solid fa-cube"></i>
+              </div>
+              <span class="jarvis-moto-standby-title">3D Model Standby</span>
+              <span class="jarvis-moto-standby-sub">No GLB loaded yet</span>
+            </div>
+          </div>
+
+          <!-- Explore in 3D Button -->
+          <a href="{% url 'motor:viewer' %}" class="jarvis-explore-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+            <span>Explore in 3D</span>
+            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 2: Safety comes first -->
+      <div class="jarvis-card-box jarvis-safety-card">
+        <div class="jarvis-safety-card-header">
+          <div class="jarvis-safety-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <span class="jarvis-safety-title">Safety comes first</span>
+        </div>
+        <p class="jarvis-safety-text">
+          Keep your motorcycle parked while diagnosing. For critical faults, consult a qualified technician.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom Floating Input Bar Dock -->
+  <div class="jarvis-bottom-dock">
+    <form id="jarvis-chat-form" class="jarvis-bottom-form" onsubmit="return false;">
+      <div class="jarvis-floating-bar">
+        <button type="button" class="jarvis-bar-icon" title="Attach file or log" aria-label="Attach file">
+          <i class="fa-solid fa-paperclip"></i>
+        </button>
+        <textarea
+          id="jarvis-user-input"
+          class="jarvis-bar-textarea"
+          rows="1"
+          maxlength="1000"
+          placeholder="Describe a symptom or ask J.A.R.V.I.S. a question..."
+          aria-label="Message Jarvis"
+          autofocus
+        ></textarea>
+        <button type="button" class="jarvis-bar-icon" id="jarvis-mic-btn" title="Voice input" aria-label="Voice input">
+          <i class="fa-solid fa-microphone"></i>
+        </button>
+        <button type="submit" id="jarvis-btn-send" class="jarvis-bar-send-btn" aria-label="Send message">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+      </div>
+    </form>
+    <div class="jarvis-bottom-hints">
+      <span class="jarvis-hint-left">AI-assisted guidance. Always verify before making repairs.</span>
+      <span class="jarvis-hint-right"><kbd>↵</kbd> Send &nbsp;&nbsp; <kbd>⇧</kbd> <kbd>↵</kbd> New line</span>
+    </div>
   </div>
 
   <!-- Chat History Slide-out Drawer -->
@@ -140,32 +376,6 @@
       </button>
     </div>
   </aside>
-
-  <!-- Bottom Input Area -->
-  <div class="jarvis-input-section">
-    <form id="jarvis-chat-form" onsubmit="return false;">
-      <div class="jarvis-input-container">
-        <textarea
-          id="jarvis-user-input"
-          class="jarvis-textarea"
-          rows="1"
-          maxlength="1000"
-          placeholder="| How may I assist you, sir?"
-          aria-label="Message Jarvis"
-          autofocus
-        ></textarea>
-        <button type="submit" id="jarvis-btn-send" class="jarvis-send-btn" aria-label="Send message">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
-        </button>
-      </div>
-    </form>
-    <div class="jarvis-input-footer-hints">
-      <span class="jarvis-input-hint-left">Describe a symptom or choose a diagnostic shortcut above.</span>
-      <span class="jarvis-input-hint-right">Enter to send</span>
-    </div>
-  </div>
 
 </div>
 {% endblock %}
@@ -228,7 +438,12 @@
   }
 
   function scrollToBottom() {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const scrollParent = document.getElementById('jarvis-copilot-scroll');
+    if (scrollParent) {
+      setTimeout(() => {
+        scrollParent.scrollTop = scrollParent.scrollHeight;
+      }, 60);
+    }
   }
 
   function escapeHtml(str) {
@@ -246,6 +461,40 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
       .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  }
+
+  function renderFormattedBlocks(text) {
+    if (!text) return '';
+    const rawParagraphs = text.split(/\n{2,}/);
+    return rawParagraphs.map(p => {
+      const trimmed = p.trim();
+      if (!trimmed) return '';
+      // Bullet list items
+      if (/^[-*•]\s+/m.test(trimmed)) {
+        const lines = trimmed.split(/\n+/);
+        const listItems = [];
+        const nonListLines = [];
+        lines.forEach(l => {
+          const lTrim = l.trim();
+          if (/^[-*•]\s+/.test(lTrim)) {
+            listItems.push('<li>' + renderMarkdownInline(lTrim.replace(/^[-*•]\s+/, '')) + '</li>');
+          } else if (lTrim) {
+            nonListLines.push(renderMarkdownInline(lTrim));
+          }
+        });
+        let result = '';
+        if (nonListLines.length > 0) {
+          result += '<p class="jarvis-card-text">' + nonListLines.join('<br>') + '</p>';
+        }
+        if (listItems.length > 0) {
+          result += '<ul class="jarvis-card-list">' + listItems.join('') + '</ul>';
+        }
+        return result;
+      }
+      // Standard paragraph with linebreaks
+      const formattedLines = trimmed.split('\n').map(l => renderMarkdownInline(l)).join('<br>');
+      return '<p class="jarvis-card-text">' + formattedLines + '</p>';
+    }).join('');
   }
 
   // ── Vehicle Information Auto-Extraction from History ───────────────────────
@@ -335,12 +584,37 @@
       cleanText = cleanText.replace(formMatch[0], '').trim();
     }
 
+    // Extract [part-image: ...] BEFORE stripping — so image data survives into the parsed object
+    let partImageData = null;
+    const partImgTagMatch = cleanText.match(/\[part-image:\s*([^|\]]+?)\s*\|\s*([^\]]+?)\s*\]/i);
+    if (partImgTagMatch) {
+      partImageData = { url: partImgTagMatch[1].trim(), alt: partImgTagMatch[2].trim() };
+    }
+    // Strip [part-image: ...] tags from displayable text (image rendered separately)
+    cleanText = cleanText.replace(/\[part-image:[^\]]+\]/gi, '').trim();
+
+    // Extract GitHub alert callouts: > [!CAUTION] or > [!WARNING] or SAFETY ALERT: ...
+    let safetyAlert = null;
+    const alertMatch = cleanText.match(/(?:^|\n)>\s*\[!(CAUTION|WARNING|IMPORTANT|NOTE|DANGER)\][ \t]*(?:>\s*)?([^\n]+(?:\n>[ \t]*[^\n]+)*)/i);
+    if (alertMatch) {
+      const alertType = alertMatch[1].toUpperCase();
+      const alertContent = alertMatch[2].replace(/\n>[ \t]*/g, ' ').trim();
+      safetyAlert = { type: alertType, content: alertContent };
+      cleanText = cleanText.replace(alertMatch[0], '').trim();
+    } else {
+      const inlineAlertMatch = cleanText.match(/(?:^|\n)(?:\*\*)?(CRITICAL SAFETY(?: HAZARD)?|SAFETY (?:ALERT|WARNING)):?\s*([^\n]+(?:\n[^\n]+)*?)(?=(?:\n\n|\n-|\n\[|$))/i);
+      if (inlineAlertMatch) {
+        safetyAlert = { type: 'CAUTION', content: (inlineAlertMatch[1] + ': ' + inlineAlertMatch[2]).trim() };
+        cleanText = cleanText.replace(inlineAlertMatch[0], '').trim();
+      }
+    }
+
     const lines = cleanText.split('\n');
     let title = '';
-    let introText = [];
+    let introLines = [];
     let checklistItems = [];
     let chips = [];
-    let outroText = [];
+    let outroLines = [];
 
     let readingChecklist = false;
 
@@ -374,22 +648,24 @@
 
       if (trimmed) {
         if (checklistItems.length === 0) {
-          introText.push(trimmed);
+          introLines.push(trimmed);
         } else {
-          outroText.push(trimmed);
+          outroLines.push(trimmed);
         }
       }
     });
 
     return {
       title,
-      intro: introText.join(' '),
+      intro: introLines.join('\n'),
       checklist: checklistItems,
       chips,
-      outro: outroText.join(' '),
+      outro: outroLines.join('\n'),
       vehicleForm: vehicleFormData,
       activeChip: activeChipName || null,
-      followupChips: followupChips || []
+      followupChips: followupChips || [],
+      partImage: partImageData,
+      safetyAlert: safetyAlert
     };
   }
 
@@ -763,6 +1039,14 @@
     const card = document.createElement('div');
     card.className = 'jarvis-card';
 
+    // Safety Alert Box (if present)
+    if (parsed.safetyAlert && parsed.safetyAlert.content) {
+      const alertEl = document.createElement('div');
+      alertEl.className = 'jarvis-safety-alert';
+      alertEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>${renderMarkdownInline(parsed.safetyAlert.content)}</div>`;
+      card.appendChild(alertEl);
+    }
+
     // Title / Progress Header (if title or checklist exists)
     let progressSpan = null;
     if (parsed.title || parsed.checklist.length > 0) {
@@ -786,10 +1070,10 @@
 
     // Intro Text (e.g. "I'm afraid I didn't recognize that specific phrasing...")
     if (parsed.intro) {
-      const introP = document.createElement('p');
-      introP.className = 'jarvis-card-text';
-      introP.innerHTML = renderMarkdownInline(parsed.intro);
-      card.appendChild(introP);
+      const introDiv = document.createElement('div');
+      introDiv.className = 'jarvis-card-intro-wrap';
+      introDiv.innerHTML = renderFormattedBlocks(parsed.intro);
+      card.appendChild(introDiv);
     }
 
     // Interactive Checklist
@@ -830,11 +1114,11 @@
 
     // Outro Text
     if (parsed.outro) {
-      const outroP = document.createElement('p');
-      outroP.className = 'jarvis-card-text';
-      outroP.style.marginTop = '10px';
-      outroP.innerHTML = renderMarkdownInline(parsed.outro);
-      card.appendChild(outroP);
+      const outroDiv = document.createElement('div');
+      outroDiv.className = 'jarvis-card-outro-wrap';
+      outroDiv.style.marginTop = '10px';
+      outroDiv.innerHTML = renderFormattedBlocks(parsed.outro);
+      card.appendChild(outroDiv);
     }
 
     // Interactive Vehicle Diagnostic Intake Form
@@ -869,6 +1153,19 @@
       });
 
       card.appendChild(chipsContainer);
+    }
+
+    // Part Visual Reference Image Card — uses parsed.partImage extracted before text stripping
+    if (parsed.partImage && parsed.partImage.url) {
+      const imgCard = document.createElement('div');
+      imgCard.className = 'jarvis-part-img-card';
+      imgCard.innerHTML =
+        '<div class="jarvis-part-img-badge"><i class="fa-solid fa-image"></i> Visual Reference</div>'
+        + '<img src="' + parsed.partImage.url + '" alt="' + parsed.partImage.alt + '" loading="lazy" referrerpolicy="no-referrer"'
+        + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Image unavailable — check your internet connection</span></div>'
+        + '<div class="jarvis-part-img-caption"><i class="fa-solid fa-tag" style="font-size:0.6rem;opacity:0.6;margin-right:3px;"></i>' + parsed.partImage.alt + '</div>';
+      card.appendChild(imgCard);
     }
 
     block.appendChild(card);
@@ -926,10 +1223,44 @@
     }
   }
 
+  // ── Sync Vehicle Header & Specs with Auto-Extracted Details ──────────────
+  function updateVehicleDisplayUI() {
+    const known = extractKnownVehicleInfo();
+    const titleEl = document.getElementById('display-vehicle-title');
+    const specsEl = document.getElementById('display-vehicle-specs');
+    if (!titleEl || !specsEl) return;
+
+    if (known.make || known.model) {
+      const parts = [];
+      if (known.make) parts.push(known.make);
+      if (known.model) parts.push(known.model);
+      titleEl.textContent = parts.join(' ');
+
+      const specParts = [];
+      if (known.year) specParts.push(known.year);
+      if (known.displacement) specParts.push(known.displacement);
+      if (known.type) specParts.push(known.type);
+      specsEl.textContent = specParts.length > 0 ? specParts.join(' · ') : 'Diagnostic Session Vehicle';
+    } else {
+      titleEl.textContent = 'Yamaha MT-07';
+      specsEl.textContent = '2023 · 689 cc · Twin-cylinder';
+    }
+  }
+
+  // ── Hero Visibility Toggle ───────────────────────────────────────────────
+  function updateHeroVisibility(history) {
+    const heroEl = document.getElementById('jarvis-copilot-hero');
+    if (!heroEl) return;
+    const activeTurns = (history || []).filter(item => item.role === 'user' || (item.role === 'bot' && !item.id.startsWith('init') && !item.id.startsWith('welcome')));
+    heroEl.style.display = activeTurns.length > 0 ? 'none' : '';
+  }
+
   // ── Render Full History ───────────────────────────────────────────────────
   function renderAll(history) {
     messagesContainer.innerHTML = '';
-    history.forEach(item => {
+    const activeTurns = (history || []).filter(item => item.role === 'user' || (item.role === 'bot' && !item.id.startsWith('init') && !item.id.startsWith('welcome')));
+    updateHeroVisibility(history);
+    activeTurns.forEach(item => {
       if (item.role === 'user') {
         renderUserMessage(item.text, item.id);
       } else {
@@ -937,6 +1268,7 @@
         renderBotMessage(parsed, item.id);
       }
     });
+    updateVehicleDisplayUI();
     scrollToBottom();
   }
 
@@ -1015,6 +1347,7 @@
     const history = loadHistory();
     history.push({ id: userId, role: 'user', text, time: userTime });
     saveHistory(history);
+    updateHeroVisibility(history);
 
     // 2. Set loading & typing state
     isLoading = true;
@@ -1031,13 +1364,21 @@
         text: (h.text || '').replace(/\[chips:.*?\]/gi, '').trim()
       }));
 
+      const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
+      const userLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
+
       const res = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': CSRF_TOKEN
         },
-        body: JSON.stringify({ message: text, history: recentHistory })
+        body: JSON.stringify({
+          message: text,
+          history: recentHistory,
+          language: userLang,
+          experience_level: userLevel
+        })
       });
 
       hideTyping();
@@ -1057,12 +1398,13 @@
       renderBotMessage(parsed, botId);
       scrollToBottom();
 
-      history.push({
+      const botEntry = {
         id: botId,
         role: 'bot',
         text: reply,
         time: botTime
-      });
+      };
+      history.push(botEntry);
       saveHistory(history);
 
     } catch (err) {
@@ -1204,14 +1546,22 @@
     const valEl = document.getElementById('jarvis-quota-val');
     const subEl = document.getElementById('jarvis-quota-sub');
     const dot = document.getElementById('jarvis-quota-dot');
-    if (!valEl) return;
+
+    // Sidebar quota elements
+    const sidePct = document.getElementById('sidebar-quota-pct');
+    const sideBar = document.getElementById('sidebar-quota-bar-fill');
+    const sideRem = document.getElementById('sidebar-quota-rem');
 
     const pct = quota.percent_left != null ? quota.percent_left : 100;
     const reqLeft = quota.requests_left != null ? quota.requests_left : 1500;
     const tokensToday = quota.tokens_today || 0;
 
-    valEl.textContent = `Quota: ${pct}% left`;
+    if (valEl) valEl.textContent = `Quota: ${pct}% left`;
     if (subEl) subEl.textContent = `(${reqLeft.toLocaleString()} reqs)`;
+
+    if (sidePct) sidePct.textContent = `${pct}%`;
+    if (sideBar) sideBar.style.width = `${pct}%`;
+    if (sideRem) sideRem.textContent = `${reqLeft.toLocaleString()} requests remaining`;
 
     if (pill) {
       pill.title = `Gemini API Free Tier: ${reqLeft.toLocaleString()} / 1,500 requests remaining today (${tokensToday.toLocaleString()} tokens used today)`;
@@ -1239,6 +1589,66 @@
         if (data.quota) updateQuotaUI(data.quota);
       }
     } catch (e) {}
+  }
+
+  // ── Hero & Sidebar Action Wiring ──────────────────────────────────────────
+  const heroNewBtn = document.getElementById('btn-hero-new-conversation');
+  if (heroNewBtn) {
+    heroNewBtn.addEventListener('click', () => {
+      clearBtn.click();
+    });
+  }
+
+  const sidebarNewBtn = document.getElementById('sidebar-btn-new-diagnosis');
+  if (sidebarNewBtn) {
+    sidebarNewBtn.addEventListener('click', () => {
+      clearBtn.click();
+    });
+  }
+
+  // Diagnostic Shortcut Cards click
+  document.querySelectorAll('.jarvis-shortcut-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const shortcut = card.dataset.shortcut;
+      if (shortcut) {
+        sendMessage(shortcut);
+      }
+    });
+  });
+
+  // Sidebar Recent Sessions click
+  document.querySelectorAll('.jarvis-recent-session-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const prompt = item.dataset.sessionPrompt;
+      if (prompt) {
+        sendMessage(prompt);
+      }
+    });
+  });
+
+  // Speech-to-text mic button (if supported by browser)
+  const micBtn = document.getElementById('jarvis-mic-btn');
+  if (micBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      micBtn.style.color = '#ef4444';
+    };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      inputEl.value = transcript;
+      inputEl.focus();
+    };
+    recognition.onend = () => {
+      micBtn.style.color = '';
+    };
+    micBtn.addEventListener('click', () => {
+      try { recognition.start(); } catch(e) {}
+    });
   }
 
   // Initial boot

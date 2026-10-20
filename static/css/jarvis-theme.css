@@ -4,11 +4,11 @@
    ========================================================================== */
 
 :root {
-  --jarvis-bg-window: #060b13;
-  --jarvis-bg-sidebar: #080f1a;
-  --jarvis-bg-workspace: #060b13;
-  --jarvis-bg-card: #0b1420;
-  --jarvis-bg-card-hover: #0f1c2d;
+  --jarvis-bg-window: #0c1017;
+  --jarvis-bg-sidebar: #131823;
+  --jarvis-bg-workspace: #0c1017;
+  --jarvis-bg-card: #131823;
+  --jarvis-bg-card-hover: #18202d;
   --jarvis-bg-user-bubble: #0f384a;
   --jarvis-bg-chip: #0f1a28;
   --jarvis-bg-chip-hover: #14253a;
@@ -17,7 +17,7 @@
   --jarvis-bg-input: #08101a;
   --jarvis-bg-checkbox: #0a131e;
 
-  --jarvis-border-card: #152438;
+  --jarvis-border-card: #1a2232;
   --jarvis-border-chip: #1a2d42;
   --jarvis-border-chip-active: #00f0ff;
   --jarvis-border-user: #1a566f;
@@ -71,7 +71,7 @@ html, body {
 .jarvis-window-topbar {
   height: 38px;
   min-height: 38px;
-  background-color: #060b13;
+  background-color: var(--jarvis-bg-window);
   border-bottom: 1px solid var(--jarvis-border-subtle);
   display: flex;
   align-items: center;
@@ -363,7 +363,7 @@ html, body {
   height: 72px;
   min-height: 72px;
   border-bottom: 1px solid var(--jarvis-border-subtle);
-  background-color: #060b13;
+  background-color: var(--jarvis-bg-window);
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -800,7 +800,7 @@ html, body {
 .jarvis-input-section {
   padding: 14px 28px 18px;
   border-top: 1px solid var(--jarvis-border-subtle);
-  background-color: #060b13;
+  background-color: var(--jarvis-bg-window);
   flex-shrink: 0;
 }
 
@@ -1004,7 +1004,7 @@ html, body {
   bottom: 0;
   width: 390px;
   max-width: 92vw;
-  background-color: #080f1a;
+  background-color: var(--jarvis-bg-sidebar);
   border-left: 1px solid var(--jarvis-border-card);
   display: flex;
   flex-direction: column;
@@ -1024,7 +1024,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #0b1420;
+  background-color: var(--jarvis-bg-card);
 }
 
 .jarvis-history-title {
@@ -1042,7 +1042,7 @@ html, body {
 
 .jarvis-history-search-bar {
   padding: 10px 16px;
-  background-color: #060b13;
+  background-color: var(--jarvis-bg-window);
   border-bottom: 1px solid var(--jarvis-border-subtle);
   display: flex;
   align-items: center;
@@ -1211,15 +1211,15 @@ html, body {
    THEME SETTINGS OFFCANVAS & FLOATING BUTTON
    ───────────────────────────────────────────────────────────── */
 #offcanvasSettings {
-  background-color: #080f1a !important;
-  color: #ffffff !important;
-  border-right: 1px solid var(--jarvis-border-card) !important;
+  background-color: var(--jarvis-bg-sidebar, #131823) !important;
+  color: var(--jarvis-text-primary, #ffffff) !important;
+  border-right: 1px solid var(--jarvis-border-card, #1a2232) !important;
   box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8) !important;
 }
 
 #offcanvasSettings .offcanvas-header {
-  border-bottom: 1px solid var(--jarvis-border-subtle);
-  background-color: #0b1420;
+  border-bottom: 1px solid var(--jarvis-border-subtle, #111e2e);
+  background-color: var(--jarvis-bg-card, #131823);
 }
 
 #offcanvasSettings .offcanvas-title {
@@ -2003,3 +2003,1151 @@ html, body {
   font-size: 11px;
   color: #4b6076;
 }
+
+/* ==========================================================================
+   GRAPHITE CONSOLE & 2-COLUMN COPILOT WORKSPACE (EXACT REFERENCE DESIGN)
+   ========================================================================== */
+
+/* Outer Shell & App Body */
+html, body {
+  background-color: var(--jarvis-bg-window, #0c1017) !important;
+  color: var(--jarvis-text-primary, #ffffff);
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.jarvis-window-shell {
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--jarvis-bg-window, #0c1017);
+  display: flex;
+  overflow: hidden;
+}
+
+.jarvis-app-body {
+  display: flex;
+  flex: 1;
+  height: 100vh;
+  width: 100vw;
+  padding: 16px 20px;
+  gap: 16px;
+  background-color: var(--jarvis-bg-window, #0c1017);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LEFT SIDEBAR (FLOATING ROUNDED CARD)
+   ───────────────────────────────────────────────────────────── */
+.jarvis-sidebar {
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  background-color: var(--jarvis-bg-sidebar, #131823);
+  border: 1px solid var(--jarvis-border-card, #1a2232);
+  border-radius: 20px;
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+
+.jarvis-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  padding: 2px 4px 14px;
+}
+
+.jarvis-brand-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #182234;
+  border: 1px solid #233550;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.jarvis-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-brand-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.jarvis-brand-subtitle {
+  color: #556c84;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.jarvis-sidebar-section {
+  color: #4b617b;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 10px 6px 6px;
+}
+
+.jarvis-sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.jarvis-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #7f95ac;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.jarvis-nav-link-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jarvis-nav-link-icon {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jarvis-nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.jarvis-nav-link.active {
+  background-color: #17283c;
+  border: 1px solid #1e3f64;
+  color: #e0f2fe;
+}
+
+.jarvis-nav-link.active .jarvis-nav-link-icon {
+  color: #38bdf8;
+}
+
+.jarvis-nav-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.jarvis-sidebar-action-box {
+  padding: 6px 0 10px;
+}
+
+.jarvis-new-diagnosis-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #161e2a;
+  border: 1px solid #212c3e;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jarvis-new-diagnosis-btn:hover {
+  background: #1c2738;
+  border-color: #2c3c54;
+  color: #ffffff;
+}
+
+.jarvis-recent-sessions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 6px 6px;
+}
+
+.jarvis-recent-sessions-header i {
+  color: #556c84;
+}
+
+.jarvis-recent-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jarvis-recent-session-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+}
+
+.jarvis-recent-session-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.jarvis-recent-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.jarvis-recent-time {
+  font-size: 10px;
+  color: #52677e;
+}
+
+.jarvis-sidebar-spacer {
+  flex: 1;
+}
+
+.jarvis-sidebar-meta-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+  margin-bottom: 10px;
+}
+
+.jarvis-meta-pill {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #64748b;
+}
+
+.jarvis-meta-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #52677e;
+}
+
+.jarvis-sidebar-quota-card {
+  background: #0f141e;
+  border: 1px solid #1a2332;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.jarvis-sidebar-quota-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.jarvis-sidebar-quota-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.jarvis-sidebar-quota-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.jarvis-sidebar-quota-bar {
+  width: 100%;
+  height: 4px;
+  background: #1a2434;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.jarvis-sidebar-quota-fill {
+  height: 100%;
+  background: #38bdf8;
+  border-radius: 999px;
+}
+
+.jarvis-sidebar-quota-sub {
+  font-size: 10px;
+  color: #52677e;
+}
+
+.jarvis-sidebar-footer {
+  border-top: 1px solid #1a2232;
+  padding-top: 12px;
+}
+
+.jarvis-user-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jarvis-user-info-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jarvis-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1e3a5f;
+  color: #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.jarvis-user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-user-name {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.jarvis-user-role {
+  color: #556c84;
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+
+.jarvis-user-logout-btn {
+  background: none;
+  border: none;
+  color: #556c84;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.jarvis-user-logout-btn:hover {
+  color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN WORKSPACE & HEADER
+   ───────────────────────────────────────────────────────────── */
+.jarvis-workspace,
+.jarvis-app-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  background: transparent !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.jarvis-dashboard-header {
+  height: 52px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 10px;
+  flex-shrink: 0;
+}
+
+.jarvis-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.jarvis-header-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #141a24;
+  border: 1px solid #1c2433;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.jarvis-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-header-title {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.jarvis-header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.jarvis-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.jarvis-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jarvis-private-badge {
+  color: #475569;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.jarvis-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1e2838);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jarvis-header-action-btn:hover {
+  background: var(--jarvis-bg-card-hover, #18202d);
+  color: #ffffff;
+  border-color: #2b394e;
+}
+
+.jarvis-header-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1e2838);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jarvis-header-icon-btn:hover {
+  background: var(--jarvis-bg-card-hover, #18202d);
+  color: #ffffff;
+  border-color: #2b394e;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2-COLUMN FLOATING CARDS GRID
+   ───────────────────────────────────────────────────────────── */
+.jarvis-dashboard-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 330px;
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+/* Center / Left Card: Copilot Card */
+.jarvis-copilot-card {
+  background-color: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1a2232);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.jarvis-copilot-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.jarvis-copilot-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.jarvis-copilot-scroll::-webkit-scrollbar-thumb {
+  background: #1a2436;
+  border-radius: 4px;
+}
+
+.jarvis-copilot-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jarvis-copilot-eyebrow {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.jarvis-pill-btn {
+  padding: 4px 12px;
+  background: #171f2b;
+  border: 1px solid #222d3e;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jarvis-pill-btn:hover {
+  background: #1d2838;
+  color: #ffffff;
+  border-color: #2e3c50;
+}
+
+.jarvis-hero-headline {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 4px 0 0;
+  letter-spacing: -0.02em;
+}
+
+.jarvis-hero-subtext {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #8da4be;
+  margin: 2px 0 2px;
+}
+
+/* Greeting Box (Nested Card) */
+.jarvis-greeting-box {
+  background: #0f131c;
+  border: 1px solid #18202c;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jarvis-greeting-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jarvis-greeting-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #38bdf8;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.jarvis-greeting-time {
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.jarvis-greeting-text {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.jarvis-shortcuts-intro {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+  margin-bottom: -2px;
+}
+
+/* 2x2 Shortcuts Grid */
+.jarvis-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.jarvis-shortcut-card {
+  background: #171e2c;
+  border: 1px solid #212c3e;
+  border-radius: 14px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jarvis-shortcut-card:hover {
+  background: #1c2638;
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+}
+
+.jarvis-shortcut-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jarvis-shortcut-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jarvis-shortcut-icon {
+  font-size: 13px;
+  color: #38bdf8;
+}
+
+.jarvis-shortcut-title {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.jarvis-shortcut-arrow {
+  color: #64748b;
+  font-size: 11px;
+  transition: color 0.15s ease;
+}
+
+.jarvis-shortcut-card:hover .jarvis-shortcut-arrow {
+  color: #38bdf8;
+}
+
+.jarvis-shortcut-sub {
+  color: #788fa8;
+  font-size: 11px;
+  margin-left: 21px;
+}
+
+.jarvis-privacy-footnote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #52677e;
+  font-size: 11.5px;
+  padding-top: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RIGHT COLUMN (STACKED FLOATING CARDS)
+   ───────────────────────────────────────────────────────────── */
+.jarvis-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.jarvis-card-box {
+  background-color: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1a2232);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Card 1: Motorcycle */
+.jarvis-moto-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-card-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.jarvis-card-eyebrow {
+  color: #556c84;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jarvis-card-dots-btn {
+  background: none;
+  border: none;
+  color: #556c84;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.jarvis-card-dots-btn:hover {
+  color: #ffffff;
+}
+
+.jarvis-moto-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-moto-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.jarvis-moto-specs {
+  color: #64748b;
+  font-size: 11.5px;
+  margin: 2px 0 12px;
+}
+
+.jarvis-moto-standby-box {
+  background: #0c0f16;
+  border: 1px solid #161c28;
+  border-radius: 14px;
+  height: 185px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.jarvis-moto-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.jarvis-moto-standby-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+
+.jarvis-moto-standby-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1e2838);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-size: 18px;
+}
+
+.jarvis-moto-standby-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8da4be;
+}
+
+.jarvis-moto-standby-sub {
+  font-size: 10.5px;
+  color: #475569;
+}
+
+.jarvis-explore-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #172d47;
+  border: 1px solid #1f4773;
+  border-radius: 12px;
+  color: #60a5fa;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.jarvis-explore-btn:hover {
+  background: #1e3a5f;
+  color: #93c5fd;
+  border-color: #2b5c92;
+}
+
+/* Card 2: Safety */
+.jarvis-safety-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jarvis-safety-card-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.jarvis-safety-icon-wrap {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.jarvis-safety-title {
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.jarvis-safety-text {
+  color: #718398;
+  font-size: 11.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOTTOM FLOATING INPUT BAR DOCK
+   ───────────────────────────────────────────────────────────── */
+.jarvis-bottom-dock {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jarvis-bottom-form {
+  width: 100%;
+}
+
+.jarvis-floating-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--jarvis-bg-card, #131823);
+  border: 1px solid var(--jarvis-border-card, #1a2232);
+  border-radius: 16px;
+  padding: 8px 10px 8px 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease;
+}
+
+.jarvis-floating-bar:focus-within {
+  border-color: #2a3a52;
+}
+
+.jarvis-bar-icon {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #64748b !important;
+  font-size: 15px !important;
+  cursor: pointer !important;
+  padding: 6px !important;
+  border-radius: 6px !important;
+  transition: color 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.jarvis-bar-icon:hover {
+  color: #cbd5e1 !important;
+}
+
+.jarvis-bar-textarea {
+  flex: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  line-height: 1.4 !important;
+  resize: none !important;
+  padding: 6px 0 !important;
+  max-height: 90px !important;
+}
+
+.jarvis-bar-textarea::placeholder {
+  color: #556c84 !important;
+}
+
+.jarvis-bar-send-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: #2563eb !important;
+  border: none !important;
+  outline: none !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+  flex-shrink: 0 !important;
+}
+
+.jarvis-bar-send-btn:hover {
+  background: #3b82f6 !important;
+  transform: scale(1.04) !important;
+}
+
+.jarvis-bottom-hints {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 4px !important;
+}
+
+.jarvis-hint-left,
+.jarvis-hint-right {
+  font-size: 11px !important;
+  color: #475569 !important;
+}
+
+.jarvis-hint-right kbd {
+  background: #141a24 !important;
+  border: 1px solid #1e2838 !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  color: #64748b !important;
+}
+
+/* Explicit Button & List Resets */
+button.jarvis-recent-session-item {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button.jarvis-recent-session-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+button.jarvis-new-diagnosis-btn {
+  border: 1px solid #212c3e !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button.jarvis-card-dots-btn {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Rich Safety Alert Callout */
+.jarvis-safety-alert {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-left: 4px solid #ef4444 !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  margin: 10px 0 !important;
+  font-size: 12.5px !important;
+  color: #fca5a5 !important;
+  line-height: 1.5 !important;
+  display: flex !important;
+  gap: 10px !important;
+  align-items: flex-start !important;
+}
+
+.jarvis-safety-alert strong {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
+.jarvis-safety-alert i {
+  color: #ef4444 !important;
+  font-size: 15px !important;
+  margin-top: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.jarvis-card-list {
+  margin: 8px 0 10px 0 !important;
+  padding-left: 20px !important;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.jarvis-card-list li {
+  margin-bottom: 4px !important;
+}
+
+/* Responsive Grid Breakpoints */
+@media (max-width: 1200px) {
+  .jarvis-dashboard-grid {
+    grid-template-columns: 1fr 280px !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .jarvis-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .jarvis-right-column {
+    display: none !important;
+  }
+}
+
+/* Custom Background Color Settings Controls */
+.jarvis-bg-preset-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.jarvis-bg-preset-btn:hover {
+  transform: scale(1.18);
+  border-color: var(--jarvis-cyan, #00f0ff);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.jarvis-bg-preset-btn.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--jarvis-cyan, #00f0ff), 0 0 12px rgba(0, 240, 255, 0.5);
+  transform: scale(1.12);
+}
+
+.jarvis-bg-preset-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background-color: #ffffff;
+  border-radius: 50%;
+}
+
