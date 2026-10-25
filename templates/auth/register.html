@@ -3,217 +3,939 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>
-    Sign in - Tabler
-</title>
-<link rel="icon" href="./favicon-dev.ico" type="image/x-icon" />
-<link rel="shortcut icon" href="./favicon-dev.ico" type="image/x-icon" />
-<link
-href="{% static 'libs/jsvectormap/dist/jsvectormap.css' %}"
-rel="stylesheet"
-/>
-<link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-flags.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-socials.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-payments.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-marketing.css' %}" rel="stylesheet" />
-<link href="{% static 'css/tabler-themes.css' %}" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-    @import url("https://rsms.me/inter/inter.css");
-</style>
+  <title>Create Account – Motor Assistant</title>
+  <link rel="icon" href="./favicon-dev.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="./favicon-dev.ico" type="image/x-icon" />
+
+  <!-- Pre-render Theme Engine -->
+  <script src="{% static 'js/tabler-theme.js' %}"></script>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Tabler & Jarvis Theme CSS -->
+  <link href="{% static 'css/tabler.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/jarvis-theme.css' %}?v={% now 'U' %}" rel="stylesheet" />
+
+  <style>
+    :root {
+      --ma-bg: #e9eeee;
+      --ma-header-bg: #e9eeee;
+      --ma-accent-blue: #1e94ea;
+      --ma-brand-teal: #146c65;
+      --ma-brand-teal-hover: #0f5650;
+      --ma-teal-light: #e6f4f2;
+      --ma-teal-text: #0d6e64;
+      --ma-dark: #12181f;
+      --ma-muted: #5a6672;
+      --ma-card-bg: #ffffff;
+      --ma-card-border: rgba(215, 225, 227, 0.7);
+      --ma-input-bg: #f8fafb;
+      --ma-input-border: #d4dcde;
+      --ma-input-focus: #146c65;
+      --ma-bubble-bg: rgba(255, 255, 255, 0.95);
+      --ma-bubble-border: rgba(255, 255, 255, 0.85);
+      --ma-footer-border: rgba(200, 212, 214, 0.6);
+      --ma-theme-btn-bg: rgba(20, 108, 101, 0.08);
+      --ma-theme-btn-color: #146c65;
+      --ma-theme-btn-border: rgba(20, 108, 101, 0.2);
+    }
+
+    [data-bs-theme="dark"] {
+      --ma-bg: #0c1219;
+      --ma-header-bg: #0c1219;
+      --ma-dark: #f1f5f9;
+      --ma-muted: #94a3b8;
+      --ma-teal-text: #2dd4bf;
+      --ma-brand-teal: #0f766e;
+      --ma-brand-teal-hover: #14b8a6;
+      --ma-teal-light: rgba(20, 184, 166, 0.12);
+      --ma-card-bg: #141d27;
+      --ma-card-border: rgba(255, 255, 255, 0.08);
+      --ma-input-bg: #0f161f;
+      --ma-input-border: #233342;
+      --ma-input-focus: #14b8a6;
+      --ma-bubble-bg: rgba(20, 29, 39, 0.95);
+      --ma-bubble-border: rgba(255, 255, 255, 0.1);
+      --ma-footer-border: rgba(255, 255, 255, 0.08);
+      --ma-theme-btn-bg: rgba(45, 212, 191, 0.12);
+      --ma-theme-btn-color: #2dd4bf;
+      --ma-theme-btn-border: rgba(45, 212, 191, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--jarvis-bg-window, var(--ma-bg));
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--ma-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Top Navbar */
+    .ma-header {
+      background: var(--jarvis-bg-window, var(--ma-header-bg));
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      transition: background 0.25s ease;
+    }
+
+    .ma-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .ma-brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ma-teal-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ma-brand-teal);
+      font-size: 15px;
+    }
+
+    .ma-brand-title {
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 1.2;
+      color: var(--ma-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .ma-brand-sub {
+      font-size: 11.5px;
+      color: var(--ma-muted);
+      font-weight: 500;
+    }
+
+    .ma-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .ma-theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--ma-theme-btn-bg);
+      color: var(--ma-theme-btn-color);
+      border: 1px solid var(--ma-theme-btn-border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .ma-theme-toggle-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      color: var(--ma-brand-teal-hover);
+    }
+
+    .ma-header-help {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ma-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .ma-header-help:hover {
+      color: var(--ma-brand-teal);
+    }
+
+    .ma-blue-divider {
+      height: 3px;
+      background: var(--ma-accent-blue);
+      width: 100%;
+    }
+
+    /* Main Container */
+    .ma-main {
+      flex: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .ma-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* Left Hero Column */
+    .ma-hero {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ma-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ma-teal-text);
+      margin-bottom: 12px;
+    }
+
+    .ma-eyebrow-line {
+      width: 22px;
+      height: 2px;
+      background: var(--ma-brand-teal);
+      border-radius: 2px;
+    }
+
+    .ma-hero-title {
+      font-size: 40px;
+      line-height: 1.12;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--ma-dark);
+      margin: 0 0 14px 0;
+    }
+
+    .ma-hero-desc {
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: var(--ma-muted);
+      margin: 0 0 28px 0;
+      max-width: 480px;
+    }
+
+    .ma-bike-stage {
+      position: relative;
+      margin-bottom: 32px;
+      max-width: 480px;
+    }
+
+    .ma-bike-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.12));
+      transition: transform 0.3s ease;
+    }
+
+    .ma-bike-stage:hover .ma-bike-img {
+      transform: translateY(-2px);
+    }
+
+    .ma-speech-bubble {
+      position: absolute;
+      top: -12px;
+      right: -8px;
+      background: var(--ma-bubble-bg);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--ma-bubble-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.08);
+      max-width: 240px;
+      animation: floatPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .ma-speech-icon {
+      color: var(--ma-brand-teal);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .ma-speech-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ma-dark);
+      line-height: 1.25;
+    }
+
+    .ma-speech-sub {
+      font-size: 10px;
+      color: var(--ma-muted);
+    }
+
+    /* 3 Pillars */
+    .ma-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      border-top: 1px solid var(--ma-card-border);
+      padding-top: 24px;
+      max-width: 500px;
+    }
+
+    .ma-feature-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .ma-feature-icon {
+      color: var(--ma-teal-text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .ma-feature-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ma-dark);
+    }
+
+    .ma-feature-desc {
+      font-size: 11px;
+      color: var(--ma-muted);
+      line-height: 1.35;
+    }
+
+    /* Right Card */
+    .ma-card-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ma-card {
+      background: var(--ma-card-bg);
+      border: 1px solid var(--ma-card-border);
+      border-radius: 20px;
+      padding: 34px 30px;
+      box-shadow: 0 12px 32px -4px rgba(18, 24, 31, 0.06);
+      transition: background 0.25s ease, border-color 0.25s ease;
+    }
+
+    .ma-card-eyebrow {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ma-muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ma-card-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ma-dark);
+      margin: 0 0 6px 0;
+    }
+
+    .ma-card-sub {
+      font-size: 13px;
+      color: var(--ma-muted);
+      line-height: 1.45;
+      margin: 0 0 20px 0;
+    }
+
+    /* Form Styles */
+    .ma-form-group {
+      margin-bottom: 14px;
+    }
+
+    .ma-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ma-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ma-dark);
+      margin-bottom: 5px;
+    }
+
+    .ma-label .req {
+      color: #dc2626;
+      margin-left: 2px;
+    }
+
+    .ma-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .ma-input-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--ma-muted);
+      font-size: 13.5px;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    .ma-input {
+      width: 100%;
+      height: 42px;
+      background: var(--ma-input-bg);
+      border: 1.5px solid var(--ma-input-border);
+      border-radius: 9px;
+      padding: 0 13px 0 38px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ma-dark);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .ma-input-noicon {
+      padding-left: 13px;
+    }
+
+    .ma-input:focus {
+      background: var(--ma-card-bg);
+      border-color: var(--ma-input-focus);
+      box-shadow: 0 0 0 3px rgba(20, 108, 101, 0.18);
+    }
+
+    .ma-input:focus + .ma-input-icon,
+    .ma-input-wrap:focus-within .ma-input-icon {
+      color: var(--ma-teal-text);
+    }
+
+    .ma-input.is-invalid {
+      border-color: #dc2626;
+      background-color: #fffbfa;
+    }
+
+    [data-bs-theme="dark"] .ma-input.is-invalid {
+      background-color: rgba(220, 38, 38, 0.1);
+    }
+
+    .ma-invalid-msg {
+      font-size: 11px;
+      color: #dc2626;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .ma-helper-text {
+      font-size: 11px;
+      color: var(--ma-muted);
+      margin-top: 4px;
+    }
+
+    .ma-toggle-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--ma-muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 13.5px;
+      transition: color 0.2s;
+    }
+
+    .ma-toggle-btn:hover {
+      color: var(--ma-dark);
+    }
+
+    /* Submit Button */
+    .ma-btn-submit {
+      width: 100%;
+      height: 46px;
+      background: var(--ma-brand-teal);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 16px -2px rgba(20, 108, 101, 0.35);
+      margin-top: 20px;
+    }
+
+    .ma-btn-submit:hover {
+      background: var(--ma-brand-teal-hover);
+      box-shadow: 0 8px 20px -2px rgba(20, 108, 101, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .ma-btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Switch Link */
+    .ma-switch-text {
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--ma-muted);
+      margin-top: 18px;
+    }
+
+    .ma-switch-link {
+      color: var(--ma-teal-text);
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+
+    .ma-switch-link:hover {
+      text-decoration: underline;
+      color: var(--ma-brand-teal-hover);
+    }
+
+    /* Privacy footnote */
+    .ma-privacy-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 11.5px;
+      color: var(--ma-muted);
+      text-align: center;
+      padding: 4px 12px;
+    }
+
+    .ma-privacy-note i {
+      font-size: 11px;
+    }
+
+    /* Alert Banner */
+    .ma-alert {
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .ma-alert-danger {
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      color: #dc2626;
+    }
+
+    /* Footer */
+    .ma-footer {
+      padding: 18px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--ma-muted);
+      border-top: 1px solid var(--ma-footer-border);
+      background: var(--jarvis-bg-window, var(--ma-header-bg));
+      transition: background 0.25s ease, border-color 0.25s ease;
+    }
+
+    .ma-footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .ma-footer-link {
+      color: var(--ma-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .ma-footer-link:hover {
+      color: var(--ma-dark);
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+      .ma-main {
+        padding: 24px 16px;
+      }
+      .ma-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .ma-hero {
+        align-items: center;
+        text-align: center;
+      }
+      .ma-eyebrow {
+        justify-content: center;
+      }
+      .ma-hero-desc {
+        max-width: 100%;
+      }
+      .ma-speech-bubble {
+        right: 10px;
+      }
+      .ma-features {
+        max-width: 100%;
+      }
+      .ma-card {
+        padding: 26px 20px;
+      }
+      .ma-header, .ma-footer {
+        padding: 14px 20px;
+      }
+      .ma-form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="antialiased">
-    <script src="{% static 'js/tabler-theme.js' %}"></script>
-    <div class="page page-center">
-        <div class="container container-tight py-4">
+<body>
 
-            <!-- Logo / Brand -->
-            <center class="mb-2">
-                <span class="fw-bold fs-1 text-body">
-                  GoldHeist <span class="text-primary">Trader</span>
-              </span>
-          </center>
+  <!-- Top Navigation Bar -->
+  <header class="ma-header">
+    <a href="{% url 'home' %}" class="ma-brand">
+      <div class="ma-brand-badge">
+        <i class="fas fa-wrench"></i>
+      </div>
+      <div>
+        <div class="ma-brand-title">Motor Assistant</div>
+        <div class="ma-brand-sub">Your motorcycle workshop companion</div>
+      </div>
+    </a>
+    
+    <div class="ma-header-actions">
+      <!-- Theme Settings Trigger Button -->
+      <button type="button" class="ma-theme-toggle-btn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSettings" title="Theme Settings" aria-label="Theme Settings">
+        <i class="fas fa-palette"></i>
+        <span>Theme Settings</span>
+      </button>
 
-          <div class="card card-md">
-            <div class="card-body">
+      <a href="#help" class="ma-header-help">
+        <i class="far fa-question-circle"></i> Need help?
+      </a>
+    </div>
+  </header>
 
-                <h2 class="h2 text-center mb-4">Create your account</h2>
+  <!-- Blue Highlight Bar -->
+  <div class="ma-blue-divider"></div>
 
-                {% if errors %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Please fix the errors below.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endif %}
+  <!-- Main View -->
+  <main class="ma-main">
+    <div class="ma-grid">
 
-                <form method="POST" action="{% url 'register' %}">
-                    {% csrf_token %}
+      <!-- Left Hero Column -->
+      <section class="ma-hero">
+        <div class="ma-eyebrow">
+          <span class="ma-eyebrow-line"></span>
+          BUILT FOR THE WAY YOU RIDE
+        </div>
+        <h1 class="ma-hero-title">
+          Know your bike.<br>
+          Own the next step.
+        </h1>
+        <p class="ma-hero-desc">
+          From the first unfamiliar noise to routine maintenance, get clear, guided help for the motorcycle in your garage.
+        </p>
 
-                    <!-- First Name & Last Name -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label required">First Name</label>
-                            <input
-                            type="text"
-                            name="first_name"
-                            class="form-control {% if errors.first_name %}is-invalid{% endif %}"
-                            placeholder=""
-                            value="{{ form_data.first_name|default:'' }}">
-                            {% if errors.first_name %}
-                            <div class="invalid-feedback">{{ errors.first_name }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label required">Last Name</label>
-                            <input
-                            type="text"
-                            name="last_name"
-                            class="form-control {% if errors.last_name %}is-invalid{% endif %}"
-                            placeholder=""
-                            value="{{ form_data.last_name|default:'' }}">
-                            {% if errors.last_name %}
-                            <div class="invalid-feedback">{{ errors.last_name }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Username -->
-                    <div class="mb-3">
-                        <label class="form-label required">Username</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-user text-secondary"></i>
-                            </span>
-                            <input
-                            type="text"
-                            name="username"
-                            class="form-control {% if errors.username %}is-invalid{% endif %}"
-                            placeholder=""
-                            value="{{ form_data.username|default:'' }}">
-                            {% if errors.username %}
-                            <div class="invalid-feedback">{{ errors.username }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label class="form-label required">Email</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-envelope text-secondary"></i>
-                            </span>
-                            <input
-                            type="email"
-                            name="email"
-                            class="form-control {% if errors.email %}is-invalid{% endif %}"
-                            placeholder=""
-                            value="{{ form_data.email|default:'' }}">
-                            {% if errors.email %}
-                            <div class="invalid-feedback">{{ errors.email }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Password -->
-                    <div class="mb-3">
-                        <label class="form-label required">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-lock text-secondary"></i>
-                            </span>
-                            <input
-                            type="password"
-                            name="password"
-                            id="password"
-                            class="form-control {% if errors.password %}is-invalid{% endif %}"
-                            placeholder="Min. 8 characters">
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="fas fa-eye" id="eyeIcon"></i>
-                            </button>
-                            {% if errors.password %}
-                            <div class="invalid-feedback">{{ errors.password }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div class="mb-3">
-                        <label class="form-label required">Confirm Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-lock text-secondary"></i>
-                            </span>
-                            <input
-                            type="password"
-                            name="confirm_password"
-                            id="confirm_password"
-                            class="form-control {% if errors.confirm_password %}is-invalid{% endif %}"
-                            placeholder="Repeat your password">
-                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirm">
-                                <i class="fas fa-eye" id="eyeIconConfirm"></i>
-                            </button>
-                            {% if errors.confirm_password %}
-                            <div class="invalid-feedback">{{ errors.confirm_password }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Submit -->
-                    <div class="form-footer">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-user-plus me-2"></i>Create Account
-                        </button>
-                    </div>
-
-                </form>
-
+        <!-- Motorcycle Stage & Speech Bubble -->
+        <div class="ma-bike-stage">
+          <img src="{% static 'img/honda_click_hero.png' %}" alt="Honda Click 125i Scooter" class="ma-bike-img" />
+          <div class="ma-speech-bubble">
+            <i class="fas fa-comment-dots ma-speech-icon"></i>
+            <div>
+              <div class="ma-speech-title">&ldquo;Why is my bike idling rough?&rdquo;</div>
+              <div class="ma-speech-sub">Let's work through it, step by step.</div>
             </div>
+          </div>
         </div>
 
-        <div class="text-center text-secondary mt-3">
-            Already have an account?
-            <a href="{% url 'login' %}" class="text-primary fw-bold">Login</a>
+        <!-- 3 Feature Pillars -->
+        <div class="ma-features">
+          <div class="ma-feature-item">
+            <i class="fas fa-stethoscope ma-feature-icon"></i>
+            <div class="ma-feature-name">Diagnose symptoms</div>
+            <div class="ma-feature-desc">Find a clearer starting point.</div>
+          </div>
+          <div class="ma-feature-item">
+            <i class="fas fa-screwdriver-wrench ma-feature-icon"></i>
+            <div class="ma-feature-name">Understand repairs</div>
+            <div class="ma-feature-desc">Take it one step at a time.</div>
+          </div>
+          <div class="ma-feature-item">
+            <i class="fas fa-shield-halved ma-feature-icon"></i>
+            <div class="ma-feature-name">Stay ride-ready</div>
+            <div class="ma-feature-desc">Keep maintenance on track.</div>
+          </div>
         </div>
+      </section>
+
+      <!-- Right Sign Up Card -->
+      <section class="ma-card-wrapper">
+        <div class="ma-card">
+
+          <div class="ma-card-eyebrow">
+            <i class="fas fa-wrench" style="font-size: 11px;"></i>
+            CREATE WORKSHOP PROFILE
+          </div>
+          <h2 class="ma-card-title">Create your account.</h2>
+          <p class="ma-card-sub">
+            Configure your Motor Assistant workshop account and start troubleshooting with guided AI diagnostics.
+          </p>
+
+          <!-- Error Alert Banner -->
+          {% if errors %}
+          <div class="ma-alert ma-alert-danger">
+            <i class="fas fa-circle-exclamation"></i>
+            <div>Please check the highlighted fields below.</div>
+          </div>
+          {% endif %}
+
+          <form method="POST" action="{% url 'register' %}">
+            {% csrf_token %}
+
+            <!-- First & Last Name -->
+            <div class="ma-form-row">
+              <div>
+                <label class="ma-label" for="id_first_name">
+                  First name <span class="req">*</span>
+                </label>
+                <div class="ma-input-wrap">
+                  <input
+                    type="text"
+                    name="first_name"
+                    id="id_first_name"
+                    class="ma-input ma-input-noicon {% if errors.first_name %}is-invalid{% endif %}"
+                    placeholder="First name"
+                    value="{{ form_data.first_name|default:'' }}"
+                    required
+                  />
+                </div>
+                {% if errors.first_name %}
+                <div class="ma-invalid-msg">{{ errors.first_name }}</div>
+                {% endif %}
+              </div>
+
+              <div>
+                <label class="ma-label" for="id_last_name">
+                  Last name <span class="req">*</span>
+                </label>
+                <div class="ma-input-wrap">
+                  <input
+                    type="text"
+                    name="last_name"
+                    id="id_last_name"
+                    class="ma-input ma-input-noicon {% if errors.last_name %}is-invalid{% endif %}"
+                    placeholder="Last name"
+                    value="{{ form_data.last_name|default:'' }}"
+                    required
+                  />
+                </div>
+                {% if errors.last_name %}
+                <div class="ma-invalid-msg">{{ errors.last_name }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Rider ID / Username -->
+            <div class="ma-form-group">
+              <label class="ma-label" for="id_username">
+                Rider ID / Username <span class="req">*</span>
+              </label>
+              <div class="ma-input-wrap">
+                <i class="far fa-user ma-input-icon"></i>
+                <input
+                  type="text"
+                  name="username"
+                  id="id_username"
+                  class="ma-input {% if errors.username %}is-invalid{% endif %}"
+                  placeholder="Choose your rider ID"
+                  value="{{ form_data.username|default:'' }}"
+                  required
+                />
+              </div>
+              {% if errors.username %}
+              <div class="ma-invalid-msg">{{ errors.username }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div class="ma-form-group">
+              <label class="ma-label" for="id_email">
+                Email <span class="req">*</span>
+              </label>
+              <div class="ma-input-wrap">
+                <i class="far fa-envelope ma-input-icon"></i>
+                <input
+                  type="email"
+                  name="email"
+                  id="id_email"
+                  class="ma-input {% if errors.email %}is-invalid{% endif %}"
+                  placeholder="you@example.com"
+                  value="{{ form_data.email|default:'' }}"
+                  required
+                />
+              </div>
+              {% if errors.email %}
+              <div class="ma-invalid-msg">{{ errors.email }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Garage PIN / Password -->
+            <div class="ma-form-group">
+              <label class="ma-label" for="id_password">
+                Garage PIN / Password <span class="req">*</span>
+              </label>
+              <div class="ma-input-wrap">
+                <i class="fas fa-lock ma-input-icon"></i>
+                <input
+                  type="password"
+                  name="password"
+                  id="id_password"
+                  class="ma-input {% if errors.password %}is-invalid{% endif %}"
+                  placeholder="Min. 8 characters"
+                  required
+                />
+                <button class="ma-toggle-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Toggle password visibility">
+                  <i class="far fa-eye" id="eyeIcon"></i>
+                </button>
+              </div>
+              <div class="ma-helper-text">Use at least 8 characters.</div>
+              {% if errors.password %}
+              <div class="ma-invalid-msg">{{ errors.password }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Confirm Garage PIN / Password -->
+            <div class="ma-form-group">
+              <label class="ma-label" for="id_confirm_password">
+                Confirm Garage PIN <span class="req">*</span>
+              </label>
+              <div class="ma-input-wrap">
+                <i class="fas fa-lock ma-input-icon"></i>
+                <input
+                  type="password"
+                  name="confirm_password"
+                  id="id_confirm_password"
+                  class="ma-input {% if errors.confirm_password %}is-invalid{% endif %}"
+                  placeholder="Repeat your password"
+                  required
+                />
+                <button class="ma-toggle-btn" type="button" id="toggleConfirm" tabindex="-1" aria-label="Toggle confirm password visibility">
+                  <i class="far fa-eye" id="eyeIconConfirm"></i>
+                </button>
+              </div>
+              {% if errors.confirm_password %}
+              <div class="ma-invalid-msg">{{ errors.confirm_password }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="ma-btn-submit">
+              Create account <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <!-- Switch to Login -->
+            <div class="ma-switch-text">
+              Already have an account?
+              <a href="{% url 'login' %}" class="ma-switch-link">Sign in</a>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Privacy footnote -->
+        <div class="ma-privacy-note">
+          <i class="fas fa-lock"></i>
+          <span>Your bike details and repair history stay private.</span>
+        </div>
+      </section>
 
     </div>
-</div>
-{% include 'theme/settings.html' %}
+  </main>
 
-<script src="{% static 'js/tabler.js' %}" defer></script>
-<script src="{% static 'js/demo.js' %}" defer></script>
-<script>
-    document.getElementById('togglePassword').addEventListener('click', function() {
-        const input = document.getElementById('password');
-        const icon = document.getElementById('eyeIcon');
-        if (input.type === 'password') {
+  <!-- Footer -->
+  <footer class="ma-footer">
+    <div>Motor Assistant / Less guesswork. More open road.</div>
+    <div class="ma-footer-links">
+      <a href="#" class="ma-footer-link">Privacy</a>
+      <a href="#" class="ma-footer-link">Terms</a>
+    </div>
+  </footer>
+
+  <!-- Theme Settings Offcanvas Drawer -->
+  {% include 'theme/settings.html' %}
+
+  <!-- Scripts -->
+  <script src="{% static 'js/tabler.js' %}"></script>
+  <script>
+    function setupToggle(btnId, inputId, iconId) {
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (btn && input && icon) {
+        btn.addEventListener('click', function () {
+          if (input.type === 'password') {
             input.type = 'text';
             icon.classList.replace('fa-eye', 'fa-eye-slash');
-        } else {
+          } else {
             input.type = 'password';
             icon.classList.replace('fa-eye-slash', 'fa-eye');
-        }
-    });
-
-    document.getElementById('toggleConfirm').addEventListener('click', function() {
-        const input = document.getElementById('confirm_password');
-        const icon = document.getElementById('eyeIconConfirm');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.replace('fa-eye', 'fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.replace('fa-eye-slash', 'fa-eye');
-        }
-    });
-</script>
+          }
+        });
+      }
+    }
+    setupToggle('togglePassword', 'id_password', 'eyeIcon');
+    setupToggle('toggleConfirm', 'id_confirm_password', 'eyeIconConfirm');
+  </script>
 </body>
 </html>

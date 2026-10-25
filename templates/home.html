@@ -189,7 +189,7 @@
               <span class="jarvis-greeting-time">JUST NOW</span>
             </div>
             <p class="jarvis-greeting-text">
-              At your service, {{ user.username|default:"Glenn"|title }}. Systems nominal. I'm your vehicle diagnostic assistant. What symptom or issue are you experiencing with your motorcycle today?
+              At your service, {{ user.username|default:"Glenn"|title }}. Which motorcycle are we working on? <strong>Model and year</strong> is enough (for example, <em>Click 125i 2022</em>). Then tell me the problem and I'll help you narrow it down, one check at a time.
             </p>
           </div>
 
@@ -412,7 +412,7 @@
     {
       id: 'init-1',
       role: 'bot',
-      text: "At your service, sir. J.A.R.V.I.S. online. Systems nominal. I am your master vehicle diagnostic assistant. What symptom or issue are you experiencing with your vehicle today?\n\n[chips: Engine won't start | Front brake not working | Engine overheating | Motorcycle won't accelerate properly]",
+      text: "At your service, sir. J.A.R.V.I.S. online. Which motorcycle are we working on?\n\n**Model and year** is enough (for example: *Click 125i 2022*). Then tell me the problem and I will help you narrow it down, one step at a time.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
       time: getTimeStr()
     }
   ];
@@ -467,33 +467,45 @@
     if (!text) return '';
     const rawParagraphs = text.split(/\n{2,}/);
     return rawParagraphs.map(p => {
-      const trimmed = p.trim();
-      if (!trimmed) return '';
-      // Bullet list items
-      if (/^[-*•]\s+/m.test(trimmed)) {
-        const lines = trimmed.split(/\n+/);
-        const listItems = [];
-        const nonListLines = [];
-        lines.forEach(l => {
-          const lTrim = l.trim();
-          if (/^[-*•]\s+/.test(lTrim)) {
-            listItems.push('<li>' + renderMarkdownInline(lTrim.replace(/^[-*•]\s+/, '')) + '</li>');
-          } else if (lTrim) {
-            nonListLines.push(renderMarkdownInline(lTrim));
-          }
-        });
-        let result = '';
-        if (nonListLines.length > 0) {
-          result += '<p class="jarvis-card-text">' + nonListLines.join('<br>') + '</p>';
+      const lines = p.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return '';
+
+      let html = '';
+      let paragraphLines = [];
+      let listItems = [];
+
+      const flushParagraph = () => {
+        if (paragraphLines.length) {
+          html += '<p class="jarvis-card-text">' +
+            paragraphLines.map(l => renderMarkdownInline(l)).join('<br>') +
+            '</p>';
+          paragraphLines = [];
         }
-        if (listItems.length > 0) {
-          result += '<ul class="jarvis-card-list">' + listItems.join('') + '</ul>';
+      };
+      const flushList = () => {
+        if (listItems.length) {
+          html += '<ul class="jarvis-card-list">' +
+            listItems.map(li => '<li>' + renderMarkdownInline(li) + '</li>').join('') +
+            '</ul>';
+          listItems = [];
         }
-        return result;
-      }
-      // Standard paragraph with linebreaks
-      const formattedLines = trimmed.split('\n').map(l => renderMarkdownInline(l)).join('<br>');
-      return '<p class="jarvis-card-text">' + formattedLines + '</p>';
+      };
+
+      // Walk the lines in order so paragraphs, numbered checks and bullets
+      // never get rearranged (the old version pushed every bullet to the end).
+      lines.forEach(line => {
+        const bullet = line.match(/^[-*•]\s+(.*)$/);
+        if (bullet) {
+          flushParagraph();
+          listItems.push(bullet[1]);
+        } else {
+          flushList();
+          paragraphLines.push(line);
+        }
+      });
+      flushParagraph();
+      flushList();
+      return html;
     }).join('');
   }
 
@@ -595,7 +607,7 @@
 
     // Extract GitHub alert callouts: > [!CAUTION] or > [!WARNING] or SAFETY ALERT: ...
     let safetyAlert = null;
-    const alertMatch = cleanText.match(/(?:^|\n)>\s*\[!(CAUTION|WARNING|IMPORTANT|NOTE|DANGER)\][ \t]*(?:>\s*)?([^\n]+(?:\n>[ \t]*[^\n]+)*)/i);
+    const alertMatch = cleanText.match(/(?:^|\n)>\s*\[!(CAUTION|WARNING|IMPORTANT|NOTE|DANGER)\][ \t]*(?:\n?>\s*)?([^\n]+(?:\n>[ \t]*[^\n]+)*)/i);
     if (alertMatch) {
       const alertType = alertMatch[1].toUpperCase();
       const alertContent = alertMatch[2].replace(/\n>[ \t]*/g, ' ').trim();
@@ -652,6 +664,9 @@
         } else {
           outroLines.push(trimmed);
         }
+      } else if (checklistItems.length === 0 && introLines.length && introLines[introLines.length - 1] !== '') {
+        // Keep intentional paragraph breaks so sections do not run together.
+        introLines.push('');
       }
     });
 
@@ -1361,7 +1376,10 @@
     try {
       const recentHistory = history.slice(-8).map(h => ({
         role: h.role,
-        text: (h.text || '').replace(/\[chips:.*?\]/gi, '').trim()
+        text: (h.text || '')
+          .replace(/\[chips:.*?\]/gi, '')
+          .replace(/\[vehicle-form[^\]]*\]/gi, '')
+          .trim()
       }));
 
       const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
@@ -1480,11 +1498,17 @@
     historyClearAllBtn.addEventListener('click', () => {
       try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
       messagesContainer.innerHTML = '';
+      // Clear the server-side guided diagnostic context too.
+      fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ reset: true })
+      }).catch(function() {});
       const clearMsg = [
         {
           id: 'cleared-1',
           role: 'bot',
-          text: "Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.\n\n[chips: Engine won't start | Spongy brakes | Strange engine noise | Smoke from exhaust | Battery dead | Oil change | Tyre check | Coolant leak | Spark plug foul | Clutch adjustment | List all symptoms | List all parts | Help & capabilities]",
+          text: "Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.\n\nWhich motorcycle are we working on? **Model and year** is enough (for example: *Click 125i 2022*), then tell me the problem.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
           time: getTimeStr()
         }
       ];
@@ -1520,12 +1544,19 @@
       localStorage.removeItem(STORAGE_KEY);
     } catch(e) {}
 
+    // Clear the server-side guided diagnostic context too.
+    fetch(CHAT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ reset: true })
+    }).catch(function() {});
+
     // Reset to the master diagnostic mechanic welcome state
     const welcomeState = [
       {
         id: 'welcome-1',
         role: 'bot',
-        text: "At your service, sir. J.A.R.V.I.S. online. Systems nominal. I am your master vehicle diagnostic assistant. What symptom or issue are you experiencing with your vehicle today?\n\n[chips: Engine won't start | Front brake not working | Engine overheating | Motorcycle won't accelerate properly]",
+        text: "At your service, sir. J.A.R.V.I.S. online. Which motorcycle are we working on?\n\n**Model and year** is enough (for example: *Click 125i 2022*). Then tell me the problem and I will help you narrow it down, one step at a time.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
         time: getTimeStr()
       }
     ];

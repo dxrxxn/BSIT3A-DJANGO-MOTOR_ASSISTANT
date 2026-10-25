@@ -34,7 +34,7 @@ def _get_gemini_client():
         try:
             _gemini_client = genai.Client(
                 api_key=settings.GEMINI_API_KEY,
-                http_options={'timeout': 15000}
+                http_options={'timeout': 45000}
             )
         except Exception:
             _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -264,6 +264,7 @@ def register_view(request):
         password=form_data['password'],
     )
     login(request, user)
+    messages.success(request, 'Welcome to Motor Assistant! Your account has been created.')
     return redirect('dashboard')
 
 
@@ -1181,21 +1182,36 @@ def _fix_vehicle_form_category(reply, message):
     return reply
 
 
-def _jarvis_response(message, user, history=None, language=None, experience_level=None):
+def _jarvis_response(message, user, history=None, language=None, experience_level=None, guided_state=None):
     """
     Intelligent J.A.R.V.I.S. Multi-Turn Diagnostic Mechanic:
-    1. Visual & Part Reference queries -> Instant visual card + description.
-    2. Diagnostic & Troubleshooting -> orchestrate_diagnostic_response:
+    1. Guided intake (web client only): identify motorcycle -> focus on it ->
+       ask the problem -> show free "where to look" checks -> narrow -> verdict.
+    2. Visual & Part Reference queries -> Instant visual card + description.
+    3. Diagnostic & Troubleshooting -> orchestrate_diagnostic_response:
        - Critical safety alerts & stop-riding directives
        - Verified database knowledge retrieval (RAG)
        - Single targeted question selection (no bombardment)
        - Strict 9-point Step-by-Step Repair Tutor format
-       - Multi-provider AI (Gemini, Ollama, OpenAI-compatible)
+       - Multi-provider AI (Gemini, OpenAI-compatible)
        - Grounded local knowledge fallback (explicitly disclosed)
-    3. Fallbacks: Offline Knowledge Cache & rule-based engine.
+    4. Fallbacks: Offline Knowledge Cache & rule-based engine.
+
+    `guided_state` is only passed by the HTTP endpoint (it lives in the user's
+    session). Internal/direct callers pass None and keep the previous behaviour.
     """
     msg = message.lower().strip()
     is_visual_query = _has_visual_intent(message)
+
+    # Guided narrowing flow (identify the bike first, then narrow the fault).
+    if guided_state is not None:
+        from .guided_diagnostic import handle_guided_turn, is_guided_intent
+        if is_guided_intent(message, history, guided_state):
+            lang = language or _detect_language(message, history)
+            sir = _jarvis_address(user)
+            return handle_guided_turn(
+                message, user, history, guided_state, lang=lang, sir=sir
+            )
 
     reply = None
 
@@ -2109,8 +2125,16 @@ def jarvis_chat(request):
         data = json.loads(request.body)
         message = data.get('message', '').strip()
         history = data.get('history', [])
+        reset = bool(data.get('reset'))
     except (json.JSONDecodeError, KeyError):
         return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    # "Clear chat" also clears the guided diagnostic context on the server.
+    if reset:
+        request.session.pop('jarvis_guided', None)
+        request.session.modified = True
+        if not message:
+            return JsonResponse({'ok': True})
 
     if not message:
         return JsonResponse({'error': 'Empty message'}, status=400)
@@ -2125,9 +2149,22 @@ def jarvis_chat(request):
     if experience_level not in ('beginner', 'mechanic'):
         experience_level = 'beginner'
 
+    # Guided narrowing state (identify motorcycle -> narrow the fault).
+    # Kept in the Django session so it survives turns and page navigation.
+    guided_state = request.session.get('jarvis_guided')
+    if not isinstance(guided_state, dict):
+        guided_state = {}
+
     reply = _jarvis_response(
-        message, request.user, history=history, language=language, experience_level=experience_level
+        message, request.user, history=history, language=language,
+        experience_level=experience_level, guided_state=guided_state,
     )
+
+    if guided_state:
+        request.session['jarvis_guided'] = guided_state
+    else:
+        request.session.pop('jarvis_guided', None)
+    request.session.modified = True
 
     from apps.core.models import GeminiUsageTracker
     quota = GeminiUsageTracker.get_current_quota()

@@ -22,6 +22,15 @@ def auth_user(db):
     return user
 
 
+@pytest.fixture(autouse=True)
+def _offline_ai(monkeypatch):
+    """Keep these intake tests deterministic and free of external AI calls."""
+    monkeypatch.setattr(
+        'apps.core.diagnostic_engine.call_configured_ai',
+        lambda *args, **kwargs: None,
+    )
+
+
 def test_language_detection():
     # English
     assert _detect_language("My front brake is soft and spongy") == 'english'
@@ -45,24 +54,23 @@ def test_vehicle_extraction_from_history():
 
 
 def test_brake_intake_when_unspecified(auth_user):
-    """When vehicle details are omitted, JARVIS must ask intake questions, provide intake form, and warn about safety."""
+    """When vehicle details are omitted, JARVIS must ask for them and warn about safety."""
     from unittest.mock import patch
     with patch('apps.core.views._jarvis_gemini', return_value=None):
         response = _jarvis_response("My front brake is not working", auth_user, history=[])
-    
-    # Must ask intake questions (make/model/year, disc vs drum)
+
+    # Must ask for the vehicle details needed for exact brake specs.
     resp_lower = response.lower()
     assert any(k in resp_lower for k in ['model', 'make', 'brand'])
     assert "year" in resp_lower
-    assert "disc" in resp_lower and "drum" in resp_lower
-    
-    # Must include mandatory safety rule
+
+    # Must include mandatory safety rule.
     assert "do not ride or drive" in resp_lower or "safety warning" in resp_lower
     assert any(w in resp_lower for w in ["qualified mechanic", "mechanic", "traffic"])
-    
-    # Must include action chips and vehicle form
+
+    # Must ask a brake-specific narrowing question and provide action chips.
+    assert "brake" in resp_lower
     assert "[chips:" in response
-    assert "[vehicle-form:" in response
 
 
 def test_brake_multi_turn_remembers_vehicle(auth_user):
@@ -112,7 +120,8 @@ def test_multilingual_tagalog_intake(auth_user):
     resp_lower = response.lower()
     assert any(w in resp_lower for w in ['sasakyan', 'makina', 'starter', 'baterya', 'kamusta', 'araw'])
     assert "[chips:" in response
-    assert "[vehicle-form:" in response
+    # It should still ask for the vehicle details before exact specs.
+    assert 'brand' in resp_lower and 'taon' in resp_lower
 
 
 def test_multilingual_hiligaynon_intake(auth_user):
@@ -121,7 +130,8 @@ def test_multilingual_hiligaynon_intake(auth_user):
     resp_lower = response.lower()
     assert any(w in resp_lower for w in ['salakyan', 'makina', 'starter', 'baterya', 'maayong', 'preno', 'andar'])
     assert "[chips:" in response
-    assert "[vehicle-form:" in response
+    # It should still ask for the vehicle details before exact specs.
+    assert 'brand' in resp_lower and 'tuig' in resp_lower
 
 
 def test_jarvis_chat_api_endpoint(client, auth_user):

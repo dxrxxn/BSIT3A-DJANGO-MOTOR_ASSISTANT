@@ -6,7 +6,7 @@ Implements Phases 2, 4, 5, 6, and 7:
 - Single most discriminative question selection (no question bombardment).
 - Safety tripwires & mandatory warnings (brakes, overheating scald risk, fuel leaks, rod knock).
 - Strict 9-point Step-by-Step Repair Tutor formatting.
-- Configurable multi-provider AI gateway (Gemini, Ollama, OpenAI-compatible).
+- Configurable multi-provider AI gateway (Gemini, OpenAI-compatible).
 - Grounded local knowledge retrieval fallback (explicitly labelled).
 - Multilingual support (English, Tagalog, Hiligaynon).
 """
@@ -289,7 +289,6 @@ def call_configured_ai(prompt, system_instruction=None):
     Dispatches prompt to the provider configured in settings / .env.
     Providers supported:
     - 'gemini' (Google GenAI SDK via GEMINI_API_KEY)
-    - 'ollama' (Local LLM via AI_API_BASE_URL or http://localhost:11434/v1)
     - 'openai_compatible' (Any OpenAI-compatible REST endpoint)
     """
     provider = getattr(settings, 'AI_PROVIDER', 'gemini').lower()
@@ -305,10 +304,20 @@ def call_configured_ai(prompt, system_instruction=None):
         if not client:
             raise RuntimeError("Gemini client unavailable (check GEMINI_API_KEY).")
         clean_model = model.replace('models/', '')
-        response = client.models.generate_content(
-            model=clean_model,
-            contents=combined_prompt,
-        )
+        try:
+            response = client.models.generate_content(
+                model=clean_model,
+                contents=combined_prompt,
+            )
+        except Exception as api_err:
+            if clean_model != 'gemini-3.1-flash-lite':
+                logger.info(f"Model {clean_model} failed ({api_err}); trying fallback gemini-3.1-flash-lite.")
+                response = client.models.generate_content(
+                    model='gemini-3.1-flash-lite',
+                    contents=combined_prompt,
+                )
+            else:
+                raise
         # Record tokens
         try:
             from apps.core.models import GeminiUsageTracker
@@ -320,8 +329,8 @@ def call_configured_ai(prompt, system_instruction=None):
             logger.debug(f"Usage record skipped: {e}")
         return response.text
 
-    elif provider in ('ollama', 'openai_compatible'):
-        endpoint = base_url or ('http://localhost:11434/v1' if provider == 'ollama' else 'http://localhost:8000/v1')
+    elif provider == 'openai_compatible':
+        endpoint = base_url or 'http://localhost:8000/v1'
         url = endpoint.rstrip('/') + '/chat/completions'
         headers = {'Content-Type': 'application/json'}
         if api_key:

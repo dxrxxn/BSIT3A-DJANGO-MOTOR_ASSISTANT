@@ -84,7 +84,8 @@
     <div class="jarvis-msg jarvis-msg--bot">
       <div class="jarvis-msg-bubble">
         At your service, <strong>{{ request.user.first_name|default:"sir" }}</strong>. I am <strong>J.A.R.V.I.S.</strong> — systems online.<br><br>
-        I can assist you in <strong>English</strong>, <strong>Tagalog</strong>, or <strong>Hiligaynon</strong>. Say <code>help</code> or ask about any motorcycle repair or diagnostic to begin.
+        Which motorcycle are we working on? <strong>Model and year</strong> is enough (for example: <em>Click 125i 2022</em>). Then tell me the problem and I will help you narrow it down, one step at a time.<br><br>
+        I can assist you in <strong>English</strong>, <strong>Tagalog</strong>, or <strong>Hiligaynon</strong>. Say <code>help</code> any time.
       </div>
       <div class="jarvis-msg-time">Now</div>
     </div>
@@ -1130,6 +1131,12 @@
     widgetHistoryClearAll.addEventListener('click', () => {
       messages.innerHTML = '';
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      // Clear the guided diagnostic context stored in the Django session.
+      fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ reset: true })
+      }).catch(() => {});
       const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
       appendBotMessage(clearMsg);
       closeWidgetHistory();
@@ -1268,6 +1275,16 @@
     let html = escapeHtml(text)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // GitHub-style safety callout: > [!CAUTION] / > [!WARNING]
+    html = html.replace(
+      /(?:^|\n)&gt;\s*\[!(CAUTION|WARNING|DANGER|IMPORTANT)\]\s*\n?&gt;\s*([^\n]*)/gi,
+      function (_, type, content) {
+        return '\n<div class="jarvis-safety-alert">' +
+          '<i class="fa-solid fa-triangle-exclamation" style="margin-right:0.35rem;"></i>' +
+          '<div>' + content + '</div></div>';
+      }
+    );
 
     // Interactive mechanic checklists
     html = html.replace(/-\s*\[ \]\s*(\d+[\.\)]\s*[^\n<]+)/g, '<label class="jarvis-checklist-item"><input type="checkbox"><span>$1</span></label>');
@@ -1489,7 +1506,10 @@
     const rawHistory = loadHistory();
     const recentHistory = rawHistory.slice(-8).map(m => ({
       role: m.role,
-      text: m.text
+      text: (m.text || '')
+        .replace(/\[chips:.*?\]/gi, '')
+        .replace(/\[vehicle-form[^\]]*\]/gi, '')
+        .trim()
     }));
 
     appendUserMessage(text);

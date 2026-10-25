@@ -74,3 +74,4 @@ class GeminiUsageTracker(models.Model):
 
     def __str__(self):
         return f"{self.date}: {self.requests_count}/{self.DAILY_REQUEST_LIMIT} reqs ({self.total_tokens} tokens)"
+

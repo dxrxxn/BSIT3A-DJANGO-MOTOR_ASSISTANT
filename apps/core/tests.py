@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -73,6 +75,44 @@ class HomeViewTests(TestCase):
         reply = response.json()['reply']
         self.assertIn('At your service', reply)
         self.assertIn('Tony', reply)
+
+    def test_jarvis_chat_guided_flow_asks_year_and_keeps_safety(self):
+        user = get_user_model().objects.create_user(
+            username='mechanic',
+            password='secret1234',
+            first_name='Tony',
+        )
+        self.client.force_login(user)
+
+        from unittest.mock import patch
+        with patch('apps.core.views._get_gemini_client', return_value=None):
+            first = self.client.post(
+                reverse('jarvis_chat'),
+                data=json.dumps({'message': 'Click 125i'}),
+                content_type='application/json',
+            )
+            second = self.client.post(
+                reverse('jarvis_chat'),
+                data=json.dumps({'message': '2022'}),
+                content_type='application/json',
+            )
+            third = self.client.post(
+                reverse('jarvis_chat'),
+                data=json.dumps({'message': 'Brakes'}),
+                content_type='application/json',
+            )
+
+        first_reply = first.json()['reply']
+        self.assertIn('What year', first_reply)
+        self.assertIn('[chips:', first_reply)
+
+        second_reply = second.json()['reply']
+        self.assertIn('2022 Honda Click 125i', second_reply)
+        self.assertIn('What is the problem', second_reply)
+
+        third_reply = third.json()['reply']
+        self.assertIn('DO NOT RIDE OR DRIVE', third_reply)
+        self.assertIn('Where to look first', third_reply)
 
     def test_jarvis_chat_rejects_empty_and_invalid(self):
         user = get_user_model().objects.create_user(username='mechanic', password='secret1234')
@@ -255,4 +295,25 @@ class MotorAssistantIntelligentAITests(TestCase):
         tutor_hil = LocalTutorFormatter.format_tutor(s_hil)
         self.assertIn('Pagsusuri sa Mahimo nga Kabangdanan', tutor_hil)
         self.assertIn('Mga Kinahanglan nga Gamit kag Materyales', tutor_hil)
+
+
+class RegistrationTests(TestCase):
+    def test_register_get_renders_form(self):
+        response = self.client.get(reverse('register'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'auth/register.html')
+
+    def test_register_post_creates_user_and_logs_in(self):
+        data = {
+            'username': 'newrider',
+            'first_name': 'Juan',
+            'last_name': 'Dela Cruz',
+            'email': 'juan@example.com',
+            'password': 'SecurePassword123!',
+            'confirm_password': 'SecurePassword123!',
+        }
+        response = self.client.post(reverse('register'), data=data)
+        self.assertRedirects(response, reverse('dashboard'))
+        self.assertTrue(get_user_model().objects.filter(username='newrider').exists())
+
 

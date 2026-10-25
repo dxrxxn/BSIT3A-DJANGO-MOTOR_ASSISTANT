@@ -23,9 +23,9 @@ load_dotenv(BASE_DIR / '.env')
 
 # Gemini AI API Key & Configurable AI Engine Settings
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()  # 'gemini', 'ollama', 'openai_compatible'
-AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.8-flash')
-AI_API_BASE_URL = os.getenv('AI_API_BASE_URL', '')  # e.g., 'http://localhost:11434/v1' for Ollama
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()  # 'gemini', 'openai_compatible'
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.1-flash-lite')
+AI_API_BASE_URL = os.getenv('AI_API_BASE_URL', '')  # e.g., 'http://localhost:8000/v1' for OpenAI-compatible endpoint
 AI_API_KEY = os.getenv('AI_API_KEY', GEMINI_API_KEY)
 AI_EXPLANATION_LEVEL = os.getenv('AI_EXPLANATION_LEVEL', 'beginner').lower()  # 'beginner' or 'mechanic'
 

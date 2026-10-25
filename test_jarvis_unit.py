@@ -443,7 +443,11 @@ class TestJarvisResponseFallbackChain:
         assert reply
         assert '[vehicle-form:' in reply
 
-    def test_cached_knowledge_used_when_gemini_offline(self, user, clean_knowledge):
+    def test_cached_knowledge_used_when_gemini_offline(self, user, clean_knowledge, monkeypatch):
+        from apps.core import diagnostic_engine
+        # Force the non-diagnostic fallback chain: orchestration returns nothing,
+        # Gemini is offline, so the locally cached answer must be used.
+        monkeypatch.setattr(diagnostic_engine, 'orchestrate_diagnostic_response', lambda *a, **k: None)
         JarvisKnowledge.objects.create(
             user_query='why is my engine overheating',
             clean_query='why engine overheating',
@@ -477,6 +481,8 @@ class TestJarvisResponseFallbackChain:
         assert '[chips: What is a caliper?' in reply
 
     def test_tagalog_reply_gets_tagalog_fallback_chips(self, user, clean_knowledge, monkeypatch):
+        from apps.core import diagnostic_engine
+        monkeypatch.setattr(diagnostic_engine, 'orchestrate_diagnostic_response', lambda *a, **k: None)
         monkeypatch.setattr(
             views, '_jarvis_gemini',
             lambda msg, usr, history=None: 'Suriin natin ang makina, sir.'
@@ -485,6 +491,8 @@ class TestJarvisResponseFallbackChain:
         assert '[chips: Ayaw mag-start ng makina' in reply
 
     def test_hiligaynon_reply_gets_hiligaynon_fallback_chips(self, user, clean_knowledge, monkeypatch):
+        from apps.core import diagnostic_engine
+        monkeypatch.setattr(diagnostic_engine, 'orchestrate_diagnostic_response', lambda *a, **k: None)
         monkeypatch.setattr(
             views, '_jarvis_gemini',
             lambda msg, usr, history=None: 'Usisa-on naton ang makina, sir.'
