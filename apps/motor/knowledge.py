@@ -582,6 +582,8 @@ def seed_default_knowledge():
                 'urgency_level': seed.get('urgency_level', 'routine'),
                 'safety_warning': seed.get('safety_warning', ''),
                 'description': seed.get('description', ''),
+                'system': seed.get('system', seed['category']),
+                'component': seed.get('component', ''),
             }
         )
         created_symptoms += 1
@@ -614,8 +616,28 @@ def seed_default_knowledge():
                     'advice_notes': g_data.get('advice_notes', ''),
                     'when_to_stop': g_data.get('when_to_stop', ''),
                     'source_reference': g_data.get('source_reference', ''),
-                    'is_verified': g_data.get('is_verified', True),
+                    'source_title': g_data.get('source_title', g_data.get('source_reference', '')),
+                    # The bundled seed data records a source for every guide.
+                    # Records without a source are forced out by the model and
+                    # retrieval guards, so they can never be cited as verified.
+                    'review_status': g_data.get('review_status', 'approved'),
+                    'review_notes': g_data.get(
+                        'review_notes',
+                        'Imported from the bundled knowledge file. Re-check the source '
+                        'before using it on a different model or variant.',
+                    ),
+                    'is_verified': bool(g_data.get('is_verified', True)),
                     'difficulty_level': g_data.get('difficulty_level', 'Beginner'),
+                    'system': g_data.get('system', seed['category']),
+                    'component': g_data.get('component', ''),
+                    'vehicle_type': seed.get('vehicle_type', 'all'),
+                    'manufacturer': g_data.get('manufacturer', ''),
+                    'model': g_data.get('model', ''),
+                    'variant': g_data.get('variant', ''),
+                    'year_from': g_data.get('year_from'),
+                    'year_to': g_data.get('year_to'),
+                    'safety_precautions': g_data.get('safety_precautions', seed.get('safety_warning', '')),
+                    'verification_procedure': g_data.get('verification_procedure', ''),
                 }
             )
             created_guides += 1
@@ -641,76 +663,293 @@ def seed_default_knowledge():
     }
 
 
-def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3):
-    """
-    Retrieves strictly verified repair knowledge relevant to the user query and vehicle type.
-    Never returns unverified user entries.
-    """
-    clean_q = query.lower()
+STOPWORDS = {
+    'the', 'and', 'for', 'with', 'that', 'this', 'from', 'have', 'has', 'was',
+    'were', 'are', 'you', 'your', 'my', 'our', 'its', 'but', 'not', 'can',
+    'could', 'would', 'should', 'when', 'what', 'why', 'how', 'does', 'did',
+    'motor', 'motorcycle', 'engine', 'vehicle', 'problem', 'issue', 'please',
+    'help', 'about', 'into', 'after', 'before', 'while', 'very', 'bike',
+}
 
-    # Strip known vehicle models that might collide with mechanical terms (e.g. "Honda Click")
-    stripped_q = re.sub(r'\b(?:honda\s+)?click\s+(?:125i?|150i?|160)?\b', '', clean_q, flags=re.I)
+# Keyword groups used to give a modest boost to the right system before the
+# per-guide token score is computed.  These are retrieval hints, not diagnoses.
+INTENT_PATTERNS = {
+    'Starting': [r'\bstart', r'\bcrank', r'\bstarter\b', r'\bclicking\b', r'\bignition\b'],
+    'Brake': [r'\bbrake', r'\bpreno\b', r'\bcaliper\b', r'\bspongy\b', r'\bsoft pedal\b'],
+    'Cooling': [r'\boverheat', r'\bradiator\b', r'\bcoolant\b', r'\bthermostat\b', r'\bfan\b'],
+    'Charging': [r'\bbattery\b', r'\balternator\b', r'\bstator\b', r'\bcharging\b', r'\brectifier\b'],
+    'Fuel': [r'\bfuel\b', r'\bgasolina\b', r'\bcarb', r'\binject', r'\bsputter', r'\bbog', r'\bhesitat'],
+    'Engine Mechanical': [r'\bknock', r'\bticking', r'\brattle', r'\bvalve', r'\bcam chain\b'],
+    'Transmission': [r'\bcvt\b', r'\bclutch\b', r'\btransmission\b', r'\bbelt\b', r'\bslip'],
+    'Electrical': [r'\belectrical\b', r'\bwiring\b', r'\bfuse\b', r'\bheadlight\b'],
+    'Suspension': [r'\bsuspension\b', r'\bshock\b', r'\bfork\b', r'\bsteering\b'],
+    'Tires': [r'\btire\b', r'\btyre\b', r'\bwheel\b', r'\bgulong\b'],
+}
 
-    # Keyword synonyms mapping to categories / symptom intents
-    intent_keywords = {
-        'brake': [r'\bbrake\b', r'\bbrakes\b', r'\bpreno\b', r'\bspongy\b', r'\bsoft\b', r'\bmalambot\b', r'\bhumok\b', r'\bcaliper\b', r'\brotor\b', r'\bdisc\b', r'\bbrake pad\b', r'\bbrake fluid\b'],
-        'start': [r'\bstart\b', r'\bcrank\b', r'\bandar\b', r'\bclicking\b', r'\bclicks\b', r'\bsolenoid\b', r'\bbattery\b', r'\bbaterya\b', r'\bdead starter\b', r'\bwon\'t start\b', r'\bayaw mag-start\b'],
-        'overheat': [r'\boverheat\b', r'\boverheating\b', r'\binit\b', r'\btemperature\b', r'\bradiator\b', r'\bcoolant\b', r'\bsingaw\b', r'\bsteam\b', r'\bradiator fan\b', r'\bkumukulo\b', r'\bnagabukal\b'],
-        'electrical': [r'\bcharging\b', r'\balternator\b', r'\bstator\b', r'\bbattery drain\b', r'\bblown fuse\b', r'\bregulator\b', r'\brectifier\b'],
-        'fuel': [r'\bfuel\b', r'\bgas\b', r'\bgasolina\b', r'\bcarb\b', r'\bcarburetor\b', r'\binjector\b', r'\bsputter\b', r'\bbog\b', r'\bhesitate\b', r'\bchoke\b', r'\bcvt\b', r'\bbelt\b', r'\bclutch\b'],
-        'noise': [r'\bnoise\b', r'\btunog\b', r'\bhuni\b', r'\btick\b', r'\bticking\b', r'\bknock\b', r'\bknocking\b', r'\bclatter\b', r'\brattle\b', r'\bpiti-piti\b', r'\blagitik\b'],
+
+def _search_tokens(text):
+    return {
+        token for token in re.findall(r'[a-z0-9]+', (text or '').lower())
+        if len(token) >= 3 and token not in STOPWORDS
     }
 
-    category_scores = {}
-    for category_key, patterns in intent_keywords.items():
-        score = 0
-        for pat in patterns:
-            if re.search(pat, stripped_q):
-                score += 1
-        if score > 0:
-            category_scores[category_key] = score
 
-    # Sort categories by hit score descending
-    sorted_categories = sorted(category_scores.keys(), key=lambda k: category_scores[k], reverse=True)
+def _contains_token(text, token):
+    """Match a token at the start of a word, allowing simple suffixes.
 
-    symptom_filter = Q()
-    if sorted_categories:
-        top_cat = sorted_categories[0]
-        symptom_filter = Q(symptom_name__icontains=top_cat) | Q(category__icontains=top_cat) | Q(description__icontains=top_cat)
-    else:
-        # Fallback to direct word match
-        words = [w for w in re.findall(r'\b\w{4,}\b', stripped_q) if w not in {'motor', 'motorcycle', 'engine', 'vehicle', 'problem'}]
-        for word in words:
-            symptom_filter |= Q(symptom_name__icontains=word) | Q(description__icontains=word)
+    Substring matching made short words such as "mag" match "damaged" and
+    produced unrelated knowledge records.  A word-boundary match keeps simple
+    stemming (brake -> brakes, start -> starting) without that noise.
+    """
+    return bool(re.search(r'\b' + re.escape(token) + r'\w*', text or ''))
 
-    v_filter = Q(vehicle_type='all')
-    if vehicle_type in ('motorcycle', 'car'):
-        v_filter |= Q(vehicle_type=vehicle_type)
 
-    symptoms = DiagnosticSymptom.objects.filter(symptom_filter & v_filter).prefetch_related(
-        'troubleshooting_guides__required_parts__part',
-        'diagnostic_questions'
-    ).distinct()[:max_results]
+def _detected_intents(text):
+    lowered = (text or '').lower()
+    intents = set()
+    for category, patterns in INTENT_PATTERNS.items():
+        if any(re.search(pattern, lowered) for pattern in patterns):
+            intents.add(category)
+    return intents
 
-    if not symptoms.exists() and sorted_categories:
-        # Relax vehicle type filter if specific match was not found
-        symptoms = DiagnosticSymptom.objects.filter(symptom_filter).prefetch_related(
+
+def _guide_matches_vehicle(guide, vehicle_info=None, vehicle_type='all'):
+    vehicle_info = vehicle_info or {}
+    requested_type = (
+        vehicle_info.get('vehicle_type') or vehicle_info.get('type') or vehicle_type or 'all'
+    ).lower()
+    if requested_type in ('scooter', 'underbone'):
+        requested_type = 'motorcycle'
+
+    guide_type = (guide.vehicle_type or 'all').lower()
+    if requested_type in ('motorcycle', 'car', 'tricycle') and guide_type not in ('all', requested_type):
+        return False
+
+    make = (vehicle_info.get('make') or '').strip().lower()
+    model = (vehicle_info.get('model') or '').strip().lower()
+    variant = (vehicle_info.get('variant') or '').strip().lower()
+    if guide.manufacturer and make and guide.manufacturer.strip().lower() not in make:
+        return False
+    if guide.model and model and guide.model.strip().lower() not in model:
+        return False
+    if guide.variant and variant and guide.variant.strip().lower() not in variant:
+        return False
+
+    year = str(vehicle_info.get('year') or '').strip()
+    if year.isdigit() and (guide.year_from or guide.year_to):
+        year_num = int(year)
+        if guide.year_from and year_num < guide.year_from:
+            return False
+        if guide.year_to and year_num > guide.year_to:
+            return False
+    return True
+
+
+def _guide_search_text(guide):
+    parts = [
+        guide.possible_cause, guide.diagnostic_test, guide.repair_instructions,
+        guide.advice_notes, guide.when_to_stop, guide.system, guide.component,
+        guide.manufacturer, guide.model, guide.variant, guide.source_title,
+        guide.source_reference,
+    ]
+    parts.extend(
+        requirement.part.part_name
+        for requirement in guide.required_parts.all()
+        if requirement.part
+    )
+    return ' '.join(part for part in parts if part).lower()
+
+
+def _score_guide(guide, query_tokens, intents, query_lowered):
+    text = _guide_search_text(guide)
+    score = 0.0
+    for token in query_tokens:
+        if _contains_token(text, token):
+            score += 1.0
+    if guide.system and any(intent.lower() in guide.system.lower() for intent in intents):
+        score += 3.0
+    if guide.component and any(intent.lower() in guide.component.lower() for intent in intents):
+        score += 2.0
+    if query_lowered and len(query_lowered) >= 8 and query_lowered in text:
+        score += 4.0
+    return score
+
+
+def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3, vehicle_info=None):
+    """Retrieve approved, vehicle-compatible repair records.
+
+    The implementation intentionally uses the Django ORM and keyword scoring.
+    It is transparent, cheap, and works offline.  A vector database is not
+    required for the current catalogue size.
+    """
+    query = (query or '').strip()
+    if not query:
+        return []
+
+    query_lowered = query.lower()
+    query_tokens = _search_tokens(query)
+    intents = _detected_intents(query)
+
+    # Narrow candidates with SQL before scoring in Python.  Symptom text is
+    # searched first; guide text is added through the relation.
+    candidate_filter = Q()
+    for token in list(query_tokens)[:12]:
+        candidate_filter |= (
+            Q(symptom_name__icontains=token)
+            | Q(category__icontains=token)
+            | Q(description__icontains=token)
+            | Q(system__icontains=token)
+            | Q(component__icontains=token)
+            | Q(aliases__icontains=token)
+            | Q(troubleshooting_guides__possible_cause__icontains=token)
+            | Q(troubleshooting_guides__repair_instructions__icontains=token)
+            | Q(troubleshooting_guides__advice_notes__icontains=token)
+            | Q(troubleshooting_guides__system__icontains=token)
+            | Q(troubleshooting_guides__component__icontains=token)
+        )
+    if intents:
+        for intent in intents:
+            candidate_filter |= Q(category__icontains=intent) | Q(system__icontains=intent)
+
+    symptoms = (
+        DiagnosticSymptom.objects.filter(candidate_filter)
+        .prefetch_related(
             'troubleshooting_guides__required_parts__part',
-            'diagnostic_questions'
-        ).distinct()[:max_results]
+            'diagnostic_questions',
+        )
+        .distinct()[:500]
+    )
 
-    results = []
-    for s in symptoms:
-        verified_guides = [g for g in s.troubleshooting_guides.all() if g.is_verified]
-        if not verified_guides:
+    scored_results = []
+    for symptom in symptoms:
+        symptom_text = ' '.join(filter(None, [
+            symptom.symptom_name, symptom.category, symptom.description,
+            symptom.aliases, symptom.system, symptom.component,
+        ])).lower()
+
+        base_score = 0.0
+        lexical_score = 0.0
+        for token in query_tokens:
+            if _contains_token(symptom_text, token):
+                lexical_score += 2.0
+        if query_lowered and len(query_lowered) >= 8 and query_lowered in symptom_text:
+            lexical_score += 5.0
+        for intent in intents:
+            if intent.lower() in symptom_text:
+                lexical_score += 3.0
+
+        # Vehicle type alone is not evidence that a record is relevant.  A
+        # Hiligaynon query with no matching symptom words must fall through to
+        # the intake rules, not return an unrelated record because both are
+        # motorcycles.
+        if lexical_score <= 0:
             continue
-        results.append({
-            'symptom_id': s.id,
-            'symptom_name': s.symptom_name,
-            'category': s.category,
-            'vehicle_type': s.vehicle_type,
-            'urgency_level': s.urgency_level,
-            'safety_warning': s.safety_warning,
+        base_score = lexical_score
+
+        # A retrieved record may look similar because it shares a word such as
+        # "front" while belonging to a completely different system.  When the
+        # query clearly indicates a system, require the record itself to match
+        # that system.  Otherwise "front brake" could surface a front-sprocket
+        # oil-seal record.  Records that match only through a guide are handled
+        # below where the guide text is available.
+        if intents and not any(intent.lower() in symptom_text for intent in intents):
+            continue
+
+        requested_type = (
+            (vehicle_info or {}).get('vehicle_type')
+            or (vehicle_info or {}).get('type')
+            or vehicle_type
+            or 'all'
+        ).lower()
+        if requested_type in ('scooter', 'underbone'):
+            requested_type = 'motorcycle'
+        symptom_type = (symptom.vehicle_type or 'all').lower()
+        if requested_type in ('motorcycle', 'car', 'tricycle'):
+            if symptom_type == requested_type:
+                base_score += 3.0
+            elif symptom_type == 'all':
+                base_score += 1.0
+            else:
+                base_score -= 5.0
+
+        scored_guides = []
+        for guide in symptom.troubleshooting_guides.all():
+            if not guide.is_verified or guide.review_status != 'approved':
+                continue
+            # Approved without a source is still not evidence.  This also
+            # catches records created before the model-level guard existed.
+            if not ((guide.source_reference or '').strip() or (guide.source_title or '').strip()):
+                continue
+            if not _guide_matches_vehicle(guide, vehicle_info=vehicle_info, vehicle_type=vehicle_type):
+                continue
+            guide_score = _score_guide(guide, query_tokens, intents, query_lowered)
+            # A vehicle-specific symptom can still be useful without keyword
+            # overlap, but require at least some relevance overall.
+            total_score = base_score + guide_score
+            if total_score <= 0:
+                continue
+            scored_guides.append((guide_score, guide))
+
+        if not scored_guides:
+            continue
+
+        scored_guides.sort(key=lambda pair: pair[0], reverse=True)
+        best_score = base_score + scored_guides[0][0]
+        # Avoid returning almost everything for an unrelated query.
+        if best_score < 2.0:
+            continue
+
+        results_guides = []
+        for guide_score, guide in scored_guides[:5]:
+            results_guides.append({
+                'guide_id': guide.id,
+                'possible_cause': guide.possible_cause,
+                'confidence_level': guide.confidence_level,
+                'diagnostic_test': guide.diagnostic_test,
+                'expected_result': guide.expected_result,
+                'alternative_outcome': guide.alternative_outcome,
+                'tools_required': guide.tools_required,
+                'repair_instructions': guide.repair_instructions,
+                'advice_notes': guide.advice_notes,
+                'when_to_stop': guide.when_to_stop,
+                'source_reference': guide.source_reference,
+                'source_title': guide.source_title or guide.source_reference,
+                'source_date': guide.source_date.isoformat() if guide.source_date else '',
+                'review_status': guide.review_status,
+                'reviewed': guide.review_status == 'approved',
+                'difficulty_level': guide.difficulty_level,
+                'system': guide.system,
+                'component': guide.component,
+                'vehicle_type': guide.vehicle_type,
+                'manufacturer': guide.manufacturer,
+                'model': guide.model,
+                'variant': guide.variant,
+                'year_from': guide.year_from,
+                'year_to': guide.year_to,
+                'safety_precautions': guide.safety_precautions,
+                'verification_procedure': guide.verification_procedure,
+                'source_score': round(guide_score, 2),
+                'required_parts': [
+                    {
+                        'name': rp.part.part_name,
+                        'part_number': rp.part.part_number or '',
+                        'quantity': rp.quantity_needed or 1,
+                        'estimated_cost': str(rp.part.estimated_cost),
+                    }
+                    for rp in guide.required_parts.all()
+                ],
+            })
+
+        scored_results.append({
+            'symptom_id': symptom.id,
+            'symptom_name': symptom.symptom_name,
+            'category': symptom.category,
+            'system': symptom.system,
+            'component': symptom.component,
+            'vehicle_type': symptom.vehicle_type,
+            'urgency_level': symptom.urgency_level,
+            'safety_warning': symptom.safety_warning,
+            'score': round(best_score, 2),
             'questions': [
                 {
                     'key': q.question_key,
@@ -719,28 +958,10 @@ def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3):
                     'text_hil': q.question_text_hil,
                     'options': json.loads(q.options_json or '[]'),
                 }
-                for q in s.diagnostic_questions.all()
+                for q in symptom.diagnostic_questions.all()
             ],
-            'guides': [
-                {
-                    'possible_cause': g.possible_cause,
-                    'confidence_level': g.confidence_level,
-                    'diagnostic_test': g.diagnostic_test,
-                    'expected_result': g.expected_result,
-                    'alternative_outcome': g.alternative_outcome,
-                    'tools_required': g.tools_required,
-                    'repair_instructions': g.repair_instructions,
-                    'advice_notes': g.advice_notes,
-                    'when_to_stop': g.when_to_stop,
-                    'source_reference': g.source_reference,
-                    'difficulty_level': g.difficulty_level,
-                    'required_parts': [
-                        f"{rp.part.part_name} (est. ${rp.part.estimated_cost})"
-                        for rp in g.required_parts.all()
-                    ],
-                }
-                for g in verified_guides
-            ],
+            'guides': results_guides,
         })
 
-    return results
+    scored_results.sort(key=lambda item: item['score'], reverse=True)
+    return scored_results[:max_results]

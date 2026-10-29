@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -20,7 +21,11 @@ class DiagnosticSymptom(models.Model):
         default='routine'
     )
     safety_warning = models.TextField(blank=True, null=True)
+    system = models.CharField(max_length=100, blank=True, default='', help_text='e.g. Brakes, Starting, Cooling')
+    component = models.CharField(max_length=120, blank=True, default='')
+    aliases = models.TextField(blank=True, default='', help_text='Optional search aliases, one per line')
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'diagnostic_symptoms'
@@ -65,7 +70,47 @@ class TroubleshootingGuide(models.Model):
     advice_notes = models.TextField(blank=True, null=True)
     when_to_stop = models.TextField(blank=True, null=True, help_text="When to stop and seek a professional mechanic")
     source_reference = models.CharField(max_length=255, blank=True, null=True, help_text="Service manual or verified reference")
-    is_verified = models.BooleanField(default=True, help_text="Only verified guides are retrieved by AI")
+    source_title = models.CharField(max_length=255, blank=True, default='')
+    source_date = models.DateField(null=True, blank=True)
+    review_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('draft', 'Draft / unreviewed'),
+            ('pending', 'Pending review'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected / not reliable'),
+        ],
+        default='draft',
+        help_text='Only approved guides are retrieved for AI or offline answers.',
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_troubleshooting_guides',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True, default='')
+    system = models.CharField(max_length=100, blank=True, default='', help_text='e.g. Brakes, Starting, Cooling')
+    component = models.CharField(max_length=120, blank=True, default='')
+    vehicle_type = models.CharField(
+        max_length=20,
+        choices=[('all', 'All Vehicles'), ('motorcycle', 'Motorcycle'), ('car', 'Car'), ('tricycle', 'Tricycle')],
+        default='all',
+    )
+    manufacturer = models.CharField(max_length=80, blank=True, default='')
+    model = models.CharField(max_length=120, blank=True, default='')
+    variant = models.CharField(max_length=120, blank=True, default='')
+    year_from = models.PositiveSmallIntegerField(null=True, blank=True)
+    year_to = models.PositiveSmallIntegerField(null=True, blank=True)
+    safety_precautions = models.TextField(blank=True, default='')
+    verification_procedure = models.TextField(blank=True, default='', help_text='How to verify the repair safely')
+    updated_at = models.DateTimeField(auto_now=True)
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Only approved guides with a checked source are retrieved.",
+    )
     difficulty_level = models.CharField(
         max_length=20,
         choices=[('Beginner', 'Beginner'), ('Intermediate', 'Intermediate'), ('Advanced', 'Advanced')],
@@ -78,6 +123,14 @@ class TroubleshootingGuide(models.Model):
 
     def __str__(self):
         return self.possible_cause
+
+    def save(self, *args, **kwargs):
+        # Verified status is meaningless without an approved review and a
+        # recorded source.  Enforce that here as well as in the admin.
+        has_source = bool((self.source_reference or '').strip() or (self.source_title or '').strip())
+        if self.review_status != 'approved' or not has_source:
+            self.is_verified = False
+        super().save(*args, **kwargs)
 
 
 class DiagnosticQuestion(models.Model):

@@ -166,11 +166,14 @@ function groundAndNormalize(root) {
 
 function attachModel(root) {
   clearModel();
+  clearHighlight();
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  prepareModelMaterials(root);
   const info = groundAndNormalize(root);
   modelInfo = Object.assign(info, inspectModel(root));
   currentModel = root;
   scene.add(root);
+  buildPartAvailability();
   fitCamera();
   setStatus('Model loaded · ' + modelInfo.meshes + ' meshes · ' + modelInfo.faces.toLocaleString() + ' faces', 'ok');
 }
@@ -310,74 +313,210 @@ function applyPreset(name) {
 }
 
 /* ── Part Definitions & Outside-to-Inside Camera Choreography ───────────── */
+/* Mesh names below are the exact node names in motorcycle.glb.  A component
+   is available only when at least one of its meshes exists in the loaded GLB;
+   nothing is positioned by guesswork or anatomical offset. */
 const PART_DEFS = {
   overview: {
     key: 'overview',
     title: 'Motorcycle Overview (Exterior)',
     badge: 'EXTERIOR VIEW',
-    desc: 'Complete vehicle exterior. Drag to orbit, scroll to zoom, or select a component below to dive inside.',
+    desc: 'Complete vehicle exterior contained in the model. Drag to orbit, scroll to zoom, or select an available component below.',
     relPos: new THREE.Vector3(1, 0.55, 1).normalize(),
     distFactor: 1.35,
     fov: 40,
-    offset: new THREE.Vector3(0, 0, 0),
-    matchKeywords: [],
+    meshNames: [],
   },
   engine: {
     key: 'engine',
-    title: 'Engine & Cylinder Block',
-    badge: 'INTERNAL CORE',
-    desc: 'Core power unit. Primary inspection points: cylinder head gasket, spark plug condition, and crankcase oil seals.',
+    title: 'Engine Case & Transmission Cover',
+    badge: 'EXTERIOR ENGINE PARTS',
+    desc: 'The GLB contains the engine transmission case and outer engine cover. Internal parts such as the piston, valves, clutch plates and oil pump are not modelled.',
     relPos: new THREE.Vector3(0.55, 0.2, 0.75).normalize(),
     distFactor: 0.44,
     fov: 32,
-    offset: new THREE.Vector3(0, -0.05, 0.05),
-    matchKeywords: ['engine', 'cylinder', 'piston', 'motor', 'crankcase', 'clutch'],
+    meshNames: ['engine_transmission_case', 'engine_cover'],
+    limitation: 'Only the outer engine case and cover are present. This view cannot confirm internal engine condition.',
+  },
+  exhaust: {
+    key: 'exhaust',
+    title: 'Exhaust Pipe & Muffler',
+    badge: 'EXHAUST SYSTEM',
+    desc: 'Exhaust pipe, muffler body and exhaust tip as modelled. Header flange, internal baffles and mounting hardware are not separately modelled.',
+    relPos: new THREE.Vector3(0.8, -0.1, -0.55).normalize(),
+    distFactor: 0.46,
+    fov: 34,
+    meshNames: ['exhaust_pipe', 'exhaust_muffler', 'exhaust_tip'],
+    limitation: 'The model shows external exhaust geometry only. It cannot show blockages, leaks or internal baffle condition.',
+  },
+  brakes: {
+    key: 'brakes',
+    title: 'Front Brake Disc & Hub',
+    badge: 'BRAKE COMPONENT',
+    desc: 'Front brake disc and disc hub as modelled. The caliper, pads, master cylinder, brake hose and fluid are not present in this GLB.',
+    relPos: new THREE.Vector3(0.55, 0.1, 0.85).normalize(),
+    distFactor: 0.4,
+    fov: 32,
+    meshNames: ['front_brake_disc', 'front_disc_hub'],
+    limitation: 'Brake safety cannot be confirmed from a 3D mesh. Inspect pad thickness, disc condition, lever feel and fluid level physically, or have a qualified technician check them.',
+  },
+  wheels: {
+    key: 'wheels',
+    title: 'Front & Rear Wheels',
+    badge: 'WHEELS & AXLES',
+    desc: 'Tires, rims, spokes and axles are modelled at both ends. Tire pressure, tread depth and bearing condition are not represented.',
+    relPos: new THREE.Vector3(0.15, 0.15, 0.95).normalize(),
+    distFactor: 0.72,
+    fov: 36,
+    meshNames: ['front_tire', 'front_rim', 'front_spoke', 'front_axle', 'rear_tire', 'rear_rim', 'rear_spoke', 'rear_axle'],
+    limitation: 'A 3D tire cannot show pressure, tread wear, cracks or bearing play. Check those physically.',
+  },
+  bodywork: {
+    key: 'bodywork',
+    title: 'Fairings, Panels & Body Trim',
+    badge: 'BODYWORK',
+    desc: 'Front fairing, side panels, fenders, floorboard, seat and tail trim as modelled. Fasteners, clips and hidden brackets are not modelled.',
+    relPos: new THREE.Vector3(0.5, 0.25, 0.85).normalize(),
+    distFactor: 1.0,
+    fov: 38,
+    meshNames: ['front_fairing_main', 'front_fairing_center', 'front_side_fairing', 'silver_fairing_accent', 'rear_side_panel', 'side_panel_accent', 'tail_fairing', 'front_fender', 'rear_mudguard', 'floorboard', 'footboard_trim', 'seat_base', 'seat_front', 'rear_grab_rail_left', 'rear_grab_rail_right', 'center_badge'],
+    limitation: 'The model cannot show cracked clips, missing fasteners or damage hidden behind panels.',
+  },
+  controls: {
+    key: 'controls',
+    title: 'Controls, Lights & Suspension',
+    badge: 'CONTROLS & CHASSIS',
+    desc: 'Handlebar, grips, mirrors, instrument cluster, lights, fork, rear shock, stands and lower frame as modelled. Cables, hydraulics and wiring are not modelled.',
+    relPos: new THREE.Vector3(0.6, 0.4, 0.75).normalize(),
+    distFactor: 0.8,
+    fov: 36,
+    meshNames: ['handlebar', 'handle_grip', 'mirror_stem', 'mirror', 'instrument_cluster', 'dashboard_screen', 'headlight_lens', 'indicator_lens', 'tail_light', 'rear_indicator', 'front_fork', 'rear_shock', 'rear_shock_spring', 'center_stand_left', 'center_stand_right', 'side_stand', 'steering_stem', 'lower_frame'],
+    limitation: 'Cables, brake lines, wiring and internal suspension parts are not modelled, so their condition cannot be judged here.',
   },
   sprocket: {
     key: 'sprocket',
-    title: 'Front Sprocket & Drive Assembly',
-    badge: 'DRIVETRAIN',
-    desc: 'Transfers engine output to drive chain. Check front sprocket tooth wear, oil seal leakage, and chain tension.',
+    title: 'Front Sprocket & Drive',
+    badge: 'NOT MODELLED',
+    desc: 'This GLB does not contain a front sprocket, chain or rear sprocket.',
     relPos: new THREE.Vector3(-0.75, -0.05, -0.45).normalize(),
     distFactor: 0.36,
     fov: 30,
-    offset: new THREE.Vector3(-0.25, -0.22, -0.3),
-    matchKeywords: ['sprocket', 'chain', 'gear', 'transmission', 'drive'],
+    meshNames: [],
+    unavailableReason: 'Front sprocket, chain and rear sprocket are not present in this GLB.',
   },
   battery: {
     key: 'battery',
     title: 'Battery & Electrical Hub',
-    badge: 'ELECTRICAL',
-    desc: '12V power supply. Check for terminal corrosion, charge retention (12.6V+ resting), and main starter fuse integrity.',
+    badge: 'NOT MODELLED',
+    desc: 'This GLB does not contain a battery, fuse box or electrical harness.',
     relPos: new THREE.Vector3(0.35, 0.55, -0.35).normalize(),
     distFactor: 0.38,
     fov: 32,
-    offset: new THREE.Vector3(0, 0.18, -0.15),
-    matchKeywords: ['battery', 'fuse', 'electr', 'box', 'starter', 'wire'],
-  },
-  exhaust: {
-    key: 'exhaust',
-    title: 'Exhaust Header & Muffler',
-    badge: 'EXHAUST SYSTEM',
-    desc: 'Channels exhaust gases from cylinder. Check header clamp torque, rust perforation, and exhaust smoke characteristics.',
-    relPos: new THREE.Vector3(0.8, -0.1, -0.55).normalize(),
-    distFactor: 0.46,
-    fov: 34,
-    offset: new THREE.Vector3(0.3, -0.2, -0.5),
-    matchKeywords: ['exhaust', 'muffler', 'pipe', 'silencer', 'header'],
-  },
-  brakes: {
-    key: 'brakes',
-    title: 'Hydraulic Disc Brake System',
-    badge: 'BRAKE ASSEMBLY',
-    desc: 'Front & rear calipers and discs. Inspect brake pad friction thickness (>2mm), disc scoring, and hydraulic lines.',
-    relPos: new THREE.Vector3(0.55, 0.1, 0.85).normalize(),
-    distFactor: 0.4,
-    fov: 32,
-    offset: new THREE.Vector3(0, -0.2, 0.75),
-    matchKeywords: ['brake', 'caliper', 'disc', 'rotor', 'wheel', 'tire'],
+    meshNames: [],
+    unavailableReason: 'Battery, fuse box and electrical harness are not present in this GLB.',
   },
 };
+
+let highlightedMeshes = [];
+let meshNameToPart = new Map();
+
+function prepareModelMaterials(root) {
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    const source = Array.isArray(o.material) ? o.material : [o.material];
+    const cloned = source.map(material => (material ? material.clone() : material));
+    o.material = Array.isArray(o.material) ? cloned : cloned[0];
+  });
+}
+
+function buildPartAvailability() {
+  const byName = new Map();
+  if (currentModel) {
+    currentModel.traverse(o => {
+      if (!o.isMesh || !o.name) return;
+      const key = o.name.toLowerCase();
+      if (!byName.has(key)) byName.set(key, []);
+      byName.get(key).push(o);
+    });
+  }
+
+  meshNameToPart = new Map();
+  Object.values(PART_DEFS).forEach(def => {
+    if (def.key === 'overview') {
+      def.available = true;
+      def.meshes = [];
+      return;
+    }
+    def.meshes = [];
+    (def.meshNames || []).forEach(name => {
+      const lower = name.toLowerCase();
+      meshNameToPart.set(lower, def.key);
+      (byName.get(lower) || []).forEach(mesh => def.meshes.push(mesh));
+    });
+    def.available = def.meshes.length > 0;
+    if (!def.available && !def.unavailableReason) {
+      def.unavailableReason = 'The required mesh is not present in this GLB.';
+    }
+  });
+
+  document.querySelectorAll('.mv-part-btn[data-part]').forEach(btn => {
+    const def = PART_DEFS[btn.dataset.part];
+    if (!def) return;
+    if (def.available === false) {
+      btn.disabled = true;
+      btn.classList.add('is-unavailable');
+      btn.title = def.title + ' — ' + def.unavailableReason;
+      btn.setAttribute('aria-disabled', 'true');
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('is-unavailable');
+      btn.title = def.title;
+      btn.removeAttribute('aria-disabled');
+    }
+  });
+
+  const coverageEl = document.getElementById('mv-coverage-text');
+  if (coverageEl) {
+    const available = Object.values(PART_DEFS)
+      .filter(def => def.key !== 'overview' && def.available)
+      .map(def => def.title);
+    const missing = Object.values(PART_DEFS)
+      .filter(def => def.key !== 'overview' && !def.available)
+      .map(def => def.title);
+    coverageEl.textContent = 'Modelled: ' + (available.join(', ') || 'exterior only')
+      + (missing.length ? ' · Not modelled: ' + missing.join(', ') : '');
+  }
+}
+
+function clearHighlight() {
+  highlightedMeshes.forEach(mesh => {
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    mats.forEach(m => {
+      if (!m || !m.emissive || m.__mvBaseEmissive === undefined) return;
+      m.emissive.setHex(m.__mvBaseEmissive);
+      m.emissiveIntensity = m.__mvBaseIntensity;
+    });
+  });
+  highlightedMeshes = [];
+}
+
+function highlightPart(def) {
+  clearHighlight();
+  if (!def || !def.meshes) return;
+  def.meshes.forEach(mesh => {
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    mats.forEach(m => {
+      if (!m || !m.emissive) return;
+      if (m.__mvBaseEmissive === undefined) {
+        m.__mvBaseEmissive = m.emissive.getHex();
+        m.__mvBaseIntensity = m.emissiveIntensity;
+      }
+      m.emissive.setHex(0x4f46e5);
+      m.emissiveIntensity = 0.55;
+    });
+    highlightedMeshes.push(mesh);
+  });
+}
 
 function computePartWorldTarget(key) {
   if (!modelInfo) return new THREE.Vector3();
@@ -386,29 +525,14 @@ function computePartWorldTarget(key) {
     return modelInfo.center.clone();
   }
 
-  // Attempt to find mesh in currentModel matching keywords
-  if (currentModel && def.matchKeywords.length > 0) {
-    let matched = null;
-    currentModel.traverse(o => {
-      if (!matched && o.isMesh && o.name) {
-        const lower = o.name.toLowerCase();
-        if (def.matchKeywords.some(kw => lower.includes(kw))) {
-          matched = o;
-        }
-      }
-    });
-    if (matched) {
-      const box = new THREE.Box3().setFromObject(matched);
-      return box.getCenter(new THREE.Vector3());
-    }
+  if (def.meshes && def.meshes.length) {
+    const box = new THREE.Box3();
+    def.meshes.forEach(mesh => box.expandByObject(mesh));
+    if (!box.isEmpty()) return box.getCenter(new THREE.Vector3());
   }
 
-  // Proportional motorcycle anatomy offset inside model bounding box
-  const target = modelInfo.center.clone();
-  target.x += def.offset.x * modelInfo.radius;
-  target.y += def.offset.y * modelInfo.radius;
-  target.z += def.offset.z * modelInfo.radius;
-  return target;
+  // Only reached for an unavailable component; callers guard against that.
+  return modelInfo.center.clone();
 }
 
 function updatePartHud(def) {
@@ -420,6 +544,11 @@ function updatePartHud(def) {
   hudBadge.textContent = def.badge;
   hudTitle.textContent = def.title;
   hudDesc.textContent = def.desc;
+  const limitEl = document.getElementById('mv-hud-limit');
+  if (limitEl) {
+    limitEl.textContent = def.limitation || '';
+    limitEl.classList.toggle('d-none', !def.limitation);
+  }
   partHud.classList.remove('d-none');
 }
 
@@ -431,15 +560,52 @@ function markActivePart(key) {
   if (btnTour && key !== 'tour') btnTour.classList.remove('active');
 }
 
+function updatePartUrl(key) {
+  try {
+    const url = new URL(window.location.href);
+    if (!key || key === 'overview') url.searchParams.delete('part');
+    else url.searchParams.set('part', key);
+    window.history.replaceState({}, '', url.toString());
+  } catch (e) {}
+}
+
+function partFromUrl() {
+  try {
+    const key = new URLSearchParams(window.location.search).get('part');
+    if (!key) return null;
+    const def = PART_DEFS[key];
+    if (!def || key === 'overview' || def.available === false) return null;
+    return key;
+  } catch (e) {
+    return null;
+  }
+}
+
+function selectPart(key, options) {
+  options = options || {};
+  const def = PART_DEFS[key];
+  if (!def) return false;
+  if (key !== 'overview' && def.available === false) {
+    setStatus('That component is not present in this model.', 'err');
+    return false;
+  }
+  stopTour();
+  const ok = focusPart(key);
+  if (ok !== false && options.updateUrl !== false) updatePartUrl(key);
+  return ok !== false;
+}
+
 /* Smooth Outside-to-Inside Camera Flight powered by Anime.js */
 function focusPart(partKey, duration) {
-  if (!modelInfo || !PART_DEFS[partKey]) return;
+  if (!modelInfo || !PART_DEFS[partKey]) return false;
+  const def = PART_DEFS[partKey];
+  if (partKey !== 'overview' && def.available === false) return false;
+
   cancelCameraTween();
   markActivePreset(null);
   markActivePart(partKey);
-
-  const def = PART_DEFS[partKey];
   updatePartHud(def);
+  highlightPart(partKey === 'overview' ? null : def);
 
   const target = computePartWorldTarget(partKey);
   const dist = modelInfo.radius * def.distFactor;
@@ -451,7 +617,7 @@ function focusPart(partKey, duration) {
     camera.fov = def.fov;
     camera.updateProjectionMatrix();
     controls.update();
-    return;
+    return true;
   }
 
   const state = {
@@ -480,33 +646,45 @@ function focusPart(partKey, duration) {
       controls.maxDistance = dist * 4.0;
     },
   });
+  return true;
 }
 
-/* Cinematic Tour: moves from Outside overview into key inside parts */
+/* Cinematic Tour: visits only components that actually exist in the GLB. */
+let tourTimer = null;
+let tourActive = false;
+
+function stopTour() {
+  tourActive = false;
+  if (tourTimer !== null) {
+    clearTimeout(tourTimer);
+    tourTimer = null;
+  }
+  if (btnTour) btnTour.classList.remove('active');
+}
+
 function playCinematicTour() {
   if (!modelInfo) return;
+  stopTour();
   cancelCameraTween();
   markActivePreset(null);
 
+  const tourSteps = ['overview'].concat(
+    Object.keys(PART_DEFS).filter(key => key !== 'overview' && PART_DEFS[key].available)
+  ).concat(['overview']);
+  let stepIndex = 0;
+  tourActive = true;
   if (btnTour) btnTour.classList.add('active');
 
-  const tourSteps = ['overview', 'engine', 'sprocket', 'battery', 'exhaust', 'brakes', 'overview'];
-  let stepIndex = 0;
-
   function runNextStep() {
+    if (!tourActive) return;
     if (stepIndex >= tourSteps.length) {
-      if (btnTour) btnTour.classList.remove('active');
-      markActivePart('overview');
+      stopTour();
+      selectPart('overview');
       return;
     }
     const key = tourSteps[stepIndex++];
-    focusPart(key, 1200);
-    camTween = anime({
-      duration: 2500,
-      complete: () => {
-        runNextStep();
-      }
-    });
+    focusPart(key, 1000);
+    tourTimer = setTimeout(runNextStep, 2200);
   }
 
   runNextStep();
@@ -514,7 +692,7 @@ function playCinematicTour() {
 
 function resetCamera() {
   if (!modelInfo) return;
-  focusPart('overview', 900);
+  selectPart('overview');
   applyPreset('iso');
   camera.near = Math.max(modelInfo.radius / 100, 0.01);
   camera.far = modelInfo.radius * 60;
@@ -544,8 +722,11 @@ function playIntro() {
 /* ── Controls / lifecycle ───────────────────────────────────────────────── */
 document.querySelectorAll('.mv-preset[data-preset]').forEach(btn => {
   btn.addEventListener('click', () => {
+    stopTour();
+    clearHighlight();
     updatePartHud(null);
     markActivePart(null);
+    updatePartUrl(null);
     applyPreset(btn.dataset.preset);
   });
 });
@@ -554,11 +735,11 @@ document.getElementById('mv-btn-reset').addEventListener('click', resetCamera);
 
 // Parts inspection bar listeners
 document.querySelectorAll('.mv-part-btn[data-part]').forEach(btn => {
-  btn.addEventListener('click', () => focusPart(btn.dataset.part));
+  btn.addEventListener('click', () => selectPart(btn.dataset.part));
 });
 if (btnTour) btnTour.addEventListener('click', playCinematicTour);
-if (hudClose) hudClose.addEventListener('click', () => focusPart('overview'));
-if (hudOutside) hudOutside.addEventListener('click', () => focusPart('overview'));
+if (hudClose) hudClose.addEventListener('click', () => selectPart('overview'));
+if (hudOutside) hudOutside.addEventListener('click', () => selectPart('overview'));
 
 // Canvas raycast click inspection
 canvas.addEventListener('pointerdown', e => {
@@ -578,18 +759,21 @@ canvas.addEventListener('pointerup', e => {
       let foundPart = null;
       let obj = hits[0].object;
       while (obj && obj !== currentModel && !foundPart) {
-        if (obj.name) {
-          const name = obj.name.toLowerCase();
-          for (const [k, d] of Object.entries(PART_DEFS)) {
-            if (d.matchKeywords.some(kw => name.includes(kw))) {
-              foundPart = k;
-              break;
-            }
-          }
+        if (obj.name && meshNameToPart.has(obj.name.toLowerCase())) {
+          foundPart = meshNameToPart.get(obj.name.toLowerCase());
         }
         obj = obj.parent;
       }
-      focusPart(foundPart || 'engine');
+      if (foundPart) {
+        selectPart(foundPart);
+      } else {
+        setStatus('No inspectable component under that point.', '');
+        setTimeout(() => {
+          if (modelInfo) {
+            setStatus('Model loaded · ' + modelInfo.meshes + ' meshes · ' + modelInfo.faces.toLocaleString() + ' faces', 'ok');
+          }
+        }, 2200);
+      }
     }
   }
 });
@@ -617,17 +801,27 @@ window.addEventListener('pagehide', dispose);
 /* ── Boot ───────────────────────────────────────────────────────────────── */
 initThree();
 controls.addEventListener('start', () => {
+  stopTour();
   cancelCameraTween();
   markActivePreset(null);
-  if (btnTour) btnTour.classList.remove('active');
 });
 setStatus('Loading model…');
 window.MV = {   // small debug/testing API
-  loadModel, fitCamera, dispose, applyPreset, playIntro, focusPart, playCinematicTour,
+  loadModel, fitCamera, dispose, applyPreset, playIntro, focusPart, selectPart, playCinematicTour,
   PART_DEFS,
   get modelInfo() { return modelInfo; },
   get camera() { return camera; },
   get controls() { return controls; },
   get tweenActive() { return !!camTween; },
 };
-loadModel(CFG.modelUrl).then(() => playIntro());
+
+window.addEventListener('popstate', () => {
+  const key = partFromUrl();
+  selectPart(key || 'overview', { updateUrl: false });
+});
+
+loadModel(CFG.modelUrl).then(() => {
+  const requestedPart = partFromUrl();
+  if (requestedPart) selectPart(requestedPart);
+  else playIntro();
+});

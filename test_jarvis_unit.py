@@ -500,6 +500,156 @@ class TestJarvisResponseFallbackChain:
         reply = views._jarvis_response('indi mag-andar ang makina ko', user)
         assert '[chips: Indi mag-andar ang makina' in reply
 
+    def test_general_oil_question_gets_direct_answer_without_intake(self, user, clean_knowledge):
+        reply = views._jarvis_response(
+            'how many km does my motorcycle need to change oil', user
+        )
+        assert '[vehicle-form:' not in reply
+        assert '2,000' in reply
+        assert 'owner' in reply.lower()
+        assert '[chips:' in reply
+
+    def test_general_tire_question_gets_pre_change_checklist(self, user, clean_knowledge):
+        reply = views._jarvis_response(
+            'what should I check before changing my tire', user
+        )
+        low = reply.lower()
+        assert '[vehicle-form:' not in reply
+        assert 'tread' in low
+        assert 'torque' in low
+        assert '[chips:' in reply
+
+    def test_general_query_skips_diagnostic_engine(self, user, clean_knowledge, monkeypatch):
+        from apps.core import diagnostic_engine
+
+        def fail(*args, **kwargs):
+            raise AssertionError('diagnostic engine must not run for general maintenance')
+
+        monkeypatch.setattr(diagnostic_engine, 'orchestrate_diagnostic_response', fail)
+        reply = views._jarvis_response('what should I do if I want to change oil', user)
+        assert 'oil' in reply.lower()
+        assert '[vehicle-form:' not in reply
+
+    def test_general_query_uses_general_ai_mode(self, user, clean_knowledge, monkeypatch):
+        calls = {}
+
+        def fake_gemini(msg, usr, history=None, mode='diagnostic'):
+            calls['mode'] = mode
+            return 'Use JASO MA2 oil, sir.\n\n[chips: Oil interval | Tire checks | Chain care]'
+
+        monkeypatch.setattr(views, '_jarvis_gemini', fake_gemini)
+        reply = views._jarvis_response('what oil should I use', user)
+        assert calls['mode'] == 'general'
+        assert 'JASO MA2' in reply
+        assert '[vehicle-form:' not in reply
+
+    def test_general_location_fallback_answers_named_part(self, user, clean_knowledge, monkeypatch):
+        monkeypatch.setattr(views, '_jarvis_gemini', lambda *a, **k: None)
+        monkeypatch.setattr(views, '_find_offline_knowledge', lambda *a, **k: None)
+        reply = views._jarvis_response('where is the ECU located', user)
+        low = reply.lower()
+        assert 'under the seat' in low or 'side panel' in low
+        assert 'which part' not in low
+        assert '[vehicle-form:' not in reply
+
+    def test_general_location_fallback_asks_which_part_when_vague(self, user, clean_knowledge, monkeypatch):
+        monkeypatch.setattr(views, '_jarvis_gemini', lambda *a, **k: None)
+        monkeypatch.setattr(views, '_find_offline_knowledge', lambda *a, **k: None)
+        reply = views._jarvis_response('where to locate that part', user)
+        assert 'which part' in reply.lower()
+        assert '[vehicle-form:' not in reply
+
+    def test_general_location_fallback_uses_history_for_pronoun(self, user, clean_knowledge, monkeypatch):
+        monkeypatch.setattr(views, '_jarvis_gemini', lambda *a, **k: None)
+        monkeypatch.setattr(views, '_find_offline_knowledge', lambda *a, **k: None)
+        history = [{'role': 'user', 'text': 'what is an oil filter?'}]
+        reply = views._jarvis_response('where is it located', user, history=history)
+        assert 'oil filter' in reply.lower()
+        assert '[vehicle-form:' not in reply
+
+    @pytest.mark.parametrize('message', [
+        'where to locate that part',
+        'where is the ECU located',
+        'where is the horn located',
+    ])
+    def test_part_location_query_uses_general_ai_mode(
+        self, user, clean_knowledge, monkeypatch, message
+    ):
+        calls = {}
+
+        def fake_gemini(msg, usr, history=None, mode='diagnostic'):
+            calls['mode'] = mode
+            calls['message'] = msg
+            return 'Typical location: under the seat, sir.\n\n[chips: Oil filter | Battery | Fuse box]'
+
+        def fail(*args, **kwargs):
+            raise AssertionError('diagnostic engine must not run for a part-location question')
+
+        from apps.core import diagnostic_engine
+        monkeypatch.setattr(views, '_jarvis_gemini', fake_gemini)
+        monkeypatch.setattr(diagnostic_engine, 'orchestrate_diagnostic_response', fail)
+        reply = views._jarvis_response(message, user, guided_state={'stage': 'area'})
+        assert calls['mode'] == 'general'
+        assert calls['message'] == message
+        assert 'under the seat' in reply.lower()
+        assert '[vehicle-form:' not in reply
+
+    def test_general_gemini_mode_uses_general_prompt(self, user, clean_knowledge, monkeypatch):
+        captured = {}
+
+        class FakeResponse:
+            text = 'General answer, sir.'
+            usage_metadata = None
+
+        class FakeModels:
+            def generate_content(self, model, contents, config=None):
+                captured['contents'] = contents
+                captured['config'] = config
+                return FakeResponse()
+
+        class FakeClient:
+            models = FakeModels()
+
+        monkeypatch.setattr(views, '_get_gemini_client', lambda: FakeClient())
+        reply = views._jarvis_gemini(
+            'how often should I change oil', user, mode='general'
+        )
+        assert reply == 'General answer, sir.'
+        assert 'GENERAL motorcycle question' in captured['contents']
+        assert '9-part Step-by-Step Repair Tutor' not in captured['contents']
+        assert captured['config'] is not None
+
+    def test_general_reply_strips_intake_and_part_image(self, user, clean_knowledge, monkeypatch):
+        def fake_gemini(msg, usr, history=None, mode='diagnostic'):
+            return (
+                'Use JASO MA2 oil, sir.\n'
+                '[vehicle-form: {"category": "general"}]\n'
+                '[part-image: https://example.com/oil.jpg | Oil]\n'
+                '[chips: Oil interval | Tire checks]'
+            )
+
+        monkeypatch.setattr(views, '_jarvis_gemini', fake_gemini)
+        reply = views._jarvis_response('what oil should I use', user)
+        assert '[vehicle-form:' not in reply
+        assert '[part-image:' not in reply
+
+    def test_general_oil_answer_is_localized(self, user, clean_knowledge):
+        reply = views._jarvis_response('paano mag-change oil', user)
+        assert '[vehicle-form:' not in reply
+        assert '2,000' in reply
+        assert 'langis' in reply.lower()
+
+    @pytest.mark.parametrize('message,needle', [
+        ('how to clean and lube the chain', '500 km'),
+        ('brake maintenance checklist', '2 mm'),
+        ('full maintenance schedule', '2,000–4,000 km'),
+    ])
+    def test_general_topic_fallbacks(self, user, clean_knowledge, message, needle):
+        reply = views._jarvis_response(message, user)
+        assert needle in reply
+        assert '[vehicle-form:' not in reply
+        assert '[chips:' in reply
+
     def test_general_form_category_retaged_from_message(self, user, clean_knowledge, monkeypatch):
         monkeypatch.setattr(
             views, '_jarvis_gemini',

@@ -24,10 +24,32 @@ load_dotenv(BASE_DIR / '.env')
 # Gemini AI API Key & Configurable AI Engine Settings
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()  # 'gemini', 'openai_compatible'
+# The model is deliberately configuration-driven.  The default keeps the
+# project's existing model; confirm availability in your Google AI account
+# before relying on it.  Do not hard-code model limits or pricing in code.
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.1-flash-lite')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', AI_MODEL)
+GEMINI_FALLBACK_MODEL = os.getenv('GEMINI_FALLBACK_MODEL', '')
+GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '45'))
+GEMINI_MAX_RETRIES = int(os.getenv('GEMINI_MAX_RETRIES', '3'))
+# This is an application-side spending guard, not a claim about Google's
+# current free-tier quota.  Set it to the budget you want this app to use.
+GEMINI_DAILY_REQUEST_LIMIT = int(os.getenv('GEMINI_DAILY_REQUEST_LIMIT', '1500'))
+GEMINI_INPUT_IMAGE_SUPPORTED = os.getenv('GEMINI_INPUT_IMAGE_SUPPORTED', '1') == '1'
 AI_API_BASE_URL = os.getenv('AI_API_BASE_URL', '')  # e.g., 'http://localhost:8000/v1' for OpenAI-compatible endpoint
 AI_API_KEY = os.getenv('AI_API_KEY', GEMINI_API_KEY)
 AI_EXPLANATION_LEVEL = os.getenv('AI_EXPLANATION_LEVEL', 'beginner').lower()  # 'beginner' or 'mechanic'
+
+# Assistant behaviour and safety limits
+ASSISTANT_MAX_CONTEXT_TURNS = int(os.getenv('ASSISTANT_MAX_CONTEXT_TURNS', '12'))
+ASSISTANT_SUMMARY_TRIGGER_TURNS = int(os.getenv('ASSISTANT_SUMMARY_TRIGGER_TURNS', '10'))
+ASSISTANT_MAX_MESSAGE_CHARS = int(os.getenv('ASSISTANT_MAX_MESSAGE_CHARS', '2000'))
+IMAGE_UPLOAD_MAX_BYTES = int(os.getenv('IMAGE_UPLOAD_MAX_BYTES', str(8 * 1024 * 1024)))
+IMAGE_UPLOAD_MAX_PIXELS = int(os.getenv('IMAGE_UPLOAD_MAX_PIXELS', '20000000'))
+IMAGE_UPLOAD_MAX_DIMENSION = int(os.getenv('IMAGE_UPLOAD_MAX_DIMENSION', '1800'))
+CHAT_RATE_LIMIT_PER_MINUTE = int(os.getenv('CHAT_RATE_LIMIT_PER_MINUTE', '30'))
+UPLOAD_RATE_LIMIT_PER_MINUTE = int(os.getenv('UPLOAD_RATE_LIMIT_PER_MINUTE', '10'))
+AUTO_LOGIN_DEV = os.getenv('AUTO_LOGIN_DEV', '0') == '1'
 
 
 # Quick-start development settings - unsuitable for production
@@ -40,9 +62,13 @@ IS_TESTING = ('test' in sys.argv) or ('pytest' in sys.modules)
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-development-only')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1]').split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -97,11 +123,14 @@ if os.getenv('USE_MYSQL') == '1':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'motor_assistant_db',
-            'USER': 'root',
-            'PASSWORD': '',
-            'HOST': 'localhost',
-            'PORT': '3306',
+            'NAME': os.getenv('MYSQL_DATABASE', 'motor_assistant_db'),
+            'USER': os.getenv('MYSQL_USER', 'root'),
+            'PASSWORD': os.getenv('MYSQL_PASSWORD', ''),
+            'HOST': os.getenv('MYSQL_HOST', 'localhost'),
+            'PORT': os.getenv('MYSQL_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
         }
     }
 else:
@@ -155,5 +184,45 @@ STATICFILES_DIRS = [
 LOGIN_REDIRECT_URL = '/home/'
 LOGOUT_REDIRECT_URL = '/'
 
+# Rate-limit counters use Django's cache.  LocMemCache is per-process, so a
+# multi-worker deployment must point this at a shared cache.  The database
+# cache is built in and can be created with `manage.py createcachetable`.
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv(
+            'DJANGO_CACHE_BACKEND',
+            'django.core.cache.backends.locmem.LocMemCache',
+        ),
+        'LOCATION': os.getenv('DJANGO_CACHE_LOCATION', 'jarvis-rate-limits'),
+    }
+}
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Diagnostic photos are private: stored outside MEDIA_ROOT and served only
+# through an ownership-checked view.
+PRIVATE_MEDIA_ROOT = BASE_DIR / 'private_media'
+PRIVATE_MEDIA_URL = '/private-media/'
+
+# Large multipart uploads need headroom above the public media limit, while
+# the chat endpoint still validates message length separately.
+DATA_UPLOAD_MAX_MEMORY_SIZE = max(12 * 1024 * 1024, IMAGE_UPLOAD_MAX_BYTES + 1024 * 1024)
+FILE_UPLOAD_MAX_MEMORY_SIZE = min(IMAGE_UPLOAD_MAX_BYTES, 8 * 1024 * 1024)
+
+# Secure-by-default cookie and transport settings for non-development use.
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', '1') == '1'
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = False  # the chat UI reads the token from the template
+    X_FRAME_OPTIONS = 'DENY'
+
+if IS_TESTING:
+    ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, 'testserver']))
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

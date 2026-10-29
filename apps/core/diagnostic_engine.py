@@ -99,12 +99,21 @@ class DiagnosticSession:
         else:
             self.vehicle_type = 'all'
 
-        # Retrieve relevant verified knowledge
-        self.verified_knowledge = retrieve_verified_knowledge(
-            self.message + " " + self.corpus[:200],
-            vehicle_type=self.vehicle_type,
-            max_results=2
-        )
+        # Check if an active symptom was mentioned
+        from .guided_diagnostic import detect_area, _has_active_fault
+        symptom_form_match = re.search(r'symptom:\s*(.+)', self.message, re.I)
+        has_form_symptom = bool(symptom_form_match and len(symptom_form_match.group(1).strip()) > 3)
+        self.has_active_symptom = bool(detect_area(self.message) or _has_active_fault(self.message) or has_form_symptom)
+
+        # Retrieve relevant verified knowledge only when a symptom is being diagnosed
+        if self.has_active_symptom:
+            self.verified_knowledge = retrieve_verified_knowledge(
+                self.message + " " + self.corpus[:200],
+                vehicle_type=self.vehicle_type,
+                max_results=2
+            )
+        else:
+            self.verified_knowledge = []
 
         # Safety evaluation
         self.safety_hazard = evaluate_safety_hazards(self.message, self.language)
@@ -292,7 +301,17 @@ def call_configured_ai(prompt, system_instruction=None):
     - 'openai_compatible' (Any OpenAI-compatible REST endpoint)
     """
     provider = getattr(settings, 'AI_PROVIDER', 'gemini').lower()
-    model = getattr(settings, 'AI_MODEL', 'gemini-3.8-flash')
+    # Gemini and OpenAI-compatible providers use separate model settings.
+    # Keep both env-driven; never embed a model name that may be unavailable
+    # on the deployment's account.
+    if provider == 'gemini':
+        model = (
+            getattr(settings, 'GEMINI_MODEL', '')
+            or getattr(settings, 'AI_MODEL', '')
+            or ''
+        ).strip()
+    else:
+        model = (getattr(settings, 'AI_MODEL', '') or '').strip()
     api_key = getattr(settings, 'AI_API_KEY', '') or getattr(settings, 'GEMINI_API_KEY', '')
     base_url = getattr(settings, 'AI_API_BASE_URL', '')
 
@@ -303,17 +322,26 @@ def call_configured_ai(prompt, system_instruction=None):
         client = _get_gemini_client()
         if not client:
             raise RuntimeError("Gemini client unavailable (check GEMINI_API_KEY).")
+        if not model:
+            raise RuntimeError('No Gemini model configured (set GEMINI_MODEL).')
         clean_model = model.replace('models/', '')
+        from .services.ai import fallback_model_name
         try:
             response = client.models.generate_content(
                 model=clean_model,
                 contents=combined_prompt,
             )
         except Exception as api_err:
-            if clean_model != 'gemini-3.1-flash-lite':
-                logger.info(f"Model {clean_model} failed ({api_err}); trying fallback gemini-3.1-flash-lite.")
+            fallback = fallback_model_name()
+            if fallback and fallback != clean_model:
+                # Log only the failure type.  Provider messages may contain
+                # request details that should not be written to application logs.
+                logger.info(
+                    'Primary Gemini model failed (%s); trying the configured fallback.',
+                    type(api_err).__name__,
+                )
                 response = client.models.generate_content(
-                    model='gemini-3.1-flash-lite',
+                    model=fallback,
                     contents=combined_prompt,
                 )
             else:
@@ -325,8 +353,8 @@ def call_configured_ai(prompt, system_instruction=None):
             p_tokens = getattr(meta, 'prompt_token_count', 0) or 0
             c_tokens = getattr(meta, 'candidates_token_count', 0) or 0
             GeminiUsageTracker.record_usage(prompt_tokens=p_tokens, candidates_tokens=c_tokens)
-        except Exception as e:
-            logger.debug(f"Usage record skipped: {e}")
+        except Exception as exc:
+            logger.debug('Usage record skipped (%s).', type(exc).__name__)
         return response.text
 
     elif provider == 'openai_compatible':
@@ -365,12 +393,62 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
     4. Formats prompt with strict anti-hallucination guardrails and 9-point tutor format.
     5. Calls configured AI provider with seamless fallback to verified local database knowledge.
     """
+    from .guided_diagnostic import _is_greeting
+    if _is_greeting(message):
+        return None
     session = DiagnosticSession(message, history, user=user, language=language, experience_level=experience_level)
 
     # 1. Immediate Critical Safety Notice
     safety_header = ""
     if session.safety_hazard and session.safety_hazard['urgency'] == 'critical_stop':
         safety_header = f"> [!CAUTION]\n> **SAFETY ALERT:** {session.safety_hazard['alert_text']}\n\n"
+
+    # If the user has NOT provided an active symptom or fault, do NOT voluntarily assume one!
+    if not session.has_active_symptom and not session.answered_questions:
+        from .views import _jarvis_address
+        sir = _jarvis_address(user)
+        v_info = session.vehicle_info
+        veh_name = " ".join(filter(None, [v_info.get('year'), v_info.get('make'), v_info.get('model')])).strip()
+        if not veh_name:
+            veh_name = "your vehicle"
+
+        no_symptom_system_prompt = f"""You are J.A.R.V.I.S., the expert automotive & motorcycle diagnostic assistant. Address the user respectfully as '{sir}'.
+Strict Rules:
+1. RELEVANT & ACCURATE ANSWER: Answer the user's inquiry directly, concisely, and courteously.
+2. ABSOLUTELY NO VOLUNTARY / ASSUMED SYMPTOMS: The user has NOT reported a breakdown or mechanical fault. NEVER assume, guess, or invent a symptom (such as 'No-Start', 'won't start', 'dead battery', or 'brake failure'). DO NOT draft a 9-step diagnostic repair protocol or checklist for an unstated condition!
+3. VEHICLE FOCUS: If the user mentioned or switched to {veh_name}, acknowledge this machine courteously, give a brief 1-2 sentence note on its specifications if relevant (e.g. carburetor, commuter motorcycle, chain drive), and politely ask what specific issue, symptom, or service they need help with.
+4. Language: Respond in {session.language.upper()}.
+5. Conclude with 3-5 clickable action chips: `[chips: Engine will not start | Brakes weak or spongy | Overheating | Strange noise | Routine maintenance]`.
+"""
+        prompt = f"User Inquiry: {message}\nActive Vehicle: {session.vehicle_info}"
+        try:
+            ai_reply = call_configured_ai(prompt, system_instruction=no_symptom_system_prompt)
+            if ai_reply and len(ai_reply.strip()) > 20:
+                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
+                    ai_reply = safety_header + ai_reply
+                return ai_reply
+        except Exception as exc:
+            logger.warning('AI call for vehicle inquiry failed (%s); using local reply.', type(exc).__name__)
+
+        lang = session.language
+        if lang == 'tagalog':
+            return (
+                f"{safety_header}Naiintindihan ko, {sir}. Nakatutok na ang ating pagsusuri sa **{veh_name}**.\n\n"
+                f"Ano po ang partikular na sintomas o problema na nararanasan ninyo sa inyong sasakyan?\n\n"
+                f"[chips: Ayaw mag-start | Malambot ang preno | Nag-iinit / Overheat | Maingay na makina | Regular na maintenance]"
+            )
+        elif lang == 'hiligaynon':
+            return (
+                f"{safety_header}Naintindihan ko, {sir}. Nakatutok na ang aton sistema sa **{veh_name}**.\n\n"
+                f"Ano bala ang partikular nga diperensya ukon sintomas sang imo salakyan?\n\n"
+                f"[chips: Indi mag-start | Humok ang preno | Nagabukal / Overheat | Gahod sa makina | Regular nga maintenance]"
+            )
+        else:
+            return (
+                f"{safety_header}Understood, {sir}. Active diagnostic focus has been updated to the **{veh_name}**.\n\n"
+                f"What specific symptom, mechanical issue, or maintenance procedure would you like assistance with on this vehicle?\n\n"
+                f"[chips: Engine will not start | Brakes weak or spongy | Overheating | Strange noise | Routine maintenance]"
+            )
 
     # 2. Check if we need to ask ONE targeted question before giving repair instructions
     # If a discriminative question is available and vehicle intake is not complete or no test answers yet
@@ -424,7 +502,7 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
     # 4. Strict System Prompt
     system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic tutor.
 Strict Rules:
-1. Always format answers using the 9-part Step-by-Step Repair Tutor:
+1. When diagnosing an active symptom or fault, format the response using the 9-part Step-by-Step Repair Tutor:
    1. Short symptom summary.
    2. Immediate safety warning (if applicable).
    3. Most likely causes with explicit confidence ratings (High, Medium, Tentative).
@@ -434,6 +512,7 @@ Strict Rules:
    7. What to do if the result differs.
    8. When to stop and consult a qualified mechanic.
    9. Final question asking whether the problem was resolved.
+   CRITICAL: ONLY troubleshoot the exact symptom reported by the user. NEVER invent or assume unrelated symptoms.
 2. Anti-Hallucination: NEVER invent torque values, electrical specs, or fluid types. Only use specifications in the verified workshop database below or state "check factory service manual stamp".
 3. Language: Respond in {session.language.upper()}. Preserve technical part names (caliper, master cylinder, stator, carb, spark plug) while explaining them naturally.
 4. {exp_instruction}
@@ -453,7 +532,10 @@ Strict Rules:
                 ai_reply = safety_header + ai_reply
             return ai_reply
     except Exception as exc:
-        logger.warning(f"Configured AI provider call failed ({exc}); initiating verified local knowledge fallback.")
+        logger.warning(
+            'Configured AI provider call failed (%s); using local knowledge.',
+            type(exc).__name__,
+        )
 
     # 6. Reliable Local Database Fallback (Explicitly Disclosed)
     local_reply = LocalTutorFormatter.format_tutor(

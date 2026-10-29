@@ -604,6 +604,214 @@ BRANCH_TEXTS = {
         ),
     },
 
+    # ─────────────────── General motorcycle Q&A (direct answers) ───────────────
+    'general_oil': {
+        'tl': (
+            "**Pagpapalit ng langis ng makina, {sir}:**\n\n"
+            "**Kailan:** Karaniwan tuwing **2,000–4,000 km** o **3–6 buwan** para sa araw-araw na scooter/underbone. "
+            "Kung traffic, maikling biyahe, o maalikabok, mas malapit sa 2,000 km; kung highway, puwedeng umabot sa 4,000 km. "
+            "Ang owner's manual ang pinakahuling batayan para sa exact na modelo mo.\n\n"
+            "**Langis:** JASO MA/MA2 4T motorcycle oil, tamang viscosity ayon sa manual. "
+            "Huwag gumamit ng car oil na may friction modifiers sa wet-clutch na motor.\n\n"
+            "**Mga kailangan:** drain pan, tamang wrench/socket, bagong crush washer, oil filter, funnel, gloves, "
+            "at sealed container para sa used oil. Patayuin ang motor sa level ground.\n\n"
+            "**Hakbang:**\n"
+            "- [ ] 1. Warm engine 2–3 minutes, patayin, hintayin 2–3 minutes.\n"
+            "- [ ] 2. Patayuin ang motor sa level ground; ilagay ang drain pan sa ilalim ng drain bolt.\n"
+            "- [ ] 3. Tanggalin ang drain bolt (at filter); hayaang maubos ang lumang langis.\n"
+            "- [ ] 4. Palitan ang crush washer; ibalik ang drain bolt nang snug — huwag sobrang higpitan; gamitin ang manual torque kung may wrench.\n"
+            "- [ ] 5. Palitan ang oil filter ayon sa manual; lagyan ng fresh oil ang filter seal.\n"
+            "- [ ] 6. I-refill ang tamang dami, check ang sight glass/dipstick, at patakbuhin sandali ang engine.\n"
+            "- [ ] 7. Patayin, hintayin, i-check muli ang level, at tingnan kung may tagas.\n\n"
+            "**Kaligtasan at disposal:** Nakakalason ang used oil — ilagay sa sealed container at dalhin sa recycling center; huwag itapon sa imburnal. "
+            "Kung rounded/seized ang drain bolt o may metal flakes sa langis, huminto at ipa-check sa mekaniko.\n\n"
+            "[chips: Kailan dapat mag-change oil? | Anong oil type ang gagamitin? | Ano ang titingnan bago magpalit ng gulong? | Buong maintenance schedule]"
+        ),
+        'hil': (
+            "**Pag-ilis sang langis sang makina, {sir}:**\n\n"
+            "**San-o:** Kasadyahan every **2,000–4,000 km** ukon **3–6 ka bulan** para sa adlaw-adlaw nga scooter/underbone. "
+            "Kon traffic, malip-ot nga biyahe, ukon madamo sang abog, mas malapit sa 2,000 km; kon highway, puwede makaabot 4,000 km. "
+            "Ang owner's manual ang pinakaulahing basihan para sa exact nga modelo mo.\n\n"
+            "**Lana:** JASO MA/MA2 4T motorcycle oil, husto nga viscosity suno sa manual. "
+            "Indi maggamit car oil nga may friction modifiers sa wet-clutch nga motor.\n\n"
+            "**Mga kinahanglan:** drain pan, husto nga wrench/socket, bag-o nga crush washer, oil filter, funnel, gloves, "
+            "kag sealed container para sa used oil. Patindoga ang motor sa level ground.\n\n"
+            "**Mga tikang:**\n"
+            "- [ ] 1. Warm engine 2–3 minutes, patya, hintayi 2–3 minutes.\n"
+            "- [ ] 2. Patindoga ang motor sa level ground; ibutang ang drain pan sa idalom sang drain bolt.\n"
+            "- [ ] 3. Tangtanga ang drain bolt (kag filter); pabay-i nga maubos ang daan nga lana.\n"
+            "- [ ] 4. Ilisan ang crush washer; ibalik ang drain bolt nga snug — indi sobra higot; gamita ang manual torque kon may wrench.\n"
+            "- [ ] 5. Ilisan ang oil filter suno sa manual; butangi sang fresh oil ang filter seal.\n"
+            "- [ ] 6. I-refill ang husto nga kadamu, check ang sight glass/dipstick, kag patakbuhon sing makadali ang engine.\n"
+            "- [ ] 7. Patya, hintayi, i-check liwat ang level, kag tan-awa kon may tagas.\n\n"
+            "**Kaligtasan kag disposal:** Makahilo ang used oil — ibutang sa sealed container kag dal-on sa recycling center; indi itapon sa imburnal. "
+            "Kon rounded/seized ang drain bolt ukon may metal flakes sa lana, hunong kag ipa-check sa mekaniko.\n\n"
+            "[chips: San-o dapat mag-ilis sang langis? | Ano nga oil type ang gamiton? | Ano ang usisahon antes mag-ilis sang gulong? | Bug-os nga maintenance schedule]"
+        ),
+    },
+    'general_tire': {
+        'tl': (
+            "**Bago magpalit ng gulong, ito ang mga dapat i-check, {sir}:**\n\n"
+            "1. **Size at rating:** Basahin ang sidewall (hal. 90/80-14) at siguraduhing pareho ang replacement. "
+            "Check ang load/speed rating, at kung tube-type o tubeless ang rim mo.\n"
+            "2. **Kondisyon:** Tread depth na hindi bababa sa **1.6 mm**, walang cracks, bulges, o naka-embed na nails/screws. "
+            "Tingnan ang rim kung may bingkong, crack, o kalawang.\n"
+            "3. **Tools:** Tyre levers, rim protectors, bead breaker (o shop), torque wrench, bagong valve stem kung kailangan, "
+            "pump with gauge, at soapy water para sa leak check.\n"
+            "4. **Brake at chain clearance:** Siguraduhing hindi baluktot ang disc rotor, hindi contaminated ang pads, at may clearance ang chain/sprocket. "
+            "Sa drum brake, tandaan ang shoe at spring orientation bago tanggalin.\n"
+            "5. **Wheel bearings at spokes:** I-rock ang wheel para sa play at check kung tight ang spokes. "
+            "Itabi nang maayos ang axle nut, spacers, at adjusters.\n"
+            "6. **Safety:** Secure ang motor sa center stand o paddock stand, chock ang kabilang wheel, "
+            "at ilayo ang kamay sa umiikot na wheel. Gumamit ng torque wrench sa axle — huwag mag-estimate.\n"
+            "7. **Pagkatapos:** I-seat ang bead, inflate sa pressure na nakasulat sa tyre/owner's manual, check leaks gamit ang soapy water, "
+            "i-spin ang wheel, at dahan-dahang i-test ang brakes sa safe area bago mag-normal ride.\n\n"
+            "**Tip:** Palitan ang gulong nang pares kung uneven ang wear, at i-check muli ang pressure cold sa susunod na umaga. "
+            "Kung cracked ang rim o damaged ang axle threads, huminto at ipa-shop na.\n\n"
+            "[chips: Anong tyre pressure ang dapat gamitin? | Kailan dapat mag-change oil? | Brake maintenance checklist | Buong maintenance schedule]"
+        ),
+        'hil': (
+            "**Antes mag-ilis sang gulong, ini ang mga dapat usisahon, {sir}:**\n\n"
+            "1. **Size kag rating:** Basaha ang sidewall (hal. 90/80-14) kag siguraduha nga pareho ang replacement. "
+            "Check ang load/speed rating, kag kon tube-type ukon tubeless ang rim mo.\n"
+            "2. **Kondisyon:** Tread depth nga indi kubos sa **1.6 mm**, wala sang cracks, bulges, ukon naka-embed nga nails/screws. "
+            "Usisahon ang rim kon may bingkong, crack, ukon kalawang.\n"
+            "3. **Tools:** Tyre levers, rim protectors, bead breaker (ukon shop), torque wrench, bag-o nga valve stem kon kinahanglan, "
+            "pump with gauge, kag soapy water para sa leak check.\n"
+            "4. **Brake kag chain clearance:** Siguraduha nga indi baluktot ang disc rotor, indi contaminated ang pads, kag may clearance ang chain/sprocket. "
+            "Sa drum brake, tandaan ang shoe kag spring orientation antes tanggalon.\n"
+            "5. **Wheel bearings kag spokes:** I-rock ang wheel para sa play kag check kon tight ang spokes. "
+            "Itago sing maayo ang axle nut, spacers, kag adjusters.\n"
+            "6. **Safety:** Secure ang motor sa center stand ukon paddock stand, chock ang isa ka wheel, "
+            "kag ilayo ang kamot sa nagatuyok nga wheel. Gamita ang torque wrench sa axle — indi mag-estimate.\n"
+            "7. **Pagkatapos:** I-seat ang bead, inflate sa pressure nga nakasulat sa tyre/owner's manual, check leaks gamit soapy water, "
+            "i-spin ang wheel, kag hinay-hinay i-test ang brakes sa safe area antes mag-normal ride.\n\n"
+            "**Tip:** Ilisan ang gulong sing pares kon uneven ang wear, kag i-check liwat ang pressure cold sa sunod nga aga. "
+            "Kon cracked ang rim ukon damaged ang axle threads, hunong kag ipa-shop na.\n\n"
+            "[chips: Ano nga tyre pressure ang dapat gamiton? | San-o dapat mag-ilis sang langis? | Brake maintenance checklist | Bug-os nga maintenance schedule]"
+        ),
+    },
+    'general_chain': {
+        'tl': (
+            "**Chain care, {sir}:**\n\n"
+            "- **Linis at lube:** Every **500 km** o pagkatapos ng ulan. Gumamit ng chain cleaner at dedicated chain lube — "
+            "ang WD-40 ay cleaner/water displacer, hindi kapalit ng chain lubricant.\n"
+            "- **Slack:** Karaniwang **20–35 mm** sa midpoint (i-confirm sa manual). Adjust sa rear axle at panatilihing aligned ang wheel.\n"
+            "- **Inspection:** Tight links, rust, missing O-rings, at hooked/sharp sprocket teeth. "
+            "Kung worn na ang chain, palitan ang chain at sprockets nang sabay — mabilis masira ang bagong chain sa worn sprockets.\n"
+            "- **Safety:** Engine off, neutral, ilayo ang kamay sa sprocket, at gumamit ng paddock stand. "
+            "Huwag sobrang higpitan ang chain; makakasira ito ng countershaft bearing.\n\n"
+            "**Quick check:** Sa stand, i-spin slowly ang rear wheel at panoorin ang chain. "
+            "Ang dry o kinked chain ay may tight spots habang dumadaan sa sprocket.\n\n"
+            "[chips: Kailan dapat mag-change oil? | Ano ang titingnan bago magpalit ng gulong? | Brake maintenance checklist | Buong maintenance schedule]"
+        ),
+        'hil': (
+            "**Chain care, {sir}:**\n\n"
+            "- **Linis kag lana:** Every **500 km** ukon pagkatapos sang ulan. Gamita ang chain cleaner kag dedicated chain lube — "
+            "ang WD-40 cleaner/water displacer, indi kapareho sang chain lubricant.\n"
+            "- **Slack:** Kasadyahan **20–35 mm** sa midpoint (i-confirm sa manual). Adjust sa rear axle kag panatiliha nga aligned ang wheel.\n"
+            "- **Inspection:** Tight links, rust, missing O-rings, kag hooked/sharp sprocket teeth. "
+            "Kon worn na ang chain, ilisan ang chain kag sprockets sing dungan — madasig maguba ang bag-o nga chain sa worn sprockets.\n"
+            "- **Safety:** Engine off, neutral, ilayo ang kamot sa sprocket, kag gamita ang paddock stand. "
+            "Indi sobra higot ang chain; makaguba ini sang countershaft bearing.\n\n"
+            "**Quick check:** Sa stand, i-spin slowly ang rear wheel kag tan-awa ang chain. "
+            "Ang dry ukon kinked chain may tight spots samtang nagalabay sa sprocket.\n\n"
+            "[chips: San-o dapat mag-ilis sang langis? | Ano ang usisahon antes mag-ilis sang gulong? | Brake maintenance checklist | Bug-os nga maintenance schedule]"
+        ),
+    },
+    'general_brakes': {
+        'tl': (
+            "**Brake maintenance checklist, {sir}:**\n\n"
+            "- **Pads/shoes:** Check every **2,000–4,000 km** o monthly. Palitan ang disc pads kapag mga **2 mm** na lang ang lining; "
+            "palitan ang drum shoes kapag manipis o contaminated ang friction material.\n"
+            "- **Fluid:** Check ang reservoir level at kulay. Bleed every **1–2 taon**, o mas maaga kapag spongy ang lever. "
+            "Gamitin ang DOT 3/DOT 4 na nakasulat sa cap — huwag paghalo.\n"
+            "- **Disc/drum:** Tingnan kung may deep grooves, blue heat spots, o warped rotor. Dapat firm ang lever/pedal at hold ang pressure.\n"
+            "- **Leaks:** Check ang master cylinder, hose, caliper, at banjo bolts para sa wet spots o crusty residue.\n"
+            "- **Safety:** Huwag i-ride kung lumulubog ang lever, may leak, o may metal grinding. "
+            "Nakakalason ang brake dust — gumamit ng gloves at mask, at magtrabaho sa maaliwalas na lugar.\n\n"
+            "**When to stop:** Kung cracked ang brake line, seized ang caliper piston, o below minimum thickness ang rotor, "
+            "palitan ang affected parts imbes na i-adjust pa.\n\n"
+            "[chips: Kailan dapat mag-change oil? | Ano ang titingnan bago magpalit ng gulong? | Paano linisin at lagyan ng langis ang chain? | Buong maintenance schedule]"
+        ),
+        'hil': (
+            "**Brake maintenance checklist, {sir}:**\n\n"
+            "- **Pads/shoes:** Check every **2,000–4,000 km** ukon monthly. Ilisan ang disc pads kon mga **2 mm** na lang ang lining; "
+            "ilisan ang drum shoes kon manipis ukon contaminated ang friction material.\n"
+            "- **Fluid:** Check ang reservoir level kag kolor. Bleed every **1–2 ka tuig**, ukon mas temprano kon spongy ang lever. "
+            "Gamita ang DOT 3/DOT 4 nga nakasulat sa cap — indi paghalo.\n"
+            "- **Disc/drum:** Tan-awa kon may deep grooves, blue heat spots, ukon warped rotor. Dapat matig-a ang lever/pedal kag hold ang pressure.\n"
+            "- **Leaks:** Check ang master cylinder, hose, caliper, kag banjo bolts para sa wet spots ukon crusty residue.\n"
+            "- **Safety:** Indi mag-ride kon nagalubog ang lever, may leak, ukon may metal grinding. "
+            "Makahilo ang brake dust — gamita ang gloves kag mask, kag magtrabaho sa maayo ang hangin nga lugar.\n\n"
+            "**When to stop:** Kon cracked ang brake line, seized ang caliper piston, ukon below minimum thickness ang rotor, "
+            "ilisan ang affected parts imbes nga i-adjust pa.\n\n"
+            "[chips: San-o dapat mag-ilis sang langis? | Ano ang usisahon antes mag-ilis sang gulong? | Paano limpyohan kag butangan sang lana ang chain? | Bug-os nga maintenance schedule]"
+        ),
+    },
+    'general_schedule': {
+        'tl': (
+            "**Routine motorcycle maintenance schedule, {sir}:**\n\n"
+            "- **Bago bawat ride:** Tyres, brakes, lights, chain, at quick look para sa leaks.\n"
+            "- **Weekly:** Cold tyre pressure, chain lubrication, engine oil level, brake fluid level, at coolant level (kung liquid-cooled).\n"
+            "- **Every 2,000–4,000 km:** Engine oil at filter, air-filter check, chain adjustment, brake inspection.\n"
+            "- **Every 4,000–6,000 km:** Spark plug, valve-clearance check (kung applicable), CVT inspection sa scooter.\n"
+            "- **Every 8,000–12,000 km:** CVT belt at rollers, brake fluid, fork oil, wheel bearings, at suspension check.\n"
+            "- **Yearly o ayon sa manual:** Coolant replacement, brake fluid flush, battery check, at full fastener/torque check.\n\n"
+            "**Importante:** Typical intervals ito para sa araw-araw na paggamit. Traffic, alikabok, ulan, at hard riding ay nagpapashorten nito; "
+            "ang owner's manual at kondisyon ng parts ang final authority. "
+            "Kung heavy traffic o maalikabok ang ruta, gawin ang oil at air-filter service sa mas maikling interval.\n\n"
+            "[chips: Kailan dapat mag-change oil? | Ano ang titingnan bago magpalit ng gulong? | Paano linisin at lagyan ng langis ang chain? | Brake maintenance checklist]"
+        ),
+        'hil': (
+            "**Routine motorcycle maintenance schedule, {sir}:**\n\n"
+            "- **Antes sang kada ride:** Tyres, brakes, lights, chain, kag quick look para sa leaks.\n"
+            "- **Weekly:** Cold tyre pressure, chain lubrication, engine oil level, brake fluid level, kag coolant level (kon liquid-cooled).\n"
+            "- **Every 2,000–4,000 km:** Engine oil kag filter, air-filter check, chain adjustment, brake inspection.\n"
+            "- **Every 4,000–6,000 km:** Spark plug, valve-clearance check (kon applicable), CVT inspection sa scooter.\n"
+            "- **Every 8,000–12,000 km:** CVT belt kag rollers, brake fluid, fork oil, wheel bearings, kag suspension check.\n"
+            "- **Tuig-tuig ukon suno sa manual:** Coolant replacement, brake fluid flush, battery check, kag full fastener/torque check.\n\n"
+            "**Importante:** Typical intervals ini para sa adlaw-adlaw nga paggamit. Traffic, abog, ulan, kag hard riding nagapamubo sini; "
+            "ang owner's manual kag kondisyon sang parts ang final authority. "
+            "Kon heavy traffic ukon madamo abog ang ruta, himuoa ang oil kag air-filter service sa mas malip-ot nga interval.\n\n"
+            "[chips: San-o dapat mag-ilis sang langis? | Ano ang usisahon antes mag-ilis sang gulong? | Paano limpyohan kag butangan sang lana ang chain? | Brake maintenance checklist]"
+        ),
+    },
+    'general_help': {
+        'tl': (
+            "Matutulungan kita sa kahit anong tanong tungkol sa motor, {sir} — hindi lang kapag may sira. "
+            "Ito ang mga quick baseline na pwede mong gamitin agad:\n\n"
+            "- **Oil/filter:** 2,000–4,000 km o 3–6 buwan; JASO MA/MA2 4T oil; filter ayon sa manual.\n"
+            "- **Tyres:** Check cold pressure weekly (karaniwang 29–33 psi front / 33–36 psi rear), tread at least 1.6 mm, "
+            "walang cracks, bulges, o nails.\n"
+            "- **Chain:** Linis at lube every 500 km; 20–35 mm slack; palitan ang chain at sprockets nang sabay kapag worn.\n"
+            "- **Brakes:** Pads at least 2 mm, fluid clear at level, firm lever; bleed every 1–2 taon o kapag spongy.\n"
+            "- **Battery:** 12.6 V+ at rest, 13.5–14.5 V while charging; typical life 3–5 taon.\n"
+            "- **CVT:** Inspect belt at rollers around 8,000–12,000 km; palitan ayon sa wear at manual.\n"
+            "- **Coolant:** Check cold monthly; palitan every 2 taon o ayon sa manual.\n\n"
+            "Sabihin lang ang model ng motor mo (optional) at kung ano ang gusto mong gawin — oil change, tyre change, chain care, brake check, "
+            "o full service — at ibibigay ko ang interval, tools, steps, at safety notes. "
+            "Ang owner's manual ang laging final authority sa exact specs.\n\n"
+            "[chips: Kailan dapat mag-change oil? | Ano ang titingnan bago magpalit ng gulong? | Paano linisin at lagyan ng langis ang chain? | Brake maintenance checklist | Buong maintenance schedule]"
+        ),
+        'hil': (
+            "Mabuligan ko ikaw sa bisan ano nga pamangkot parte sa motor, {sir} — indi lang kon may guba. "
+            "Ini ang mga quick baseline nga pwede mo gamiton dayon:\n\n"
+            "- **Oil/filter:** 2,000–4,000 km ukon 3–6 ka bulan; JASO MA/MA2 4T oil; filter suno sa manual.\n"
+            "- **Tyres:** Check cold pressure weekly (kasadyahan 29–33 psi front / 33–36 psi rear), tread at least 1.6 mm, "
+            "wala sang cracks, bulges, ukon nails.\n"
+            "- **Chain:** Linis kag lube every 500 km; 20–35 mm slack; ilisan ang chain kag sprockets sing dungan kon worn.\n"
+            "- **Brakes:** Pads at least 2 mm, fluid clear kag level, matig-a lever; bleed every 1–2 ka tuig ukon kon spongy.\n"
+            "- **Battery:** 12.6 V+ at rest, 13.5–14.5 V while charging; kasadyahan nga kabuhi 3–5 ka tuig.\n"
+            "- **CVT:** Inspect belt kag rollers around 8,000–12,000 km; ilisan suno sa wear kag manual.\n"
+            "- **Coolant:** Check cold monthly; ilisan every 2 ka tuig ukon suno sa manual.\n\n"
+            "Sugiri lang ang model sang motor mo (optional) kag ano ang gusto mo himuon — oil change, tyre change, chain care, brake check, "
+            "ukon full service — kag ihatag ko ang interval, tools, steps, kag safety notes. "
+            "Ang owner's manual ang permi final authority sa exact specs.\n\n"
+            "[chips: San-o dapat mag-ilis sang langis? | Ano ang usisahon antes mag-ilis sang gulong? | Paano limpyohan kag butangan sang lana ang chain? | Brake maintenance checklist | Bug-os nga maintenance schedule]"
+        ),
+    },
+
     # ───────────────────────── Stats ──────────────────────────────────────────
     'stats_symptoms': {
         'tl': (

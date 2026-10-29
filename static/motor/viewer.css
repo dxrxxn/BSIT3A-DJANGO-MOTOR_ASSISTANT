@@ -264,6 +264,19 @@
   border-color: rgba(99, 102, 241, .5);
   box-shadow: 0 0 10px rgba(99, 102, 241, .25);
 }
+.mv-part-btn:disabled,
+.mv-part-btn.is-unavailable {
+  color: #5c6578;
+  cursor: not-allowed;
+  opacity: .55;
+  text-decoration: line-through;
+  text-decoration-color: rgba(240, 80, 110, .55);
+}
+.mv-part-btn:disabled:hover,
+.mv-part-btn.is-unavailable:hover {
+  background: transparent;
+  color: #5c6578;
+}
 .mv-part-tour-btn {
   color: #fcd34d;
 }
@@ -315,6 +328,28 @@
   transition: color .15s ease;
 }
 .mv-part-hud-close:hover { color: #f0f3fa; }
+.mv-part-hud-limit {
+  margin: .45rem 0 .1rem;
+  padding: .45rem .6rem;
+  border-left: 2px solid rgba(245, 185, 66, .65);
+  background: rgba(245, 185, 66, .08);
+  border-radius: 4px;
+  color: #e7c98d;
+  font-size: .7rem;
+  line-height: 1.45;
+}
+.mv-coverage-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .45rem;
+  flex-wrap: wrap;
+  margin: 0;
+  color: #7d879c;
+  font-size: .69rem;
+  line-height: 1.5;
+}
+.mv-coverage-note i { margin-top: .15rem; color: #6ea8fe; }
+.mv-coverage-note #mv-coverage-text { color: #aab3c5; }
 .mv-part-hud-title {
   font-size: 1.05rem;
   font-weight: 700;

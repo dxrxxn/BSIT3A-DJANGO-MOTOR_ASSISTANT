@@ -146,8 +146,38 @@ BIKE_LIBRARY = {
         'brakes': 'front disc / rear drum',
         'focus': ['Chain, carburetor, and valve clearance checks.'],
     },
+    'bajaj ct 100': {
+        'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'fuel': 'Carburetor', 'drive': 'Chain',
+        'brakes': 'front drum / rear drum',
+        'focus': [
+            'Carburetor cleanliness, idle screw, and fuel petcock flow.',
+            'Spark plug gap and condition.',
+            'Drive chain slack, lubrication, and drum brake shoe wear.',
+        ],
+    },
+    'bajaj ct100': {
+        'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'fuel': 'Carburetor', 'drive': 'Chain',
+        'brakes': 'front drum / rear drum',
+        'focus': [
+            'Carburetor cleanliness, idle screw, and fuel petcock flow.',
+            'Spark plug gap and condition.',
+            'Drive chain slack, lubrication, and drum brake shoe wear.',
+        ],
+    },
+    'ct 100': {
+        'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'fuel': 'Carburetor', 'drive': 'Chain',
+        'brakes': 'front drum / rear drum',
+        'focus': [
+            'Carburetor cleanliness, idle screw, and fuel petcock flow.',
+            'Spark plug gap and condition.',
+            'Drive chain slack, lubrication, and drum brake shoe wear.',
+        ],
+    },
     'ct100': {
-        'make': 'Kawasaki', 'model': 'CT100', 'type': 'underbone',
+        'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': ['Carburetor, chain, and drum brakes.'],
@@ -1635,11 +1665,432 @@ def _is_followup_question(msg):
     return msg.endswith('?') or msg.startswith(starters)
 
 
+# ---------------------------------------------------------------------------
+# General motorcycle Q&A detection
+# ---------------------------------------------------------------------------
+# Maintenance, how-to, service-interval and "what should I check" questions
+# deserve a direct answer. They must not be forced through the diagnostic
+# intake, which asks for make/model/year before helping.
+
+GENERAL_DOMAIN_RE = re.compile(
+    r"""
+    \b(?:
+        motorcycles?|motorbikes?|motor|scooters?|underbones?|mopeds?|tricycles?|bikes?|
+        engines?|makina|oil|langis|lana|oil\s+filters?|air\s+filters?|filters?|
+        tyres?|tires?|gulong|wheels?|rims?|spokes?|hubs?|chains?|kadena|sprockets?|
+        brakes?|preno|batter(?:y|ies)|baterya|spark\s+plugs?|plugs?|coolant|radiators?|
+        suspension|forks?|shocks?|clutch|cvt|belts?|rollers?|valves?|tappets?|
+        throttle|carburetors?|carbs?|fuel|gas|gasoline|petrol|exhaust|mufflers?|tambutso|
+        headlights?|tail\s?lights?|bulbs?|fuses?|stator|rectifier|alternators?|
+        bearings?|axles?|calipers?|discs?|drums?|pads?|shoes?|fluids?|grease|lube|psi|
+        leak(?:s|ing)?|smoke|smoking|noise|sounds?|
+        tyre\s+pressure|tire\s+pressure|maintenance|service|pms|tune[- ]?up|
+        ride|riding|long\s+ride|trips?|
+        helmet|helmets?|visor|gear|gears?|jacket|gloves?|boots?|protector|
+        riding\s+gear|safety\s+gear|apparel|atgatt|
+        buy(?:ing)?|purchas(?:e|ing)|beginner|starter|commut(?:e|er|ing)|
+        review|comparison|compare|versus|recommend(?:ation)?s?|
+        abs|efi|displacement|horsepower
+    )\b
+    """,
+    re.I | re.X,
+)
+
+# A question word only counts at the START of the message. Otherwise a symptom
+# report like "... clicking sound when pressing the starter" would be mistaken
+# for a general "when" question.
+GENERAL_QUESTION_START_RE = re.compile(
+    r"^\s*(?:"
+    r"how|what|when|where|which|who|why|"
+    r"paano|papaano|kailan|gaano|ilan|pila|unsa|ano|saan|san-o|magkano|pwede|dapat|tama|"
+    r"can|could|should|do|does|is|are|will|would"
+    r")\b",
+    re.I,
+)
+
+# Action/how-to cues. A bare system noun ("Brakes", "Oil") is deliberately not
+# enough: during a guided session those are area answers, not general questions.
+GENERAL_ACTION_RE = re.compile(
+    r"""
+    \b(?:
+        tips?|guide|procedure|steps?|checklist|interval|schedule|frequency|
+        recommended|recommendation|best|advice|maintenance|service|tune[- ]?up|pms|preventive|care|
+        chang(?:e|ing)|replac(?:e|ing)|clean(?:ing)?|lub(?:e|ing|ricate|ricating)|
+        adjust(?:ing)?|inspect(?:ing)?|check(?:ing)?|flush(?:ing)?|bleed(?:ing)?|
+        tighten(?:ing)?|measur(?:e|ing)|choos(?:e|ing)|buy(?:ing)?|upgrad(?:e|ing)|
+        tell\s+me|explain|describe|
+        psi|pressure|slack|gap|spec(?:s|ification)?|size|type|capacity|torque|
+        viscosity|weight|length|price|cost|difference|vs|versus|fitment|compatible|
+        compar(?:e|ing|ison)|recommend(?:ation)?s?|review|better|best\s+for|
+        beginner|starter|commuter|buying|purchase|tell\s+me\s+about|
+        feature|pros?\s+and\s+cons?|advantage|disadvantage
+    )\b
+    """,
+    re.I | re.X,
+)
+
+# Maintenance/how-to words plus system nouns, used to tell a bare vehicle
+# identification from a vehicle + topic message.
+GENERAL_MAINTENANCE_RE = re.compile(
+    r"""
+    \b(?:
+        tips?|guide|procedure|steps?|checklist|interval|schedule|frequency|
+        recommended|recommendation|best|advice|maintenance|service|tune[- ]?up|pms|preventive|care|
+        chang(?:e|ing)|replac(?:e|ing)|clean(?:ing)?|lub(?:e|ing|ricate|ricating)|
+        adjust(?:ing)?|inspect(?:ing)?|check(?:ing)?|flush(?:ing)?|bleed(?:ing)?|
+        tighten(?:ing)?|measur(?:e|ing)|choos(?:e|ing)|buy(?:ing)?|upgrad(?:e|ing)|
+        tell\s+me|explain|describe|
+        oils?|langis|tyres?|tires?|gulong|chains?|kadena|brakes?|preno|batter(?:y|ies)|baterya|
+        fluids?|filters?|spark\s+plugs?|coolant|radiators?|suspension|forks?|shocks?|cvt|belts?|
+        psi|pressure|slack|gap|spec(?:s|ification)?|size|type|capacity|torque|
+        viscosity|weight|length|price|cost|difference|vs|versus|fitment|compatible
+    )\b
+    """,
+    re.I | re.X,
+)
+
+
+def _has_general_topic_cue(msg):
+    return bool(
+        GENERAL_QUESTION_START_RE.search(msg)
+        or GENERAL_ACTION_RE.search(msg)
+    )
+
+
+VISUAL_PART_TERMS = (
+    'caliper', 'disc brake', 'brake pad', 'sprocket', 'drive chain', 'chain',
+    'spark plug', 'carburetor', 'battery', 'starter motor', 'cvt', 'radiator',
+    'piston', 'headlight', 'tail light', 'air filter', 'oil filter',
+    'shock absorber', 'fuel injector', 'throttle body', 'fork',
+)
+
+VISUAL_REQUEST_RE = re.compile(
+    r"\b(?:what\s+is|what\s+are|show\s+me|show|picture|photo|image|"
+    r"look\s+like|looks\s+like|ano\s+ang|unsa\s+ang)\b",
+    re.I,
+)
+
+# "Where is the oil filter?" / "Where can I find the CDI?" / "Saan
+# matatagpuan ang battery?" are location questions, not fault reports. They
+# need a direct answer instead of the guided intake or a generic fallback.
+LOCATION_QUERY_RE = re.compile(
+    r"^\s*(?:where|saan|asa|diin|ha)\b"
+    r"|\b(?:location\s+of|whereabouts\s+of|where\s+to\s+locate|"
+    r"where\s+can\s+i\s+(?:locate|find)|where\s+do\s+i\s+(?:locate|find))\b",
+    re.I,
+)
+
+# Parts that users commonly ask to locate. This deliberately excludes
+# symptom words such as noise, leak, smoke, and vibration so that "where is
+# the noise coming from?" stays a diagnostic question.
+PART_LOCATION_RE = re.compile(
+    r"\b(?:parts?|components?|assembl(?:y|ies)|modules?|units?|"
+    r"ecu|ecm|cdi|tci|ignition\s+coil|coil|spark\s+plug|"
+    r"horn|relay|solenoid|fuses?|fuse\s+box|battery|rectifier|regulator|stator|alternator|"
+    r"oil\s+filter|air\s+filter|fuel\s+filter|fuel\s+pump|fuel\s+tank|petcock|"
+    r"carburetor|throttle\s+body|injector|injection|radiator|coolant|reservoir|"
+    r"hose|clamp|gasket|seal|bearing|axle|swingarm|shock|fork|suspension|"
+    r"chain|sprocket|belt|cvt|variator|rollers?|clutch|brake|caliper|master\s+cylinder|"
+    r"pads?|disc|rotor|drum|wheel|tyre|tire|rim|spoke|"
+    r"headlight|tail\s?light|signal\s+light|bulb|switch|wiring|harness|connector|terminal|"
+    r"sensor|tps|map\s+sensor|o2\s+sensor|oxygen\s+sensor|speedometer|cluster|dashboard|"
+    r"handlebar|throttle|grip|lever|pedal|sidestand|kickstand|footpeg|seat|"
+    r"exhaust|muffler|pipe|engine|motor|makina|transmission|gearbox|"
+    r"oil|langis|filter|pump|valve|tappet|camshaft|cam|piston|cylinder|"
+    r"cable|wire|tube|line|mirror|rack|cap|plug|bolt|nut|screw)\b",
+    re.I,
+)
+
+LOCATION_FLOW_RE = re.compile(
+    r"\b(?:coming|leaking|dripping|oozing|seeping|spraying|squirting|pouring)\s+from\b",
+    re.I,
+)
+
+LOCATION_SYMPTOM_RE = re.compile(
+    r"\b(?:noise|sound|rattle|knock|vibration|leak|smoke|smell|problem|issue|fault)\b",
+    re.I,
+)
+
+PRONOUN_LOCATION_RE = re.compile(
+    r"\b(?:it|that|this|they|them|those|these)\b",
+    re.I,
+)
+
+LOCATION_ACTION_RE = re.compile(
+    r"\b(?:locate|located|location|find|found|whereabouts)\b",
+    re.I,
+)
+
+
+def _history_texts(history):
+    """Return recent history text without assuming one client shape."""
+    if not history:
+        return []
+    if isinstance(history, str):
+        return [history]
+    texts = []
+    for turn in list(history)[-8:]:
+        if isinstance(turn, dict):
+            texts.append(
+                str(
+                    turn.get('text')
+                    or turn.get('message')
+                    or turn.get('content')
+                    or ''
+                )
+            )
+        else:
+            texts.append(str(turn))
+    return [text for text in texts if text]
+
+
+def _history_mentions_part(history):
+    for text in reversed(_history_texts(history)):
+        norm = _norm(text)
+        if _has_active_fault(norm):
+            continue
+        if PART_LOCATION_RE.search(norm):
+            return True
+    return False
+
+SPEC_CUE_RE = re.compile(
+    r"\b(?:gap|interval|best|how\s+often|when\s+to|how\s+to|change|changing|"
+    r"replace|replacing|clean|cleaning|check|checking|maintenance|spec|"
+    r"specification|size|type|price|cost|difference|vs|versus|capacity|"
+    r"torque|pressure|psi|weight|viscosity|slack|adjust|adjusting)\b",
+    re.I,
+)
+
+# "Check for leaks" / "look for signs of wear" are maintenance questions, not
+# fault reports. Remove those inspection phrases before looking for faults.
+GENERAL_INSPECTION_RE = re.compile(
+    r"\b(?:how\s+to\s+)?(?:check|checking|inspect|inspecting|look|looking|watch|test|testing)\s+"
+    r"(?:"
+    r"(?:for|out\s+for)\s+(?:any\s+)?(?:signs?\s+of\s+)?(?:\w+\s+){0,3}"
+    r"(?:leaks?|smoke|noise|sounds?|cracks?|wear|damage|problems?|issues?|"
+    r"punctures?|punctured|dead|weak|flat|worn|loose|stuck|broken|faulty|seized|overheating)"
+    r"|"
+    r"(?:if|whether)\s+.{0,60}?\b(?:dead|weak|flat|worn|loose|stuck|broken|"
+    r"damaged|faulty|leaking|overheating|seized|punctured)"
+    r")\b",
+    re.I,
+)
+
+FAULT_PATTERNS = [
+    re.compile(pattern, re.I) for pattern in (
+        r"\bwon'?t\s+(?:start|run|idle|crank|charge|fire)\b",
+        r"\bwill\s+not\s+(?:start|run|idle|crank|charge|fire)\b",
+        r"\b(?:can'?t|cannot|doesn'?t|doesnt|isn'?t|isnt|not)\s+"
+        r"(?:start|starting|run|running|idle|crank|cranking|charge|charging|"
+        r"work|working|respond|responding|fire|firing)\b",
+        r"\bno\s+(?:start|power|lights?|spark|compression|charge)\b",
+        r"\bhard\s+to\s+start\b",
+        r"\b(?:dead|flat|punctured|seized|stuck|broken|damaged|faulty)\b",
+        r"\b(?:overheat|overheating|overheated)\b",
+        r"\b(?:smoke|smoking|smoky)\b",
+        r"\b(?:leak|leaking|leaks|dripping|drip)\b",
+        r"\b(?:grind|grinding|squeal|squealing|squeak|squeaking|"
+        r"knock|knocking|rattle|rattling|tick|ticking|clicking|clicked|clicks|noisy)\b",
+        r"\b(?:oil|battery|temperature|check\s+engine|engine)\s+"
+        r"(?:warning\s+)?light\s+(?:is\s+)?on\b",
+        r"\b(?:stall|stalling|misfire|misfiring|backfire|backfiring|"
+        r"slipping|bogging|bogs|hesitating|jerking)\b",
+        r"\b(?:wobble|wobbling|shaking|vibrating|vibration)\b",
+        r"\b(?:soft|spongy|mushy)\s+(?:brakes?|lever|pedal|preno)\b",
+        r"\b(?:brakes?|lever|pedal|preno)\s+(?:is|are|feels?|feeling)?\s*"
+        r"(?:soft|spongy|mushy|weak|failing|failed)\b",
+        r"\b(?:weak|failing|failed)\s+(?:brakes?|battery|baterya|preno)\b",
+        r"\b(?:battery|baterya)\s+(?:is\s+)?(?:weak|dead|flat|dying)\b",
+        r"\b(?:lights?|headlight|ilaw)\s+(?:are|is|seem|seems|look|looks)?\s*"
+        r"(?:dim|flickering|dead|not\s+working)\b",
+        r"\b(?:not\s+working|doesn'?t\s+work|won'?t\s+work|no\s+longer\s+works?)\b",
+        r"\b(?:making|makes|made|has|have|there'?s|there\s+is)\b"
+        r".{0,40}\b(?:noise|sound|rattle|knock|tick|click|squeal|grind)\b",
+        r"\b(?:bike|motorcycle|scooter|engine|motor)\s+(?:is\s+)?"
+        r"(?:slow|sluggish|underpowered)\b",
+        r"\b(?:lose|loses|losing|loss\s+of)\s+power\b",
+        r"\b(?:burning|burns|burn)\s+oil\b",
+        r"\b(?:nail|screw)\s+(?:in|on)\s+(?:the\s+)?(?:tyre|tire)\b",
+        r"\b(?:tyre|tire)\s+(?:has|with)\s+(?:a\s+)?(?:nail|screw|puncture)\b",
+        r"\b(?:ayaw|hindi|indi)\s+(?:mag-?start|umandar|mag-?andar|gumana|"
+        r"mag-?function|mag-?crank|umiikot|tumutunog)\b",
+        r"\b(?:guba|sira|basag|patay)\b",
+        r"\b(?:may|naa)\s+(?:tagas|tulo|usok|aso|ingay|tunog|tingog)\b",
+        r"\b(?:nag-?iinit|uminit|nag-?o-?overheat|nagabukal|nagasiga)\b",
+        r"\b(?:umuusok|tumutulo|lumulubog|malambot|humok)\b",
+        r"\b(?:maingay|kumatok|nagapiti|nagagrind|umaalingawngaw)\b",
+        r"\b(?:walang|wala)\s+(?:kuryente|ilaw|power)\b",
+    )
+]
+
+
+def _has_active_fault(msg):
+    """True when the message reports a live fault (not a how-to/check question)."""
+    probe = GENERAL_INSPECTION_RE.sub(' ', msg)
+    return any(pattern.search(probe) for pattern in FAULT_PATTERNS)
+
+
+def _looks_like_part_visual_query(msg):
+    """True for "what is a caliper?" / "show me a sprocket" style queries."""
+    if not VISUAL_REQUEST_RE.search(msg):
+        return False
+    if SPEC_CUE_RE.search(msg):
+        return False
+    return any(
+        re.search(r'\b' + re.escape(term) + r'\b', msg)
+        for term in VISUAL_PART_TERMS
+    )
+
+
+def _looks_like_part_location_query(msg, history=None):
+    """True for "where is the oil filter?" style location questions."""
+    if not LOCATION_QUERY_RE.search(msg):
+        return False
+    if LOCATION_FLOW_RE.search(msg):
+        return False
+    if _has_active_fault(msg):
+        return False
+    if PART_LOCATION_RE.search(msg):
+        return True
+    # "Where is it located?" is general only when the previous turns mention
+    # a component; otherwise it stays in the diagnostic flow.
+    if LOCATION_ACTION_RE.search(msg) and PRONOUN_LOCATION_RE.search(msg):
+        return _history_mentions_part(history)
+    return False
+
+
+def _looks_like_vehicle_identification(msg):
+    """True for a bare vehicle answer such as "2022 Honda Click 125i"."""
+    if not _mentions_bike_name(msg):
+        return False
+    if GENERAL_MAINTENANCE_RE.search(msg):
+        return False
+    return len(msg.split()) <= 10
+
+
+
+# Comparison, review, buying advice, and "tell me about" queries are
+# informational and must be answered directly, not forced into the guided
+# diagnostic intake even when a bike name is mentioned.
+COMPARISON_INFO_RE = re.compile(
+    r"""
+    \b(?:
+        (?:what\s+is\s+(?:the\s+)?)?better(?:\s+(?:than|or))?|
+        compar(?:e|ed|ing|ison)|versus|\bvs\b|
+        (?:tell|talk|ask)\s+(?:me|us)\s+about|
+        (?:which\s+(?:is|one|would)\b)|
+        (?:should\s+i\s+(?:buy|get|choose|pick))|
+        (?:pros?\s+(?:and|or)\s+cons?)|
+        (?:review|overview|buying\s+guide)
+    )\b
+    """,
+    re.I | re.X,
+)
+
+def is_general_motorcycle_query(message, history=None):
+    """True for motorcycle maintenance/how-to/service/info questions.
+
+    Active fault reports are deliberately excluded so they keep using the
+    guided diagnostic flow. Visual part queries are also excluded.
+    """
+    msg = _norm(message)
+    if not msg:
+        return False
+    if re.search(
+        r'\b(?:picture|pictures|photo|photos|image|images|larawan|litrato|hulagway)\b',
+        msg,
+    ):
+        return False
+    if LOCATION_FLOW_RE.search(msg):
+        # "Where is the noise/oil coming from?" is a fault question, not a
+        # request for the physical location of a component.
+        return False
+    if LOCATION_QUERY_RE.search(msg) and LOCATION_SYMPTOM_RE.search(msg):
+        # "Where is the brake noise?" / "Where is the oil leak?" are symptom
+        # questions even though they contain a component name.
+        return False
+    if _looks_like_part_visual_query(msg):
+        return False
+    if _looks_like_part_location_query(msg, history):
+        return True
+    # Comparison, buying-advice, and "tell me about" queries get a direct
+    # informational answer even when a bike name appears in the message.
+    if COMPARISON_INFO_RE.search(msg):
+        return True
+    if _has_active_fault(msg):
+        return False
+    if _looks_like_vehicle_identification(msg):
+        return False
+    if not GENERAL_DOMAIN_RE.search(msg):
+        return False
+    if not _has_general_topic_cue(msg) and not msg.rstrip().endswith('?'):
+        return False
+    return True
+
+
+def _is_guided_chip_answer(msg):
+    """True when the text is one of the guided flow's own chip labels."""
+    for area in AREAS.values():
+        if _norm(area.get('chips', '')) == msg:
+            return True
+        for question in area.get('questions', []):
+            if any(_norm(label) == msg for _, label in question.get('options', [])):
+                return True
+    return False
+
+
+GUIDED_AREA_WORDS = [
+    'brake', 'preno', 'engine', 'makina', 'oil', 'langis', 'maintenance',
+    'tire', 'tyre', 'gulong', 'chain', 'kadena', 'battery', 'baterya',
+    'electrical', 'overheat', 'init', 'noise', 'ingay', 'smoke', 'usok',
+    'power', 'accelerat', 'suspension', 'chassis', 'starting', 'start',
+]
+
+GUIDED_GENERAL_CUE_RE = re.compile(
+    r"\b(?:interval|schedule|frequency|how\s+often|how\s+many|best|recommended|"
+    r"procedure|steps?|guide|tips?|checklist|spec|price|cost|pressure|psi|slack)\b",
+    re.I,
+)
+
+# Maintenance chips/options are requests for a direct answer, not fault-area
+# answers. They should leave the guided diagnostic flow even mid-session.
+GUIDED_MAINTENANCE_RE = re.compile(
+    r"\b(?:oil|langis|maintenance|service|pms|tune[- ]?up|chain|kadena|"
+    r"brake\s+pads?|fluids?|clean(?:ing)?|lubricat(?:e|ing|ion)|"
+    r"replace|changing|change|inspect(?:ing)?|check(?:ing)?)\b",
+    re.I,
+)
+
+
+def _is_guided_area_choice(msg):
+    """True for a short area answer such as "Brakes" during a guided session."""
+    if len(msg.split()) > 4 or '?' in msg or GENERAL_QUESTION_START_RE.search(msg):
+        return False
+    if GUIDED_GENERAL_CUE_RE.search(msg):
+        return False
+    return bool(detect_area(msg)) or _has_any(msg, GUIDED_AREA_WORDS)
+
+
 def is_guided_intent(message, history=None, state=None):
     """True when the guided flow should handle this turn."""
     msg = _norm(message)
     if _has_any(msg, RESET_PHRASES):
         return True
+    # General maintenance/how-to questions get a direct answer, not an intake
+    # form. The exception is a guided chip/area answer mid-session, which must
+    # continue the flow the user is already in.
+    if is_general_motorcycle_query(message, history):
+        if state and state.get('stage') in ('area', 'checks', 'narrow', 'verdict'):
+            # Comparison/info queries always escape the guided flow.
+            if COMPARISON_INFO_RE.search(msg):
+                return False
+            if GUIDED_MAINTENANCE_RE.search(msg):
+                # "Oil change / maintenance" and similar chips are general
+                # questions; answer them instead of restarting the intake.
+                return False
+            if _is_guided_chip_answer(msg) or _is_guided_area_choice(msg):
+                return True
+        return False
     # Let the existing handlers own greetings, help, visuals and catalogues,
     # even in the middle of a guided session.
     if _is_greeting(msg):
@@ -1744,6 +2195,31 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
         state.update(start_state())
 
     stage = state['stage']
+
+    # --- Detect mid-session motorcycle switch ---
+    from .views import _extract_vehicle_info
+    cur_veh = _extract_vehicle_info(message)
+    if cur_veh.get('make') or cur_veh.get('model'):
+        cur_prof = resolve_profile(cur_veh, message)
+        prev_bike = state.get('bike') or {}
+        prev_name = f"{prev_bike.get('make', '')} {prev_bike.get('model', '')}".strip().lower()
+        new_name = f"{cur_prof.get('make', '')} {cur_prof.get('model', '')}".strip().lower()
+        if prev_name and new_name and prev_name != new_name:
+            state.clear()
+            state.update(start_state())
+            state['bike'] = cur_prof
+            state['fresh'] = False
+            new_area = detect_area(message)
+            if new_area:
+                state['area'] = new_area
+                return _enter_checks(state, cur_prof, new_area, lang, message)
+            state['stage'] = 'area'
+            return (
+                f"Understood, {sir}. Switching diagnostic focus to the **{bike_label(cur_prof)}**.\n\n"
+                f"{focus_block(cur_prof, lang)}\n\n"
+                f"{_tr(lang, 'area_ask')}\n\n"
+                f"[chips: {_tr(lang, 'area_chips')}]"
+            )
 
     # --- User says it is still broken (must be checked before "fixed") ------
     if _has_any(msg, ['still not', 'not fixed', 'same problem', 'hindi pa', 'indi gihapon',

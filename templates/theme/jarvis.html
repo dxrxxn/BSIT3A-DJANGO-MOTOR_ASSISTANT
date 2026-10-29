@@ -84,7 +84,7 @@
     <div class="jarvis-msg jarvis-msg--bot">
       <div class="jarvis-msg-bubble">
         At your service, <strong>{{ request.user.first_name|default:"sir" }}</strong>. I am <strong>J.A.R.V.I.S.</strong> — systems online.<br><br>
-        Which motorcycle are we working on? <strong>Model and year</strong> is enough (for example: <em>Click 125i 2022</em>). Then tell me the problem and I will help you narrow it down, one step at a time.<br><br>
+        Ask me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose. I answer general questions directly, and I can narrow down a problem step by step. For model-specific specs, include your make/model/year (for example: <em>Click 125i 2022</em>).<br><br>
         I can assist you in <strong>English</strong>, <strong>Tagalog</strong>, or <strong>Hiligaynon</strong>. Say <code>help</code> any time.
       </div>
       <div class="jarvis-msg-time">Now</div>
@@ -1263,8 +1263,106 @@
   // ─────────────────────────────────────────────────────
   // Render helpers
   // ─────────────────────────────────────────────────────
-  function scrollToBottom() {
-    messages.scrollTop = messages.scrollHeight;
+  function scrollToBottom(delay = 40) {
+    if (!messages) return;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+      });
+    }, delay);
+  }
+
+  function scrollToUserTurn(userId, delay = 30) {
+    if (!messages) return;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const userEl = userId ? document.getElementById('widget-msg-el-' + userId) : null;
+        if (!userEl) {
+          messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+          return;
+        }
+        const parentRect = messages.getBoundingClientRect();
+        const userRect = userEl.getBoundingClientRect();
+        const userOffsetTop = userRect.top - parentRect.top + messages.scrollTop;
+        const targetTop = Math.max(0, userOffsetTop - 14);
+        messages.scrollTo({ top: targetTop, behavior: 'smooth' });
+        try { userEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+      });
+    }, delay);
+  }
+
+  function scrollToTurnResponse(userId, botId, delay = 50) {
+    if (!messages) return;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const botEl = botId ? document.getElementById('widget-msg-el-' + botId) : null;
+        const userEl = userId ? document.getElementById('widget-msg-el-' + userId) : null;
+
+        if (!botEl && !userEl) {
+          messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+          return;
+        }
+
+        const parentRect = messages.getBoundingClientRect();
+        const containerHeight = messages.clientHeight;
+
+        if (userEl && botEl) {
+          const userRect = userEl.getBoundingClientRect();
+          const botRect = botEl.getBoundingClientRect();
+          const userOffsetTop = userRect.top - parentRect.top + messages.scrollTop;
+          const botOffsetBottom = botRect.bottom - parentRect.top + messages.scrollTop;
+          const turnHeight = botOffsetBottom - userOffsetTop;
+
+          if (turnHeight + 16 <= containerHeight) {
+            const targetTop = Math.max(0, userOffsetTop - 12);
+            messages.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else if (botEl.offsetHeight + 16 <= containerHeight) {
+            const targetTop = Math.max(0, botOffsetBottom - containerHeight + 12);
+            messages.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else {
+            const botOffsetTop = botRect.top - parentRect.top + messages.scrollTop;
+            const targetTop = Math.max(0, botOffsetTop - 36);
+            messages.scrollTo({ top: targetTop, behavior: 'smooth' });
+          }
+        } else if (botEl) {
+          const botRect = botEl.getBoundingClientRect();
+          const botOffsetBottom = botRect.bottom - parentRect.top + messages.scrollTop;
+          const botOffsetTop = botRect.top - parentRect.top + messages.scrollTop;
+          if (botEl.offsetHeight + 16 <= containerHeight) {
+            messages.scrollTo({ top: Math.max(0, botOffsetBottom - containerHeight + 12), behavior: 'smooth' });
+          } else {
+            messages.scrollTo({ top: Math.max(0, botOffsetTop - 12), behavior: 'smooth' });
+          }
+        } else {
+          messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+        }
+
+        try {
+          const anchorEl = botEl || userEl;
+          if (anchorEl) anchorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {}
+      });
+    }, delay);
+  }
+
+  function scrollToTurn(elementId, delay = 40) {
+    if (!messages) return;
+    const target = elementId ? document.getElementById(elementId) : null;
+    if (!target) {
+      scrollToBottom(delay);
+      return;
+    }
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const parentRect = messages.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const offset = targetRect.top - parentRect.top + messages.scrollTop;
+        messages.scrollTo({
+          top: Math.max(0, offset - 12),
+          behavior: 'smooth'
+        });
+      });
+    }, delay);
   }
 
   function getTime() {
@@ -1456,6 +1554,8 @@
     const history = loadHistory();
     history.push({ id, role: 'user', text, time });
     saveHistory(history);
+    scrollToUserTurn(id, 30);
+    return id;
   }
 
   function appendBotMessage(text) {
@@ -1466,6 +1566,7 @@
     const entry = { id, role: 'bot', text, time };
     history.push(entry);
     saveHistory(history);
+    return id;
   }
 
   function appendTyping() {
@@ -1512,9 +1613,10 @@
         .trim()
     }));
 
-    appendUserMessage(text);
+    const userMsgId = appendUserMessage(text);
     setLoading(true);
     appendTyping();
+    scrollToUserTurn(userMsgId, 30);
 
     await new Promise(r => setTimeout(r, 250));
 
@@ -1525,13 +1627,19 @@
         body: JSON.stringify({ message: text, history: recentHistory }),
       });
       removeTyping();
-      if (!res.ok) { appendBotMessage('A momentary malfunction, sir. Please try that again.'); return; }
+      if (!res.ok) {
+        const botErrId = appendBotMessage('A momentary malfunction, sir. Please try that again.');
+        scrollToTurnResponse(userMsgId, botErrId, 50);
+        return;
+      }
       const data = await res.json();
       if (data.quota) updateQuotaUI(data.quota);
-      appendBotMessage(data.reply || 'I appear to have lost that thought, sir. One more time, if you would.');
+      const botMsgId = appendBotMessage(data.reply || 'I appear to have lost that thought, sir. One more time, if you would.');
+      scrollToTurnResponse(userMsgId, botMsgId, 50);
     } catch (err) {
       removeTyping();
-      appendBotMessage('I cannot reach the network, sir. Check the connection and I shall try again.');
+      const botFailId = appendBotMessage('I cannot reach the network, sir. Check the connection and I shall try again.');
+      scrollToTurnResponse(userMsgId, botFailId, 50);
     } finally {
       setLoading(false);
       input.focus();

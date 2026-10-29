@@ -93,6 +93,490 @@
   color: rgba(255,255,255,0.4);
   font-style: italic;
 }
+
+/* ── Assistant mode, structured cards and photo intake ─────────────── */
+.jarvis-copilot-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.jarvis-mode-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid #233147;
+  border-radius: 9px;
+  background: #0b1420;
+}
+.jarvis-mode-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 5px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.jarvis-mode-btn.active {
+  background: #16263a;
+  color: #a5f3fc;
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.22);
+}
+.jarvis-mode-btn:focus-visible {
+  outline: 2px solid var(--jarvis-cyan, #00f0ff);
+  outline-offset: 1px;
+}
+.jarvis-lang-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #233147;
+  background: #0b1420;
+  border-radius: 9px;
+  padding: 3px 6px;
+  color: #64748b;
+}
+.jarvis-lang-wrap i { font-size: 10px; }
+.jarvis-lang-select {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  max-width: 128px;
+}
+.jarvis-lang-select option { background: #0f1a28; color: #e2e8f0; }
+.jarvis-structured-card {
+  border: 1px solid #233147;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 29, 45, 0.98), rgba(12, 19, 30, 0.98));
+  padding: 14px 16px;
+  width: 100%;
+  box-shadow: 0 10px 26px -18px rgba(0, 0, 0, 0.75);
+}
+.jarvis-structured-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.jarvis-structured-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.jarvis-structured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.07);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.jarvis-structured-badge--ai {
+  color: #a5f3fc;
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(34, 211, 238, 0.08);
+}
+.jarvis-structured-badge--offline {
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+.jarvis-structured-badge--stage {
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.07);
+}
+.jarvis-structured-time {
+  color: #475569;
+  font-size: 10px;
+}
+.jarvis-structured-safety {
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.09);
+  border-left: 4px solid #ef4444;
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin-bottom: 11px;
+}
+.jarvis-structured-safety--warning {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+  border-left-color: #f59e0b;
+}
+.jarvis-structured-safety--caution {
+  border-color: rgba(250, 204, 21, 0.35);
+  background: rgba(250, 204, 21, 0.06);
+  border-left-color: #eab308;
+}
+.jarvis-structured-safety-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fca5a5;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.jarvis-structured-safety--warning .jarvis-structured-safety-head { color: #fcd34d; }
+.jarvis-structured-safety--caution .jarvis-structured-safety-head { color: #fef08a; }
+.jarvis-structured-safety ul {
+  margin: 0;
+  padding-left: 17px;
+  color: #fecaca;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.jarvis-structured-safety li { margin-bottom: 3px; }
+.jarvis-structured-safety-note {
+  margin: 6px 0 0;
+  color: rgba(254, 202, 202, 0.62);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.jarvis-structured-section {
+  margin-top: 12px;
+}
+.jarvis-structured-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+.jarvis-structured-section-title i { font-size: 9px; opacity: 0.8; }
+.jarvis-structured-text {
+  color: #d4e1ef;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.jarvis-structured-text p { margin: 0 0 8px; }
+.jarvis-structured-text p:last-child { margin-bottom: 0; }
+.jarvis-structured-text ul,
+.jarvis-structured-text ol {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+}
+.jarvis-structured-text li { margin-bottom: 3px; }
+.jarvis-structured-text h1,
+.jarvis-structured-text h2,
+.jarvis-structured-text h3,
+.jarvis-structured-text h4 {
+  color: #f1f5f9;
+  font-size: 12.5px;
+  margin: 10px 0 5px;
+  letter-spacing: 0.01em;
+}
+.jarvis-structured-cause,
+.jarvis-structured-test,
+.jarvis-structured-step {
+  border: 1px solid #1d2c40;
+  background: rgba(9, 16, 26, 0.6);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 7px;
+}
+.jarvis-structured-cause-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  color: #e2e8f0;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.jarvis-structured-confidence {
+  flex-shrink: 0;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.jarvis-structured-evidence {
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.jarvis-structured-uncertainty {
+  color: #fbbf24;
+  font-size: 10.5px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.jarvis-structured-test-name {
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 650;
+}
+.jarvis-structured-test dl {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 3px 8px;
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.jarvis-structured-test dt { color: #64748b; font-weight: 500; }
+.jarvis-structured-test dd { margin: 0; color: #b7c8dc; }
+.jarvis-structured-step {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+}
+.jarvis-structured-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 800;
+}
+.jarvis-structured-step-body { color: #d4e1ef; font-size: 12px; line-height: 1.5; }
+.jarvis-structured-step-safety {
+  margin-top: 4px;
+  color: #fcd34d;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.jarvis-structured-parts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.jarvis-structured-parts th,
+.jarvis-structured-parts td {
+  text-align: left;
+  padding: 5px 6px;
+  border-bottom: 1px solid #16243a;
+  vertical-align: top;
+}
+.jarvis-structured-parts th {
+  color: #64748b;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.jarvis-structured-parts td { color: #cbd5e1; }
+.jarvis-structured-parts tr:last-child td { border-bottom: 0; }
+.jarvis-structured-verified {
+  display: inline-block;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+.jarvis-structured-unverified {
+  display: inline-block;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+.jarvis-structured-callout {
+  border-left: 3px solid #334155;
+  background: rgba(51, 65, 85, 0.16);
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: #94a3b8;
+  font-size: 10.8px;
+  line-height: 1.5;
+}
+.jarvis-structured-sources {
+  margin: 0;
+  padding-left: 17px;
+  color: #b7c8dc;
+  font-size: 10.8px;
+  line-height: 1.5;
+}
+.jarvis-structured-sources li { margin-bottom: 4px; }
+.jarvis-structured-source-ref { color: #64748b; }
+.jarvis-structured-source-badge {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #86efac;
+}
+.jarvis-structured-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid #1a273b;
+}
+.jarvis-structured-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #26364c;
+  background: #101b2a;
+  color: #94a3b8;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.jarvis-structured-action:hover {
+  border-color: rgba(34, 211, 238, 0.45);
+  color: #cffafe;
+  text-decoration: none;
+}
+.jarvis-structured-action:disabled { opacity: 0.55; cursor: default; }
+.jarvis-structured-action--primary {
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.1);
+  color: #a5f3fc;
+}
+.jarvis-structured-next {
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(34, 211, 238, 0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #cffafe;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.jarvis-structured-error {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #fecaca;
+  font-size: 12px;
+  line-height: 1.55;
+  width: 100%;
+}
+.jarvis-structured-error strong { color: #fca5a5; }
+.jarvis-user-image {
+  margin-top: 6px;
+  max-width: 230px;
+  border-radius: 9px;
+  border: 1px solid #24364d;
+  display: block;
+}
+.jarvis-photo-dock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0d1725;
+  border: 1px solid #233147;
+  border-radius: 11px;
+  padding: 7px 9px;
+  margin-bottom: 7px;
+}
+.jarvis-photo-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid #2b3d55;
+}
+.jarvis-photo-info { flex: 1; min-width: 0; }
+.jarvis-photo-name {
+  display: block;
+  color: #cbd5e1;
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jarvis-photo-status { color: #64748b; font-size: 9.5px; }
+.jarvis-photo-remove {
+  border: 1px solid #2b3d55;
+  background: transparent;
+  color: #94a3b8;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.jarvis-photo-remove:hover { color: #fca5a5; border-color: rgba(239, 68, 68, 0.45); }
+.jarvis-moto-quickstats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+.jarvis-moto-quickstat {
+  display: block;
+  border: 1px solid #1d2c40;
+  background: rgba(9, 16, 26, 0.55);
+  border-radius: 8px;
+  padding: 7px 8px;
+  text-decoration: none;
+  text-align: center;
+  transition: border-color 0.15s ease;
+}
+.jarvis-moto-quickstat:hover { border-color: rgba(34, 211, 238, 0.4); text-decoration: none; }
+.jarvis-moto-quickstat strong {
+  display: block;
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.1;
+}
+.jarvis-moto-quickstat span {
+  display: block;
+  color: #64748b;
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+@media (max-width: 700px) {
+  .jarvis-copilot-controls { width: 100%; justify-content: space-between; }
+  .jarvis-mode-toggle { order: 1; }
+  .jarvis-lang-wrap { order: 2; }
+  .jarvis-copilot-card-top { flex-wrap: wrap; gap: 8px; }
+  .jarvis-structured-card { padding: 12px; }
+  .jarvis-structured-test dl { grid-template-columns: 1fr; gap: 1px; }
+  .jarvis-moto-quickstat strong { font-size: 13px; }
+}
 </style>
 {% endblock %}
 
@@ -153,12 +637,34 @@
     <div class="jarvis-copilot-card">
       <div class="jarvis-copilot-scroll" id="jarvis-copilot-scroll">
 
-        <!-- Card Header: Eyebrow + New Conversation -->
+        <!-- Card Header: Eyebrow + Mode + Language + New Conversation -->
         <div class="jarvis-copilot-card-top">
           <span class="jarvis-copilot-eyebrow">YOUR DIAGNOSTIC COPILOT</span>
-          <button type="button" class="jarvis-pill-btn" id="btn-hero-new-conversation">
-            New conversation
-          </button>
+          <div class="jarvis-copilot-controls">
+            <div class="jarvis-mode-toggle" role="group" aria-label="Assistant mode">
+              <button type="button" class="jarvis-mode-btn" data-assistant-mode="guided" title="Original step-by-step guided flow">
+                <i class="fa-solid fa-list-check me-1"></i>Guided
+              </button>
+              <button type="button" class="jarvis-mode-btn" data-assistant-mode="structured" title="Structured safety-first diagnosis with photo support">
+                <i class="fa-solid fa-shield-heart me-1"></i>Smart
+              </button>
+            </div>
+            <label class="jarvis-lang-wrap" for="jarvis-language-select" title="Answer language">
+              <i class="fa-solid fa-language"></i>
+              <select id="jarvis-language-select" class="jarvis-lang-select" aria-label="Answer language">
+                <option value="auto">Auto language</option>
+                <option value="english">English</option>
+                <option value="tagalog">Filipino</option>
+                <option value="hiligaynon">Hiligaynon</option>
+              </select>
+            </label>
+            <button type="button" class="jarvis-pill-btn" id="btn-hero-new-conversation">
+              New conversation
+            </button>
+          </div>
+        </div>
+        <div class="jarvis-mode-hint" id="jarvis-mode-hint" style="font-size:10.5px;color:#556c84;line-height:1.4;margin-top:-4px;">
+          Guided mode walks you through the original step-by-step checks. Smart mode adds safety-first structured answers, local evidence and photo support.
         </div>
 
         <!-- Hero Section: Headline, Greeting & Shortcuts (Shown when starting fresh) -->
@@ -189,13 +695,13 @@
               <span class="jarvis-greeting-time">JUST NOW</span>
             </div>
             <p class="jarvis-greeting-text">
-              At your service, {{ user.username|default:"Glenn"|title }}. Which motorcycle are we working on? <strong>Model and year</strong> is enough (for example, <em>Click 125i 2022</em>). Then tell me the problem and I'll help you narrow it down, one check at a time.
+              At your service, {{ user.username|default:"Glenn"|title }}. Ask me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose. I answer general questions directly, and I can narrow down a problem step by step. For model-specific specs, include your make/model/year (for example, <em>Click 125i 2022</em>).
             </p>
           </div>
 
           <!-- Shortcut Section Subtitle -->
           <div class="jarvis-shortcuts-intro">
-            Not sure where to start? Try a diagnostic shortcut.
+            Not sure where to start? Ask a question or try a shortcut.
           </div>
 
           <!-- 2x2 Diagnostic Shortcuts Grid -->
@@ -274,20 +780,10 @@
           </button>
         </div>
         <div class="jarvis-moto-details">
-          <h3 class="jarvis-moto-title" id="display-vehicle-title">Yamaha MT-07</h3>
-          <p class="jarvis-moto-specs" id="display-vehicle-specs">2023 · 689 cc · Twin-cylinder</p>
-          
-          <!-- Motorcycle Standby Box (Empty state without GLB) -->
-          <div class="jarvis-moto-standby-box">
-            <div class="jarvis-moto-grid-pattern"></div>
-            <div class="jarvis-moto-standby-content">
-              <div class="jarvis-moto-standby-icon">
-                <i class="fa-solid fa-cube"></i>
-              </div>
-              <span class="jarvis-moto-standby-title">3D Model Standby</span>
-              <span class="jarvis-moto-standby-sub">No GLB loaded yet</span>
-            </div>
-          </div>
+          <h3 class="jarvis-moto-title" id="display-vehicle-title"
+              data-default-title="No vehicle selected">No vehicle selected</h3>
+          <p class="jarvis-moto-specs" id="display-vehicle-specs"
+             data-default-specs="Tell the assistant your motorcycle in chat.">Tell the assistant your motorcycle in chat.</p>
 
           <!-- Explore in 3D Button -->
           <a href="{% url 'motor:viewer' %}" class="jarvis-explore-btn">
@@ -324,9 +820,20 @@
 
   <!-- Bottom Floating Input Bar Dock -->
   <div class="jarvis-bottom-dock">
+    <div class="jarvis-photo-dock d-none" id="jarvis-photo-dock" aria-live="polite">
+      <img class="jarvis-photo-thumb" id="jarvis-photo-thumb" alt="Selected diagnostic photo preview">
+      <div class="jarvis-photo-info">
+        <span class="jarvis-photo-name" id="jarvis-photo-name">photo.jpg</span>
+        <span class="jarvis-photo-status" id="jarvis-photo-status">Ready to attach</span>
+      </div>
+      <button type="button" class="jarvis-photo-remove" id="jarvis-photo-remove" title="Remove photo" aria-label="Remove photo">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <input type="file" id="jarvis-image-input" accept="image/jpeg,image/png,image/webp" hidden>
     <form id="jarvis-chat-form" class="jarvis-bottom-form" onsubmit="return false;">
       <div class="jarvis-floating-bar">
-        <button type="button" class="jarvis-bar-icon" title="Attach file or log" aria-label="Attach file">
+        <button type="button" class="jarvis-bar-icon" id="jarvis-attach-btn" title="Attach a diagnostic photo (Smart mode)" aria-label="Attach diagnostic photo">
           <i class="fa-solid fa-paperclip"></i>
         </button>
         <textarea
@@ -386,8 +893,13 @@
   'use strict';
 
   const CHAT_URL = "{% url 'jarvis_chat' %}";
+  const UPLOAD_URL = "{% url 'jarvis_image_upload' %}";
+  const STATUS_URL = "{% url 'jarvis_status' %}";
   const CSRF_TOKEN = "{{ csrf_token }}";
-  const STORAGE_KEY = 'jarvis_ui_history_{{ request.user.pk|default:"default" }}';
+  const USER_KEY = '{{ request.user.pk|default:"default" }}';
+  const STORAGE_KEY = 'jarvis_ui_history_' + USER_KEY;
+  const MODE_KEY = 'jarvis-assistant-mode_' + USER_KEY;
+  const CONVERSATION_KEY = 'jarvis_conversation_id_' + USER_KEY;
 
   const messagesContainer = document.getElementById('jarvis-chat-messages');
   const inputEl = document.getElementById('jarvis-user-input');
@@ -400,8 +912,28 @@
   const historySearchInput = document.getElementById('history-search-input');
   const historyListEl = document.getElementById('jarvis-history-list');
   const historyClearAllBtn = document.getElementById('btn-history-clear-all');
+  const modeHintEl = document.getElementById('jarvis-mode-hint');
+  const languageSelect = document.getElementById('jarvis-language-select');
+  const attachBtn = document.getElementById('jarvis-attach-btn');
+  const imageInput = document.getElementById('jarvis-image-input');
+  const photoDock = document.getElementById('jarvis-photo-dock');
+  const photoThumb = document.getElementById('jarvis-photo-thumb');
+  const photoName = document.getElementById('jarvis-photo-name');
+  const photoStatus = document.getElementById('jarvis-photo-status');
+  const photoRemoveBtn = document.getElementById('jarvis-photo-remove');
 
   let isLoading = false;
+  let assistantMode = 'guided';
+  let conversationId = null;
+  let pendingImage = null;
+  let imageUploading = false;
+
+  try {
+    const savedMode = localStorage.getItem(MODE_KEY);
+    if (savedMode === 'guided' || savedMode === 'structured') assistantMode = savedMode;
+    const savedConversation = localStorage.getItem(CONVERSATION_KEY);
+    if (savedConversation && /^\d+$/.test(savedConversation)) conversationId = Number(savedConversation);
+  } catch (e) {}
 
   function getTimeStr() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -412,7 +944,7 @@
     {
       id: 'init-1',
       role: 'bot',
-      text: "At your service, sir. J.A.R.V.I.S. online. Which motorcycle are we working on?\n\n**Model and year** is enough (for example: *Click 125i 2022*). Then tell me the problem and I will help you narrow it down, one step at a time.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
+      text: "At your service, sir. J.A.R.V.I.S. online. Ask me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose.\n\nI answer general questions directly, and I can narrow down a problem step by step. For model-specific specs, include your make/model/year (for example: *Click 125i 2022*).\n\n[chips: How often should I change oil? | What to check before changing a tire? | Engine won't start | Not sure]",
       time: getTimeStr()
     }
   ];
@@ -437,13 +969,129 @@
     updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
   }
 
-  function scrollToBottom() {
+  function scrollToBottom(delay = 50) {
     const scrollParent = document.getElementById('jarvis-copilot-scroll');
     if (scrollParent) {
       setTimeout(() => {
-        scrollParent.scrollTop = scrollParent.scrollHeight;
-      }, 60);
+        requestAnimationFrame(() => {
+          scrollParent.scrollTo({
+            top: scrollParent.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
+      }, delay);
     }
+  }
+
+  function scrollToUserTurn(userId, delay = 30) {
+    const scrollParent = document.getElementById('jarvis-copilot-scroll');
+    if (!scrollParent) return;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const userEl = userId ? document.getElementById('msg-node-' + userId) : null;
+        if (!userEl) {
+          scrollParent.scrollTo({ top: scrollParent.scrollHeight, behavior: 'smooth' });
+          return;
+        }
+        const parentRect = scrollParent.getBoundingClientRect();
+        const userRect = userEl.getBoundingClientRect();
+        const userOffsetTop = userRect.top - parentRect.top + scrollParent.scrollTop;
+        const targetTop = Math.max(0, userOffsetTop - 18);
+        scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+        try {
+          userEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {}
+      });
+    }, delay);
+  }
+
+  function scrollToTurnResponse(userId, botId, delay = 50) {
+    const scrollParent = document.getElementById('jarvis-copilot-scroll');
+    if (!scrollParent) return;
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const botEl = botId ? document.getElementById('msg-node-' + botId) : null;
+        const userEl = userId ? document.getElementById('msg-node-' + userId) : null;
+
+        if (!botEl && !userEl) {
+          scrollParent.scrollTo({ top: scrollParent.scrollHeight, behavior: 'smooth' });
+          return;
+        }
+
+        const parentRect = scrollParent.getBoundingClientRect();
+        const containerHeight = scrollParent.clientHeight;
+
+        if (userEl && botEl) {
+          const userRect = userEl.getBoundingClientRect();
+          const botRect = botEl.getBoundingClientRect();
+
+          const userOffsetTop = userRect.top - parentRect.top + scrollParent.scrollTop;
+          const botOffsetBottom = botRect.bottom - parentRect.top + scrollParent.scrollTop;
+          const turnHeight = botOffsetBottom - userOffsetTop;
+
+          // If question and answer fit together on screen:
+          if (turnHeight + 20 <= containerHeight) {
+            const targetTop = Math.max(0, userOffsetTop - 16);
+            scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else if (botEl.offsetHeight + 24 <= containerHeight) {
+            // Answer alone fits: scroll to show full answer at bottom with question above
+            const targetTop = Math.max(0, botOffsetBottom - containerHeight + 16);
+            scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else {
+            // Very tall answer: scroll so top of answer starts right beneath user question
+            const botOffsetTop = botRect.top - parentRect.top + scrollParent.scrollTop;
+            const targetTop = Math.max(0, botOffsetTop - 50);
+            scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+          }
+        } else if (botEl) {
+          const botRect = botEl.getBoundingClientRect();
+          const botOffsetTop = botRect.top - parentRect.top + scrollParent.scrollTop;
+          const botOffsetBottom = botRect.bottom - parentRect.top + scrollParent.scrollTop;
+
+          if (botEl.offsetHeight + 24 <= containerHeight) {
+            const targetTop = Math.max(0, botOffsetBottom - containerHeight + 16);
+            scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else {
+            const targetTop = Math.max(0, botOffsetTop - 16);
+            scrollParent.scrollTo({ top: targetTop, behavior: 'smooth' });
+          }
+        } else {
+          scrollParent.scrollTo({ top: scrollParent.scrollHeight, behavior: 'smooth' });
+        }
+
+        try {
+          const anchorEl = botEl || userEl;
+          if (anchorEl) {
+            anchorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        } catch (e) {}
+      });
+    }, delay);
+  }
+
+  function scrollToTurn(elementId, delay = 50) {
+    const scrollParent = document.getElementById('jarvis-copilot-scroll');
+    if (!scrollParent) return;
+    const target = elementId ? document.getElementById(elementId) : null;
+    if (!target) {
+      scrollToBottom(delay);
+      return;
+    }
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const offset = targetRect.top - parentRect.top + scrollParent.scrollTop;
+        scrollParent.scrollTo({
+          top: Math.max(0, offset - 14),
+          behavior: 'smooth'
+        });
+        try {
+          target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {}
+      });
+    }, delay);
   }
 
   function escapeHtml(str) {
@@ -522,6 +1170,29 @@
       displacement: '',
       fuel: 'Not sure'
     };
+
+    // Prefer the authoritative profile saved with the latest structured turn.
+    for (let i = history.length - 1; i >= 0; i--) {
+      const profile = history[i] && history[i].structured && history[i].structured.vehicle_profile;
+      if (!profile) continue;
+      if (profile.make) info.make = profile.make;
+      if (profile.model) info.model = profile.model;
+      if (profile.year) info.year = profile.year;
+      if (profile.engine_displacement) info.displacement = profile.engine_displacement;
+      if (profile.fuel_system) {
+        info.fuel = profile.fuel_system === 'fi'
+          ? 'Fuel-injected (FI)'
+          : (profile.fuel_system === 'carburetor' ? 'Carburetor' : 'Not sure');
+      }
+      if (profile.vehicle_type) {
+        const vt = String(profile.vehicle_type).toLowerCase();
+        if (vt === 'motorcycle' || vt === 'scooter') info.type = 'Scooter';
+        else if (vt === 'car') info.type = 'Car';
+        else if (vt === 'tricycle') info.type = 'Other';
+        else info.type = 'Motorcycle';
+      }
+      break;
+    }
 
     // Check make
     const makes = ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota', 'Mitsubishi', 'Nissan', 'Ford', 'Hyundai', 'Isuzu', 'Mazda', 'Kymco', 'Rusi', 'Bajaj', 'TVS', 'Vespa'];
@@ -1010,7 +1681,7 @@
   }
 
   // ── DOM Renderer for User Message ─────────────────────────────────────────
-  function renderUserMessage(text, id) {
+  function renderUserMessage(text, id, imageUrl) {
     const block = document.createElement('div');
     block.className = 'jarvis-msg-block jarvis-msg-block--user';
     if (id) block.id = 'msg-node-' + id;
@@ -1022,6 +1693,15 @@
     const bubble = document.createElement('div');
     bubble.className = 'jarvis-user-bubble';
     bubble.textContent = text;
+    if (imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'jarvis-user-image';
+      img.src = imageUrl;
+      img.alt = 'Photo attached to this message';
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      bubble.appendChild(img);
+    }
 
     block.appendChild(badge);
     block.appendChild(bubble);
@@ -1207,10 +1887,437 @@
     messagesContainer.appendChild(block);
   }
 
-  // ── Typing Indicator ──────────────────────────────────────────────────────
+  // ── Structured (Smart) Assistant Rendering ────────────────────────────────
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function esc(value) {
+    return escapeHtml(value == null ? '' : String(value));
+  }
+
+  function stripChipsTag(text) {
+    return (text || '').replace(/\[chips:\s*[^\]]*\]/gi, '').trim();
+  }
+
+  function stripLeadingSafetyBlock(text) {
+    const lines = (text || '').split(/\r?\n/);
+    while (lines.length && !lines[0].trim()) lines.shift();
+    if (lines.length && /^>\s*\[!(?:CAUTION|WARNING|IMPORTANT|NOTE|DANGER)\]/i.test(lines[0].trim())) {
+      while (lines.length && lines[0].trim().startsWith('>')) lines.shift();
+      while (lines.length && !lines[0].trim()) lines.shift();
+    }
+    return lines.join('\n').trim();
+  }
+
+  function renderStructuredMarkdown(text) {
+    const lines = (stripChipsTag(text) || '').split(/\r?\n/);
+    let html = '';
+    let paragraph = [];
+    let listItems = [];
+    let listType = '';
+
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      html += '<p>' + paragraph.map(line => renderMarkdownInline(line)).join('<br>') + '</p>';
+      paragraph = [];
+    };
+    const flushList = () => {
+      if (!listItems.length) return;
+      html += '<' + listType + '>' + listItems.map(item => '<li>' + renderMarkdownInline(item) + '</li>').join('') + '</' + listType + '>';
+      listItems = [];
+      listType = '';
+    };
+
+    lines.forEach(rawLine => {
+      const line = rawLine.trim();
+      if (!line) {
+        flushParagraph();
+        flushList();
+        return;
+      }
+      const heading = line.match(/^(#{1,4})\s+(.*)$/);
+      if (heading) {
+        flushParagraph();
+        flushList();
+        const level = Math.min(heading[1].length + 2, 6);
+        html += '<h' + level + '>' + renderMarkdownInline(heading[2]) + '</h' + level + '>';
+        return;
+      }
+      const bullet = line.match(/^[-*•]\s+(.*)$/);
+      const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+      if (bullet || numbered) {
+        flushParagraph();
+        const wanted = bullet ? 'ul' : 'ol';
+        if (listType && listType !== wanted) flushList();
+        listType = wanted;
+        listItems.push((bullet || numbered)[1]);
+        return;
+      }
+      if (line.startsWith('>')) {
+        flushParagraph();
+        flushList();
+        html += '<div class="jarvis-structured-callout">' + renderMarkdownInline(line.replace(/^>\s?/, '')) + '</div>';
+        return;
+      }
+      flushList();
+      paragraph.push(line);
+    });
+    flushParagraph();
+    flushList();
+    return html;
+  }
+
+  function structuredSection(title, icon, inner) {
+    if (!inner) return '';
+    return '<div class="jarvis-structured-section">'
+      + '<h4 class="jarvis-structured-section-title"><i class="fa-solid ' + icon + '"></i>' + esc(title) + '</h4>'
+      + inner + '</div>';
+  }
+
+  function structuredList(items) {
+    const values = asArray(items).filter(item => String(item || '').trim());
+    if (!values.length) return '';
+    return '<ul class="jarvis-structured-text" style="margin:0;padding-left:18px;">'
+      + values.map(item => '<li>' + renderMarkdownInline(String(item)) + '</li>').join('')
+      + '</ul>';
+  }
+
+  function renderStructuredMessage(structured, id, meta) {
+    structured = structured || {};
+    meta = meta || {};
+    const block = document.createElement('div');
+    block.className = 'jarvis-msg-block jarvis-msg-block--bot';
+    if (id) block.id = 'msg-node-' + id;
+
+    const badge = document.createElement('div');
+    badge.className = 'jarvis-msg-badge jarvis-msg-badge--bot';
+    badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/></svg><span>J.A.R.V.I.S.</span>';
+    block.appendChild(badge);
+
+    const card = document.createElement('div');
+    card.className = 'jarvis-structured-card';
+
+    const safety = structured.safety || {};
+    const warnings = asArray(safety.warnings).map(item => String(item || '').trim()).filter(Boolean);
+    const severity = String(safety.severity || 'none').toLowerCase();
+    if (warnings.length || safety.summary || safety.stop_use) {
+      let toneClass = '';
+      if (severity === 'critical' || safety.stop_use) toneClass = '';
+      else if (severity === 'warning') toneClass = ' jarvis-structured-safety--warning';
+      else if (severity === 'caution') toneClass = ' jarvis-structured-safety--caution';
+      const heading = safety.stop_use
+        ? 'Stop use — safety warning'
+        : (severity === 'critical' ? 'Critical safety warning' : 'Safety warning');
+      const warningItems = warnings.length ? warnings : [String(safety.summary || '').trim()].filter(Boolean);
+      card.innerHTML += '<div class="jarvis-structured-safety' + toneClass + '">'
+        + '<div class="jarvis-structured-safety-head"><i class="fa-solid fa-triangle-exclamation"></i>' + esc(heading) + '</div>'
+        + '<ul>' + warningItems.map(item => '<li>' + renderMarkdownInline(item) + '</li>').join('') + '</ul>'
+        + '<p class="jarvis-structured-safety-note">Safety warnings come from local rules first. A symptom or photo alone does not confirm a fault.</p>'
+        + '</div>';
+    }
+
+    const isOffline = !!structured.offline || meta.offline;
+    const stageLabel = String(structured.diagnostic_stage || '').replace(/_/g, ' ');
+    const metaHtml = '<div class="jarvis-structured-meta">'
+      + '<div class="jarvis-structured-badges">'
+      + (isOffline
+          ? '<span class="jarvis-structured-badge jarvis-structured-badge--offline" title="' + esc(structured.offline_reason || 'AI service unavailable') + '"><i class="fa-solid fa-database"></i>Offline guidance</span>'
+          : '<span class="jarvis-structured-badge jarvis-structured-badge--ai"><i class="fa-solid fa-wand-magic-sparkles"></i>AI-assisted</span>')
+      + (stageLabel ? '<span class="jarvis-structured-badge jarvis-structured-badge--stage">' + esc(stageLabel) + '</span>' : '')
+      + (isOffline && structured.offline_reason ? '<span class="jarvis-structured-badge">' + esc(structured.offline_reason) + '</span>' : '')
+      + '</div>'
+      + '<span class="jarvis-structured-time">' + esc(meta.time || getTimeStr()) + '</span>'
+      + '</div>';
+    card.innerHTML += metaHtml;
+
+    const replyText = stripLeadingSafetyBlock(structured.reply_text || '');
+    if (replyText) {
+      card.innerHTML += '<div class="jarvis-structured-text">' + renderStructuredMarkdown(replyText) + '</div>';
+    }
+
+    const symptoms = asArray(structured.symptoms).filter(Boolean);
+    if (symptoms.length) {
+      card.innerHTML += structuredSection('Reported symptoms', 'fa-notes-medical',
+        '<div class="jarvis-chips-grid">' + symptoms.map(item => '<span class="jarvis-chip" style="cursor:default;">' + esc(item) + '</span>').join('') + '</div>');
+    }
+
+    const questions = asArray(structured.missing_questions).filter(item => item && item.question);
+    if (questions.length) {
+      card.innerHTML += structuredSection('Useful next details', 'fa-circle-question',
+        questions.map(item => '<div class="jarvis-structured-test" style="margin-bottom:6px;">'
+          + '<div class="jarvis-structured-test-name">' + esc(item.question) + '</div>'
+          + (item.why ? '<div class="jarvis-structured-evidence">' + renderMarkdownInline(item.why) + '</div>' : '')
+          + (asArray(item.options).length ? '<div class="jarvis-structured-evidence">Options: ' + asArray(item.options).map(esc).join(' · ') + '</div>' : '')
+          + '</div>').join(''));
+    }
+
+    const causes = asArray(structured.possible_causes).filter(item => item && item.cause);
+    if (causes.length) {
+      card.innerHTML += structuredSection('Possible causes — not confirmed', 'fa-diagram-project',
+        causes.map(item => '<div class="jarvis-structured-cause">'
+          + '<div class="jarvis-structured-cause-head"><span>' + esc(item.cause) + '</span>'
+          + '<span class="jarvis-structured-confidence">' + esc(item.confidence || 'possible') + '</span></div>'
+          + (item.evidence ? '<div class="jarvis-structured-evidence"><strong>Why it is considered:</strong> ' + renderMarkdownInline(item.evidence) + '</div>' : '')
+          + (item.uncertainty ? '<div class="jarvis-structured-uncertainty"><strong>Still uncertain:</strong> ' + renderMarkdownInline(item.uncertainty) + '</div>' : '')
+          + '</div>').join(''));
+    }
+
+    if (structured.findings) {
+      card.innerHTML += structuredSection('Findings so far', 'fa-magnifying-glass',
+        '<div class="jarvis-structured-text">' + renderStructuredMarkdown(structured.findings) + '</div>');
+    }
+
+    const visible = asArray(structured.visible_evidence).filter(Boolean);
+    if (visible.length) {
+      card.innerHTML += structuredSection('Visible in the photo — uncertain', 'fa-image',
+        structuredList(visible) + '<div class="jarvis-structured-callout" style="margin-top:6px;">A photo can suggest what to inspect, but it cannot prove a safe or unsafe condition by itself.</div>');
+    }
+
+    const tests = asArray(structured.diagnostic_tests).filter(item => item && item.name);
+    if (tests.length) {
+      card.innerHTML += structuredSection('Checks to try', 'fa-vials',
+        tests.map(item => '<div class="jarvis-structured-test">'
+          + '<div class="jarvis-structured-test-name">' + esc(item.name) + '</div>'
+          + '<dl>'
+          + (item.purpose ? '<dt>Purpose</dt><dd>' + esc(item.purpose) + '</dd>' : '')
+          + (asArray(item.tools).length ? '<dt>Tools</dt><dd>' + asArray(item.tools).map(esc).join(', ') + '</dd>' : '')
+          + (item.expected ? '<dt>Expected</dt><dd>' + esc(item.expected) + '</dd>' : '')
+          + (item.if_abnormal ? '<dt>If abnormal</dt><dd>' + esc(item.if_abnormal) + '</dd>' : '')
+          + (item.safety ? '<dt>Safety</dt><dd style="color:#fcd34d;">' + esc(item.safety) + '</dd>' : '')
+          + '</dl></div>').join(''));
+    }
+
+    const steps = asArray(structured.repair_steps).filter(item => item && (item.instruction || typeof item === 'string'));
+    if (steps.length) {
+      card.innerHTML += structuredSection('Repair steps', 'fa-screwdriver-wrench',
+        steps.map((item, index) => {
+          const instruction = typeof item === 'string' ? item : item.instruction;
+          const safetyText = typeof item === 'string' ? '' : (item.safety || '');
+          return '<div class="jarvis-structured-step">'
+            + '<span class="jarvis-structured-step-num">' + esc(String(item.step || index + 1)) + '</span>'
+            + '<div class="jarvis-structured-step-body">' + renderMarkdownInline(instruction)
+            + (safetyText ? '<div class="jarvis-structured-step-safety"><i class="fa-solid fa-triangle-exclamation"></i> ' + renderMarkdownInline(safetyText) + '</div>' : '')
+            + '</div></div>';
+        }).join(''));
+    }
+
+    const tools = asArray(structured.required_tools).filter(Boolean);
+    if (tools.length) {
+      card.innerHTML += structuredSection('Tools needed', 'fa-toolbox',
+        '<div class="jarvis-chips-grid">' + tools.map(item => '<span class="jarvis-chip" style="cursor:default;">' + esc(item) + '</span>').join('') + '</div>');
+    }
+
+    const parts = asArray(structured.required_parts).filter(item => item && item.name);
+    if (parts.length) {
+      card.innerHTML += structuredSection('Parts mentioned', 'fa-box',
+        '<div><table class="jarvis-structured-parts"><thead><tr><th>Part</th><th>Number</th></tr></thead><tbody>'
+        + parts.map(item => '<tr><td>' + esc(item.name) + (item.note ? '<div class="jarvis-structured-evidence">' + esc(item.note) + '</div>' : '') + '</td>'
+          + '<td>' + (item.part_number ? esc(item.part_number) : '<span>Not recorded</span>') + '</td></tr>').join('')
+        + '</tbody></table></div>');
+    }
+
+    const verification = asArray(structured.verification).filter(Boolean);
+    if (verification.length) {
+      card.innerHTML += structuredSection('How to verify the repair', 'fa-circle-check', structuredList(verification));
+    }
+
+    const sources = asArray(structured.sources).filter(item => item && (item.title || item.reference));
+    if (sources.length) {
+      card.innerHTML += structuredSection('Approved local sources', 'fa-book',
+        '<ul class="jarvis-structured-sources">' + sources.map(item =>
+          '<li>' + esc(item.title || item.reference)
+          + (item.reference && item.reference !== item.title ? '<div class="jarvis-structured-source-ref">' + esc(item.reference) + '</div>' : '')
+          + (item.reviewed ? '<span class="jarvis-structured-source-badge">reviewed</span>' : '<span class="jarvis-structured-unverified">unreviewed</span>')
+          + (item.date ? '<div class="jarvis-structured-source-ref">' + esc(item.date) + '</div>' : '')
+          + '</li>').join('') + '</ul>');
+    }
+
+    const limitations = asArray(structured.limitations).filter(Boolean);
+    if (limitations.length) {
+      card.innerHTML += structuredSection('Limitations', 'fa-circle-info',
+        '<div class="jarvis-structured-callout">' + limitations.map(item => renderMarkdownInline(item)).join('<br>') + '</div>');
+    }
+
+    if (structured.next_action) {
+      card.innerHTML += structuredSection('Next safe action', 'fa-arrow-right',
+        '<div class="jarvis-structured-next">' + renderMarkdownInline(structured.next_action) + '</div>');
+    }
+
+    card.innerHTML += '<div class="jarvis-structured-actions">'
+      + '<button type="button" class="jarvis-structured-action js-copy-reply"><i class="fa-regular fa-copy"></i>Copy</button>'
+      + '</div>';
+
+    const chips = asArray(structured.chips).filter(Boolean);
+    if (chips.length) {
+      card.innerHTML += '<div class="jarvis-chips-grid" style="margin-top:10px;">'
+        + chips.map(chip => '<button type="button" class="jarvis-chip" data-structured-chip="' + esc(chip) + '">' + esc(chip) + '</button>').join('')
+        + '</div>';
+    }
+
+    block.appendChild(card);
+
+    const copyBtn = card.querySelector('.js-copy-reply');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => copyToClipboard(copyBtn, structured.reply_text || structured.next_action || ''));
+    }
+    card.querySelectorAll('[data-structured-chip]').forEach(chipBtn => {
+      chipBtn.addEventListener('click', () => sendMessage(chipBtn.dataset.structuredChip));
+    });
+
+    messagesContainer.appendChild(block);
+
+    if (meta.quota) updateQuotaUI(meta.quota);
+  }
+
+  function renderStructuredError(message, id, retry) {
+    retry = retry || {};
+    const block = document.createElement('div');
+    block.className = 'jarvis-msg-block jarvis-msg-block--bot';
+    if (id) block.id = 'msg-node-' + id;
+
+    const badge = document.createElement('div');
+    badge.className = 'jarvis-msg-badge jarvis-msg-badge--bot';
+    badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/></svg><span>J.A.R.V.I.S.</span>';
+    block.appendChild(badge);
+
+    const card = document.createElement('div');
+    card.className = 'jarvis-structured-error';
+    card.innerHTML = '<strong><i class="fa-solid fa-triangle-exclamation"></i> The assistant could not answer that turn.</strong>'
+      + '<div style="margin-top:5px;">' + esc(message) + '</div>';
+    if (retry.text || retry.imageId) {
+      const retryBtn = document.createElement('button');
+      retryBtn.type = 'button';
+      retryBtn.className = 'jarvis-structured-action';
+      retryBtn.style.marginTop = '9px';
+      retryBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>Retry';
+      retryBtn.addEventListener('click', () => {
+        if (isLoading) return;
+        retryBtn.disabled = true;
+        retryBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Retrying…';
+        runStructuredTurn(retry.text || '', retry.imageId ? { id: retry.imageId, url: null } : null, { appendUser: false });
+      });
+      card.appendChild(retryBtn);
+    }
+    block.appendChild(card);
+    messagesContainer.appendChild(block);
+  }
+
+  async function copyToClipboard(button, text) {
+    const value = stripChipsTag(text || '');
+    if (!value) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const area = document.createElement('textarea');
+        area.value = value;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      button.innerHTML = '<i class="fa-solid fa-check"></i>Copied';
+      setTimeout(() => { button.innerHTML = '<i class="fa-regular fa-copy"></i>Copy'; }, 1800);
+    } catch (e) {
+      button.innerHTML = '<i class="fa-solid fa-xmark"></i>Copy failed';
+      setTimeout(() => { button.innerHTML = '<i class="fa-regular fa-copy"></i>Copy'; }, 1800);
+    }
+  }
+
+
+  // ── Photo intake ──────────────────────────────────────────────────────────
+  function clearPendingPhoto() {
+    if (pendingImage && pendingImage.objectUrl) {
+      try { URL.revokeObjectURL(pendingImage.objectUrl); } catch (e) {}
+    }
+    pendingImage = null;
+    if (imageInput) imageInput.value = '';
+    if (photoDock) photoDock.classList.add('d-none');
+    if (photoStatus) {
+      photoStatus.style.color = '';
+      photoStatus.textContent = 'Ready to attach';
+    }
+  }
+
+  function photoError(message) {
+    if (!photoDock || !photoStatus) return;
+    photoDock.classList.remove('d-none');
+    photoStatus.style.color = '#fca5a5';
+    photoStatus.textContent = message;
+    if (photoThumb) photoThumb.removeAttribute('src');
+    if (photoName) photoName.textContent = 'Photo not attached';
+  }
+
+  async function uploadDiagnosticPhoto(file) {
+    if (!file || imageUploading) return;
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type || '')) {
+      photoError('Use a JPEG, PNG or WebP photo.');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      photoError('Photo is too large. The limit is 8 MB.');
+      return;
+    }
+
+    if (assistantMode !== 'structured') setAssistantMode('structured');
+    imageUploading = true;
+    attachBtn.disabled = true;
+
+    let objectUrl = '';
+    try { objectUrl = URL.createObjectURL(file); } catch (e) {}
+    if (photoDock) photoDock.classList.remove('d-none');
+    if (photoThumb && objectUrl) photoThumb.src = objectUrl;
+    if (photoName) photoName.textContent = file.name || 'photo.jpg';
+    if (photoStatus) {
+      photoStatus.style.color = '';
+      photoStatus.textContent = 'Uploading privately…';
+    }
+
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      if (conversationId) form.append('conversation_id', String(conversationId));
+      const res = await fetch(UPLOAD_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: form
+      });
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      if (!res.ok) {
+        if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) {} }
+        photoError(data.error || 'The photo could not be uploaded. Please try another image.');
+        return;
+      }
+      pendingImage = {
+        id: data.image_id,
+        url: data.url,
+        name: data.original_name || file.name || 'photo.jpg',
+        objectUrl: objectUrl
+      };
+      if (photoThumb) photoThumb.src = data.url || objectUrl;
+      if (photoName) photoName.textContent = pendingImage.name;
+      if (photoStatus) {
+        photoStatus.style.color = '#86efac';
+        photoStatus.textContent = 'Ready — describe what to check (optional), then send.';
+      }
+    } catch (e) {
+      if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) {} }
+      photoError('Photo upload failed. Check your connection and retry.');
+    } finally {
+      imageUploading = false;
+      attachBtn.disabled = false;
+    }
+  }
+
+
   let typingEl = null;
 
-  function showTyping() {
+  function showTyping(anchorId) {
     if (typingEl) return;
     typingEl = document.createElement('div');
     typingEl.className = 'jarvis-msg-block jarvis-msg-block--bot';
@@ -1228,7 +2335,11 @@
       </div>
     `;
     messagesContainer.appendChild(typingEl);
-    scrollToBottom();
+    if (anchorId) {
+      scrollToUserTurn(anchorId, 30);
+    } else {
+      scrollToBottom();
+    }
   }
 
   function hideTyping() {
@@ -1257,8 +2368,8 @@
       if (known.type) specParts.push(known.type);
       specsEl.textContent = specParts.length > 0 ? specParts.join(' · ') : 'Diagnostic Session Vehicle';
     } else {
-      titleEl.textContent = 'Yamaha MT-07';
-      specsEl.textContent = '2023 · 689 cc · Twin-cylinder';
+      titleEl.textContent = titleEl.dataset.defaultTitle || 'No vehicle selected';
+      specsEl.textContent = specsEl.dataset.defaultSpecs || 'Tell the assistant your motorcycle in chat.';
     }
   }
 
@@ -1277,7 +2388,11 @@
     updateHeroVisibility(history);
     activeTurns.forEach(item => {
       if (item.role === 'user') {
-        renderUserMessage(item.text, item.id);
+        renderUserMessage(item.text, item.id, item.imageUrl);
+      } else if (item.kind === 'structured' && item.structured) {
+        renderStructuredMessage(item.structured, item.id, item);
+      } else if (item.kind === 'structured-error') {
+        renderStructuredError(item.error || 'The diagnostic assistant could not complete that request.', item.id, item.retry || {});
       } else {
         const parsed = parseBotMessage(item.text, item.activeChip, item.followupChips);
         renderBotMessage(parsed, item.id);
@@ -1344,8 +2459,265 @@
     }
   }
 
-  // ── Send Message Routine ──────────────────────────────────────────────────
-  async function sendMessage(manualText) {
+  // ── Assistant Mode, Language and Session Controls ─────────────────────────
+  function setAssistantMode(mode) {
+    if (mode !== 'guided' && mode !== 'structured') mode = 'guided';
+    assistantMode = mode;
+    try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
+
+    document.querySelectorAll('[data-assistant-mode]').forEach(btn => {
+      const isActive = btn.dataset.assistantMode === mode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    if (modeHintEl) {
+      modeHintEl.textContent = mode === 'structured'
+        ? 'Smart mode runs local safety rules first, then structured checks, approved local sources and optional photo review. Switch to Guided for the original step-by-step flow.'
+        : 'Guided mode walks you through the original step-by-step checks. Smart mode adds safety-first structured answers, local evidence and photo support.';
+    }
+    if (inputEl) inputEl.maxLength = mode === 'structured' ? 2000 : 1000;
+    if (attachBtn) {
+      attachBtn.title = mode === 'structured'
+        ? 'Attach a diagnostic photo'
+        : 'Attach a diagnostic photo (switches to Smart mode)';
+    }
+  }
+
+  function updateAIStatus(data) {
+    if (!data) return;
+    const statusEl = document.querySelector('.jarvis-header-status span:last-child');
+    if (!statusEl) return;
+    if (data.ai_available === false) {
+      statusEl.textContent = 'Online · Offline guidance (AI unavailable)';
+    } else {
+      statusEl.textContent = 'Online · At your service, sir';
+    }
+  }
+
+  function resetAssistantSession() {
+    const previousConversation = conversationId;
+    conversationId = null;
+    try { localStorage.removeItem(CONVERSATION_KEY); } catch (e) {}
+    clearPendingPhoto();
+    fetch(CHAT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({
+        reset: true,
+        structured: true,
+        conversation_id: previousConversation
+      })
+    }).catch(function() {});
+  }
+
+  function initAssistantControls() {
+    document.querySelectorAll('[data-assistant-mode]').forEach(btn => {
+      btn.addEventListener('click', () => setAssistantMode(btn.dataset.assistantMode));
+    });
+
+    if (languageSelect) {
+      let savedLanguage = 'auto';
+      try { savedLanguage = localStorage.getItem('jarvis-pref-lang') || 'auto'; } catch (e) {}
+      if (['auto', 'english', 'tagalog', 'hiligaynon'].indexOf(savedLanguage) === -1) {
+        savedLanguage = 'auto';
+      }
+      languageSelect.value = savedLanguage;
+      languageSelect.addEventListener('change', () => {
+        try { localStorage.setItem('jarvis-pref-lang', languageSelect.value); } catch (e) {}
+      });
+    }
+
+    if (attachBtn && imageInput) {
+      attachBtn.addEventListener('click', () => {
+        if (assistantMode !== 'structured') setAssistantMode('structured');
+        imageInput.click();
+      });
+      imageInput.addEventListener('change', () => {
+        const file = imageInput.files && imageInput.files[0];
+        if (file) uploadDiagnosticPhoto(file);
+      });
+    }
+
+    if (photoRemoveBtn) {
+      photoRemoveBtn.addEventListener('click', clearPendingPhoto);
+    }
+
+    setAssistantMode(assistantMode);
+  }
+
+  // ── Structured (Smart) Turn ───────────────────────────────────────────────
+  async function runStructuredTurn(text, image, options) {
+    options = options || {};
+    const messageText = (text || '').trim();
+    const imageRef = image || null;
+    if ((!messageText && !imageRef) || isLoading) return;
+
+    const appendUser = options.appendUser !== false;
+    const userId = 'msg-u-' + Date.now();
+    const userTime = getTimeStr();
+    let history = loadHistory();
+
+    if (appendUser) {
+      const imageUrl = imageRef && imageRef.url ? imageRef.url : null;
+      renderUserMessage(messageText || 'Photo attached for inspection.', userId, imageUrl);
+      scrollToUserTurn(userId, 30);
+      history.push({
+        id: userId,
+        role: 'user',
+        text: messageText || 'Photo attached for inspection.',
+        imageUrl: imageUrl,
+        time: userTime
+      });
+      saveHistory(history);
+      updateHeroVisibility(history);
+    }
+
+    isLoading = true;
+    sendBtn.disabled = true;
+    inputEl.disabled = true;
+    showTyping(userId);
+
+    const retry = {
+      text: messageText,
+      imageId: imageRef && imageRef.id ? imageRef.id : null
+    };
+
+    try {
+      const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
+      const userLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
+      const payload = {
+        message: messageText,
+        structured: true,
+        language: userLang,
+        experience_level: userLevel
+      };
+      if (conversationId) payload.conversation_id = conversationId;
+      if (retry.imageId) payload.image_id = retry.imageId;
+
+      const res = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify(payload)
+      });
+
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      hideTyping();
+
+      if (!res.ok) {
+        let message = data.error || 'The assistant could not answer that request. Please retry.';
+        if (res.status === 429 && data.retry_after) {
+          message += ' Try again in about ' + data.retry_after + ' seconds.';
+        }
+        const errorId = 'msg-e-' + Date.now();
+        history = loadHistory();
+        history.push({
+          id: errorId,
+          role: 'bot',
+          kind: 'structured-error',
+          text: message,
+          error: message,
+          retry: retry,
+          time: getTimeStr()
+        });
+        saveHistory(history);
+        renderStructuredError(message, errorId, retry);
+        scrollToBottom();
+        return;
+      }
+
+      if (data.conversation_id) {
+        const nextConversation = Number(data.conversation_id);
+        if (Number.isFinite(nextConversation)) {
+          conversationId = nextConversation;
+          try { localStorage.setItem(CONVERSATION_KEY, String(conversationId)); } catch (e) {}
+        }
+      }
+
+      const structured = data.structured || {};
+      const botId = 'msg-b-' + Date.now();
+      const botTime = getTimeStr();
+      const meta = {
+        conversationId: conversationId,
+        offline: !!data.offline,
+        time: botTime,
+        quota: data.quota || null
+      };
+      renderStructuredMessage(structured, botId, meta);
+      scrollToTurnResponse(userId, botId, 60);
+
+      history = loadHistory();
+      history.push({
+        id: botId,
+        role: 'bot',
+        kind: 'structured',
+        structured: structured,
+        text: stripChipsTag(structured.reply_text || ''),
+        conversationId: conversationId,
+        offline: !!data.offline,
+        time: botTime
+      });
+      saveHistory(history);
+
+      if (data.quota) updateQuotaUI(data.quota);
+      updateAIStatus(data);
+
+    } catch (err) {
+      hideTyping();
+      const message = 'The diagnostic assistant could not be reached. Check your connection and retry.';
+      const errorId = 'msg-e-' + Date.now();
+      history = loadHistory();
+      history.push({
+        id: errorId,
+        role: 'bot',
+        kind: 'structured-error',
+        text: message,
+        error: message,
+        retry: retry,
+        time: getTimeStr()
+      });
+      saveHistory(history);
+      renderStructuredError(message, errorId, retry);
+      scrollToBottom();
+    } finally {
+      isLoading = false;
+      sendBtn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
+      clearPendingPhoto();
+    }
+  }
+
+  function sendStructuredMessage(manualText) {
+    const text = (manualText != null ? manualText : (inputEl ? inputEl.value : '')).trim();
+    const image = pendingImage;
+    if (!text && !image) return;
+    if (inputEl) {
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+    }
+    return runStructuredTurn(text, image, { appendUser: true });
+  }
+
+  function sendMessage(manualText) {
+    const text = (manualText != null ? manualText : (inputEl ? inputEl.value : '')).trim();
+    if (pendingImage) {
+      if (assistantMode !== 'structured') setAssistantMode('structured');
+      return sendStructuredMessage(text);
+    }
+    if (assistantMode === 'structured') {
+      if (!text) return;
+      return sendStructuredMessage(text);
+    }
+    return sendGuidedMessage(manualText);
+  }
+
+  // ── Guided (Legacy) Turn ──────────────────────────────────────────────────
+  async function sendGuidedMessage(manualText) {
     const text = (manualText || inputEl.value).trim();
     if (!text || isLoading) return;
 
@@ -1357,7 +2729,7 @@
 
     // 1. Render user message
     renderUserMessage(text, userId);
-    scrollToBottom();
+    scrollToUserTurn(userId, 30);
 
     const history = loadHistory();
     history.push({ id: userId, role: 'user', text, time: userTime });
@@ -1368,7 +2740,7 @@
     isLoading = true;
     sendBtn.disabled = true;
     inputEl.disabled = true;
-    showTyping();
+    showTyping(userId);
 
     // Natural assistant latency
     await new Promise(r => setTimeout(r, 380));
@@ -1414,7 +2786,7 @@
       const botTime = getTimeStr();
       const parsed = parseBotMessage(reply, null, []);
       renderBotMessage(parsed, botId);
-      scrollToBottom();
+      scrollToTurnResponse(userId, botId, 60);
 
       const botEntry = {
         id: botId,
@@ -1498,17 +2870,12 @@
     historyClearAllBtn.addEventListener('click', () => {
       try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
       messagesContainer.innerHTML = '';
-      // Clear the server-side guided diagnostic context too.
-      fetch(CHAT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ reset: true })
-      }).catch(function() {});
+      resetAssistantSession();
       const clearMsg = [
         {
           id: 'cleared-1',
           role: 'bot',
-          text: "Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.\n\nWhich motorcycle are we working on? **Model and year** is enough (for example: *Click 125i 2022*), then tell me the problem.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
+          text: "Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.\n\nAsk me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose. General questions get a direct answer; a fault can be narrowed down step by step.\n\n[chips: How often should I change oil? | What to check before changing a tire? | Engine won't start | Not sure]",
           time: getTimeStr()
         }
       ];
@@ -1544,19 +2911,14 @@
       localStorage.removeItem(STORAGE_KEY);
     } catch(e) {}
 
-    // Clear the server-side guided diagnostic context too.
-    fetch(CHAT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-      body: JSON.stringify({ reset: true })
-    }).catch(function() {});
+    resetAssistantSession();
 
-    // Reset to the master diagnostic mechanic welcome state
+    // Reset to the master motorcycle-assistant welcome state
     const welcomeState = [
       {
         id: 'welcome-1',
         role: 'bot',
-        text: "At your service, sir. J.A.R.V.I.S. online. Which motorcycle are we working on?\n\n**Model and year** is enough (for example: *Click 125i 2022*). Then tell me the problem and I will help you narrow it down, one step at a time.\n\n[chips: Click 125i | Mio | Wave 125 | Not sure]",
+        text: "At your service, sir. J.A.R.V.I.S. online. Ask me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose.\n\nI answer general questions directly, and I can narrow down a problem step by step. For model-specific specs, include your make/model/year (for example: *Click 125i 2022*).\n\n[chips: How often should I change oil? | What to check before changing a tire? | Engine won't start | Not sure]",
         time: getTimeStr()
       }
     ];
@@ -1614,10 +2976,11 @@
 
   async function fetchQuotaStatus() {
     try {
-      const res = await fetch('/jarvis/status/');
+      const res = await fetch(STATUS_URL);
       if (res.ok) {
         const data = await res.json();
         if (data.quota) updateQuotaUI(data.quota);
+        updateAIStatus(data);
       }
     } catch (e) {}
   }
@@ -1683,6 +3046,7 @@
   }
 
   // Initial boot
+  initAssistantControls();
   const initialHistory = loadHistory();
   renderAll(initialHistory);
   fetchQuotaStatus();

@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import timedelta
 
@@ -10,34 +11,58 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .jarvis_translations import BRANCH_TEXTS
+from .part_locations import location_hint
+from .services import assistant as assistant_service
+from .services.ai import fallback_model_name, is_ai_available, is_ai_configured, model_name
+from .services.images import InvalidImageError, attach_to_conversation, save_uploaded_image
+from .services.memory import get_or_create_conversation
+from .services.rate_limit import check_rate_limit
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Gemini AI client setup (using google-genai SDK)
 # ---------------------------------------------------------------------------
 _gemini_client = None
+_gemini_key_warning_logged = False
 
 
 def _get_gemini_client():
     """Lazily initialise and return the Gemini AI client."""
-    global _gemini_client
-    if _gemini_client is None and getattr(settings, 'GEMINI_API_KEY', ''):
-        from google import genai
-        try:
-            _gemini_client = genai.Client(
-                api_key=settings.GEMINI_API_KEY,
-                http_options={'timeout': 45000}
+    global _gemini_client, _gemini_key_warning_logged
+    if _gemini_client is not None:
+        return _gemini_client
+
+    api_key = getattr(settings, 'GEMINI_API_KEY', '')
+    if not api_key:
+        if not _gemini_key_warning_logged:
+            logger.warning(
+                'GEMINI_API_KEY is not configured; J.A.R.V.I.S. will use offline fallbacks.'
             )
-        except Exception:
-            _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            _gemini_key_warning_logged = True
+        return None
+
+    from google import genai
+    try:
+        _gemini_client = genai.Client(
+            api_key=api_key,
+            http_options={'timeout': 45000}
+        )
+    except Exception:
+        try:
+            _gemini_client = genai.Client(api_key=api_key)
+        except Exception as exc:
+            logger.warning('Could not initialise the Gemini client: %s', exc)
+            return None
     return _gemini_client
 
 MAX_FAILED_ATTEMPTS = 5
@@ -170,12 +195,17 @@ def home(request):
     if not request.user.is_authenticated:
         if getattr(settings, 'IS_TESTING', False):
             return redirect('login')
-        glenn = User.objects.filter(username='glenn').first()
-        if not glenn:
-            glenn = User.objects.filter(is_superuser=True).first()
-        if not glenn:
-            glenn = User.objects.create_superuser('glenn', 'glenn@example.com', 'admin1234')
-        login(request, glenn)
+        # Development convenience only; never create a known-password account
+        # in normal or production use.
+        if getattr(settings, 'DEBUG', False) and getattr(settings, 'AUTO_LOGIN_DEV', False):
+            dev_user = User.objects.filter(is_superuser=True).order_by('id').first()
+            if dev_user:
+                login(request, dev_user)
+            else:
+                messages.error(request, 'AUTO_LOGIN_DEV is enabled but no superuser exists. Run createsuperuser first.')
+                return redirect('login')
+        else:
+            return redirect('login')
 
     from apps.motor.models import DiagnosticSymptom
 
@@ -288,7 +318,193 @@ FALLBACK_CHIPS = {
         'tagalog': 'Ayaw mag-start ng makina | Sira ang preno | Umainit ang makina | Kakaibang ingay sa makina',
         'hiligaynon': 'Indi mag-andar ang makina | Guba ang preno | Naga-init ang makina | May kakaiba nga tingog ang makina',
     },
+    'general': {
+        'english': 'How often should I change oil? | What to check before changing a tire? | How to clean and lube the chain? | Brake maintenance checklist | Full maintenance schedule',
+        'tagalog': 'Kailan dapat mag-change oil? | Ano ang titingnan bago magpalit ng gulong? | Paano linisin at lagyan ng langis ang chain? | Brake maintenance checklist | Buong maintenance schedule',
+        'hiligaynon': 'San-o dapat mag-ilis sang langis? | Ano ang usisahon antes mag-ilis sang gulong? | Paano limpyohan kag butangan sang lana ang chain? | Brake maintenance checklist | Bug-os nga maintenance schedule',
+    },
 }
+
+
+# Offline answers for general motorcycle questions. These are intentionally
+# practical and conservative: typical intervals are given as ranges, and the
+# owner's manual is always named as the final authority.
+GENERAL_FALLBACK_TEXTS = {
+    'oil': (
+        "**Engine oil change — quick answer, {sir}:**\n\n"
+        "**Interval:** Usually every **2,000–4,000 km** or **3–6 months** for a daily scooter/underbone. "
+        "Hard use (heavy traffic, short trips, dusty roads) → closer to 2,000 km; highway touring → up to 4,000 km. "
+        "Your owner's manual is the final authority for your exact model.\n\n"
+        "**Oil type:** JASO MA/MA2 4T motorcycle oil in the viscosity listed in your manual. "
+        "Do not use passenger-car oil with friction modifiers in a wet-clutch motorcycle.\n\n"
+        "**Before you start:** drain pan, correct wrench/socket, new crush washer, oil filter, funnel, "
+        "gloves, and a sealed container for the used oil. Park on level ground.\n\n"
+        "**Procedure:**\n"
+        "- [ ] 1. Warm the engine for 2–3 minutes, shut it off, then wait 2–3 minutes.\n"
+        "- [ ] 2. Keep the bike upright on level ground and place the drain pan under the drain bolt.\n"
+        "- [ ] 3. Remove the drain bolt (and filter); let the old oil drain completely.\n"
+        "- [ ] 4. Fit a new crush washer and reinstall the drain bolt snugly — do not overtighten; use the manual torque if you have a wrench.\n"
+        "- [ ] 5. Replace the oil filter as the manual specifies; lubricate the filter seal with fresh oil.\n"
+        "- [ ] 6. Refill with the specified amount, check the sight glass/dipstick, then run the engine briefly.\n"
+        "- [ ] 7. Stop the engine, wait a minute, recheck the level, and look for leaks.\n\n"
+        "**Safety and disposal:** Used oil is toxic — seal it and take it to a recycling center; never dump it. "
+        "If the drain bolt is rounded or seized, or you find metal flakes in the oil, stop and have a mechanic inspect it.\n\n"
+        "[chips: How often should I change oil? | What oil type should I use? | What to check before changing a tire? | Full maintenance schedule]"
+    ),
+    'tire': (
+        "**Before changing a tyre, check these, {sir}:**\n\n"
+        "1. **Size and rating:** Read the sidewall (for example 90/80-14) and confirm the replacement matches. "
+        "Check the load and speed rating, and whether your rim needs a tube or is tubeless.\n"
+        "2. **Tyre condition:** Tread depth at least **1.6 mm**, no cracks, bulges, or embedded nails/screws. "
+        "Inspect the rim for bends, cracks, or corrosion.\n"
+        "3. **Tools:** Tyre levers, rim protectors, bead breaker (or a shop), torque wrench, new valve stem if needed, "
+        "pump with gauge, and soapy water for leak checks.\n"
+        "4. **Brake and chain clearance:** Make sure the disc rotor is not bent, pads are not contaminated, and the chain/sprocket "
+        "has room to move. On drum brakes, note the shoe and spring orientation before disassembly.\n"
+        "5. **Wheel bearings and spokes:** Rock the wheel for play and check that spokes are tight. "
+        "Keep the axle nut, spacers, and adjusters in order.\n"
+        "6. **Safety:** Support the bike securely on a center stand or paddock stand, chock the other wheel, "
+        "and keep hands clear of a spinning wheel. Use a torque wrench on the axle — do not guess.\n"
+        "7. **After fitting:** Seat the bead, inflate to the pressure on the tyre/owner's manual, check for leaks with soapy water, "
+        "spin the wheel, and test the brakes slowly in a safe area before riding normally.\n\n"
+        "**Tip:** Replace tyres in pairs when wear is uneven, and recheck pressure cold the next morning. "
+        "If the rim is cracked or the axle threads are damaged, stop and let a shop handle it.\n\n"
+        "[chips: What tyre pressure should I use? | How often should I change oil? | Brake maintenance checklist | Full maintenance schedule]"
+    ),
+    'chain': (
+        "**Chain care, {sir}:**\n\n"
+        "- **Clean and lube:** Every **500 km** or after rain. Use a chain cleaner and dedicated chain lube — "
+        "WD-40 is a cleaner/water displacer, not a substitute for chain lubricant.\n"
+        "- **Slack:** Typically **20–35 mm** at the midpoint (confirm your manual). Adjust at the rear axle and keep the wheel aligned.\n"
+        "- **Inspect:** Tight links, rust, missing O-rings, and hooked or sharp sprocket teeth. "
+        "If the chain is worn, replace the chain and sprockets as a set — a new chain on worn sprockets wears out fast.\n"
+        "- **Safety:** Engine off, transmission in neutral, fingers away from the sprocket, and use a paddock stand. "
+        "Do not overtighten the chain; it can damage the countershaft bearing.\n\n"
+        "**Quick check:** With the bike on its stand, spin the rear wheel slowly and watch the chain run. "
+        "A dry or kinked chain will show tight spots as it passes over the sprocket.\n\n"
+        "[chips: How often should I change oil? | What to check before changing a tire? | Brake maintenance checklist | Full maintenance schedule]"
+    ),
+    'brakes': (
+        "**Brake maintenance checklist, {sir}:**\n\n"
+        "- **Pads/shoes:** Check every **2,000–4,000 km** or monthly. Replace disc pads at about **2 mm** of lining; "
+        "replace drum shoes when the friction material is thin or contaminated.\n"
+        "- **Fluid:** Check the reservoir level and colour. Bleed the system every **1–2 years**, or sooner if the lever feels spongy. "
+        "Use the DOT 3/DOT 4 fluid specified on the cap — never mix types.\n"
+        "- **Disc/drum:** Look for deep grooves, blue heat spots, or a warped rotor. The lever/pedal should feel firm and hold pressure.\n"
+        "- **Leaks:** Check the master cylinder, hose, caliper, and banjo bolts for wet spots or crusty residue.\n"
+        "- **Safety:** Do not ride if the lever sinks, fluid is leaking, or you hear metal grinding. "
+        "Brake dust is harmful — wear gloves and a mask, and work in a ventilated area.\n\n"
+        "**When to stop:** If a brake line is cracked, a caliper piston is seized, or the rotor is below the minimum thickness, "
+        "replace the affected parts instead of adjusting around the problem.\n\n"
+        "[chips: How often should I change oil? | What to check before changing a tire? | How to clean and lube the chain? | Full maintenance schedule]"
+    ),
+    'schedule': (
+        "**Routine motorcycle maintenance schedule, {sir}:**\n\n"
+        "- **Before every ride:** Tyres, brakes, lights, chain, and a quick look for leaks.\n"
+        "- **Weekly:** Cold tyre pressure, chain lubrication, engine oil level, brake fluid level, and coolant level (if liquid-cooled).\n"
+        "- **Every 2,000–4,000 km:** Engine oil and filter, air-filter check, chain adjustment, brake inspection.\n"
+        "- **Every 4,000–6,000 km:** Spark plug, valve-clearance check (if applicable), CVT inspection on scooters.\n"
+        "- **Every 8,000–12,000 km:** CVT belt and rollers, brake fluid, fork oil, wheel bearings, and suspension check.\n"
+        "- **Yearly or per manual:** Coolant replacement, brake fluid flush, battery check, and a full fastener/torque check.\n\n"
+        "**Important:** These are typical intervals for everyday riding. Traffic, dust, rain, and hard riding shorten them; "
+        "the owner's manual and the condition of the parts are the final authority. "
+        "If you ride in heavy traffic or on dusty roads, move oil and air-filter service closer to the shorter interval.\n\n"
+        "[chips: How often should I change oil? | What to check before changing a tire? | How to clean and lube the chain? | Brake maintenance checklist]"
+    ),
+    'help': (
+        "I can help with any motorcycle question, {sir} — not only breakdowns. "
+        "Here are quick baselines you can use right away:\n\n"
+        "- **Oil/filter:** 2,000–4,000 km or 3–6 months; JASO MA/MA2 4T oil; filter per manual.\n"
+        "- **Tyres:** Check cold pressure weekly (often around 29–33 psi front / 33–36 psi rear), tread at least 1.6 mm, "
+        "and no cracks, bulges, or nails.\n"
+        "- **Chain:** Clean and lube every 500 km; 20–35 mm slack; replace chain and sprockets together when worn.\n"
+        "- **Brakes:** Pads at least 2 mm, fluid clear and at level, firm lever; bleed every 1–2 years or if spongy.\n"
+        "- **Battery:** 12.6 V+ at rest, 13.5–14.5 V while charging; typical life 3–5 years.\n"
+        "- **CVT:** Inspect the belt and rollers around 8,000–12,000 km; replace per wear and manual.\n"
+        "- **Coolant:** Check cold monthly; replace every 2 years or per manual.\n\n"
+        "Tell me your bike model (optional) and what you want to do — oil change, tyre change, chain care, brake check, "
+        "or a full service — and I'll give you the interval, tools, steps, and safety notes. "
+        "The owner's manual is always the final authority for exact specs.\n\n"
+        "[chips: How often should I change oil? | What to check before changing a tire? | How to clean and lube the chain? | Brake maintenance checklist | Full maintenance schedule]"
+    ),
+}
+
+
+def _general_topic(message):
+    """Pick the offline general-answer topic from a free-text question."""
+    msg = (message or '').lower()
+
+    def has(*words):
+        return any(re.search(r'\b' + re.escape(w) + r'\b', msg) for w in words)
+
+    if has('oil', 'langis', 'lana', 'lubricant'):
+        return 'oil'
+    if has('tyre', 'tire', 'gulong', 'wheel', 'rim'):
+        return 'tire'
+    if has('chain', 'kadena', 'sprocket'):
+        return 'chain'
+    if has('brake', 'preno', 'caliper', 'brake pad', 'shoe'):
+        return 'brakes'
+    if has(
+        'maintenance', 'maintain', 'service', 'pms', 'tune up', 'tune-up',
+        'schedule', 'interval', 'check', 'inspection', 'care',
+    ):
+        return 'schedule'
+    return 'help'
+
+
+def _history_plain_text(history):
+    if not history:
+        return ''
+    if isinstance(history, str):
+        return history
+    parts = []
+    for turn in list(history)[-8:]:
+        if isinstance(turn, dict):
+            parts.append(str(turn.get('text') or ''))
+        else:
+            parts.append(str(turn))
+    return ' '.join(part for part in parts if part)
+
+
+def _general_location_fallback(message, sir, history=None):
+    """Offline answer for "where is the ...?" questions."""
+    hint = location_hint(message) or location_hint(_history_plain_text(history))
+    if hint:
+        return (
+            f"**Typical location, {sir}:**\n\n"
+            f"{hint}\n\n"
+            "The exact position varies by model, so confirm it in your owner's "
+            "manual before removing panels or disconnecting anything.\n\n"
+            "[chips: Oil filter | Battery | Fuse box | ECU/CDI | Horn]"
+        )
+    return (
+        "I can point you to the usual location. Which part do you mean?\n\n"
+        "Common ones are the oil filter, battery, fuse box, ECU/CDI, horn, and "
+        "starter relay.\n\n"
+        "[chips: Oil filter | Battery | Fuse box | ECU/CDI | Horn]"
+    )
+
+
+def _jarvis_general_fallback(message, user, history=None, language=None):
+    """Offline answer for maintenance/how-to/info questions (no intake form)."""
+    sir = _jarvis_address(user)
+    lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+    if re.search(r'\b(?:where|saan|asa|diin)\b', message or '', re.IGNORECASE):
+        if (
+            location_hint(message)
+            or location_hint(_history_plain_text(history))
+            or re.search(r'\b(?:parts?|components?)\b', message or '', re.IGNORECASE)
+        ):
+            localized = _localized_branch('general_location', lang, sir=sir)
+            if localized:
+                return localized
+            return _general_location_fallback(message, sir, history)
+    topic = _general_topic(message)
+    localized = _localized_branch(f'general_{topic}', lang, sir=sir)
+    if localized:
+        return localized
+    return GENERAL_FALLBACK_TEXTS[topic].format(sir=sir)
 
 
 def _localized_branch(key, lang, **ctx):
@@ -339,10 +555,13 @@ def _detect_language(text, history=None):
 
 def _extract_vehicle_info(text, history=None):
     """Extracts known vehicle specifications from current message and conversation history."""
-    corpus = (text or '').lower()
+    current_text = (text or '').lower()
+    history_turns = []
     if history and isinstance(history, list):
         for turn in history:
-            corpus += " " + (turn.get('text', '') or '').lower()
+            history_turns.append((turn.get('text', '') or '').lower())
+    history_corpus = " ".join(history_turns)
+    corpus = (current_text + " " + history_corpus).strip()
 
     info = {
         'make': None,
@@ -354,7 +573,7 @@ def _extract_vehicle_info(text, history=None):
         'displacement': None,
     }
 
-    # 1. Direct parsing for structured form submissions (e.g. "Vehicle: 2022 Honda Click 125i (Scooter, 125cc, Fuel-injected)")
+    # 1. Direct parsing for structured form submissions
     form_match = re.search(r'Vehicle:\s*(?:(\d{4})\s+)?([A-Za-z]+)\s+([^\(\n,]+)', text or '', re.I)
     if form_match:
         y, mk, mdl = form_match.groups()
@@ -370,11 +589,23 @@ def _extract_vehicle_info(text, history=None):
         'ford', 'hyundai', 'isuzu', 'mazda', 'bmw', 'ducati', 'ktm', 'vespa',
         'tvs', 'bajaj', 'kymco', 'sym', 'rusi', 'motorstar', 'keeway', 'royal enfield'
     ]
+
+    # Prioritize make in current message before checking conversation history
+    make_switched = False
     if not info['make']:
         for m in makes:
-            if re.search(r'\b' + re.escape(m) + r'\b', corpus):
+            if re.search(r'\b' + re.escape(m) + r'\b', current_text):
                 info['make'] = m.title()
+                make_switched = True
                 break
+        if not info['make'] and history_turns:
+            for turn_txt in reversed(history_turns):
+                for m in makes:
+                    if re.search(r'\b' + re.escape(m) + r'\b', turn_txt):
+                        info['make'] = m.title()
+                        break
+                if info['make']:
+                    break
 
     models_list = [
         'click 125i', 'click 150i', 'click 160', 'click',
@@ -383,54 +614,229 @@ def _extract_vehicle_info(text, history=None):
         'fazzio', 'gravis', 'burgman street', 'burgman',
         'beat', 'pcx 160', 'pcx 150', 'pcx', 'adv 160', 'adv 150', 'adv',
         'sniper 155', 'sniper 150', 'sniper',
-        'tmx 125', 'tmx supremo', 'tmx', 'barako 175', 'barako', 'ct100', 'ct125',
+        'tmx 125', 'tmx supremo', 'tmx', 'barako 175', 'barako',
+        'bajaj ct 100', 'bajaj ct100', 'ct 100', 'ct100', 'ct 125', 'ct125',
+        'kawasaki ct100', 'kawasaki ct 100',
+        'rouser 200', 'rouser 160', 'rouser 135', 'rouser',
+        'boxer 150', 'discover 125', 'pulsar 200', 'pulsar 150', 'pulsar',
         'wave 110', 'wave 125', 'wave', 'xrm 125', 'xrm', 'smash 115', 'smash',
         'vios', 'mirage g4', 'mirage', 'wigo', 'innova', 'fortuner', 'hilux',
         'civic', 'corolla', 'city', 'almera', 'rush', 'raize', 'montero'
     ]
+
+    # Prioritize model in current message before checking conversation history
+    model_switched = False
     if not info['model']:
         for mdl in models_list:
-            mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', corpus)
+            mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', current_text)
             if mdl_match:
-                label = re.sub(r'(\d+)I\b', r'\1i', mdl_match.group(0).title())
+                label = mdl_match.group(0).title()
+                label = re.sub(r'(\d+)I\b', r'\1i', label)
+                if 'ct' in label.lower():
+                    label = re.sub(r'\bCt\b', 'CT', label)
+                    label = re.sub(r'\bCt(\d+)', r'CT \1', label)
                 info['model'] = label
+                model_switched = True
+                # If make wasn't explicitly stated, infer make from brand-specific model
+                if not info['make']:
+                    if any(k in mdl for k in ['ct 100', 'ct100', 'rouser', 'boxer', 'pulsar', 'discover']):
+                        info['make'] = 'Bajaj'
+                    elif any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'xrm', 'tmx']):
+                        info['make'] = 'Honda'
+                    elif any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper']):
+                        info['make'] = 'Yamaha'
+                    elif any(k in mdl for k in ['raider', 'smash', 'burgman']):
+                        info['make'] = 'Suzuki'
+                    elif any(k in mdl for k in ['barako']):
+                        info['make'] = 'Kawasaki'
                 break
 
+        if not info['model'] and history_turns:
+            for turn_txt in reversed(history_turns):
+                for mdl in models_list:
+                    mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', turn_txt)
+                    if mdl_match:
+                        label = mdl_match.group(0).title()
+                        label = re.sub(r'(\d+)I\b', r'\1i', label)
+                        if 'ct' in label.lower():
+                            label = re.sub(r'\bCt\b', 'CT', label)
+                            label = re.sub(r'\bCt(\d+)', r'CT \1', label)
+                        info['model'] = label
+                        break
+                if info['model']:
+                    break
+
+    if info['make'] and info['model'] and info['model'].lower().startswith(info['make'].lower()):
+        info['model'] = info['model'][len(info['make']):].strip()
+
+    # Determine attribute scope: if the user named a new make or model in the current message,
+    # do NOT inherit old incompatible attributes from previous turns
+    active_attr_text = current_text if (make_switched or model_switched) else corpus
+
     if not info['year']:
-        year_match = re.search(r'\b(19[89]\d|20[012]\d)\b', corpus)
+        year_match = re.search(r'\b(19[89]\d|20[012]\d)\b', active_attr_text)
         if year_match:
             info['year'] = year_match.group(1)
 
-    if any(k in corpus for k in ['scooter', 'click', 'aerox', 'nmax', 'mio', 'beat', 'pcx', 'adv', 'fazzio', 'burgman']):
+    # Type detection
+    if any(k in active_attr_text for k in ['scooter', 'click', 'aerox', 'nmax', 'mio', 'beat', 'pcx', 'adv', 'fazzio', 'burgman']):
         info['type'] = 'scooter'
-    elif any(k in corpus for k in ['car', 'sedan', 'suv', 'van', 'truck', 'kotse', 'awto', 'salakyan', 'vios', 'wigo']):
+    elif any(k in active_attr_text for k in ['car', 'sedan', 'suv', 'van', 'truck', 'kotse', 'awto', 'salakyan', 'vios', 'wigo']):
         info['type'] = 'car'
-    elif any(k in corpus for k in ['tricycle', 'toda', 'trike']):
+    elif any(k in active_attr_text for k in ['tricycle', 'toda', 'trike']):
         info['type'] = 'tricycle'
-    elif any(k in corpus for k in ['motorcycle', 'motor', 'bike', 'underbone']):
+    elif any(k in active_attr_text for k in ['motorcycle', 'motor', 'bike', 'underbone', 'ct 100', 'ct100', 'tmx', 'barako', 'rouser', 'boxer']):
         info['type'] = 'motorcycle'
 
-    if 'disc' in corpus or 'disk' in corpus or 'caliper' in corpus:
+    # Brake detection
+    if 'disc' in active_attr_text or 'disk' in active_attr_text or 'caliper' in active_attr_text:
         info['brake_type'] = 'disc'
-    elif 'drum' in corpus or 'tambor' in corpus:
+    elif 'drum' in active_attr_text or 'tambor' in active_attr_text or (info['model'] and any(k in info['model'].lower() for k in ['ct 100', 'ct100', 'barako', 'tmx'])):
         info['brake_type'] = 'drum'
 
-    if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject|inject(?:ed|ion)', corpus):
+    # Fuel system detection
+    if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject|inject(?:ed|ion)', active_attr_text):
         info['engine_fuel'] = 'FI'
-    elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', corpus):
+    elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', active_attr_text) or (info['model'] and any(k in info['model'].lower() for k in ['ct 100', 'ct100', 'barako', 'tmx 125', 'wave 110', 'xrm 125'])):
         info['engine_fuel'] = 'Carburetor'
 
-    disp_match = re.search(r'\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b', corpus)
+    disp_match = re.search(r'\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b', active_attr_text)
     if disp_match:
         info['displacement'] = disp_match.group(1).upper()
+    elif info['model'] and ('ct 100' in info['model'].lower() or 'ct100' in info['model'].lower()):
+        info['displacement'] = '100CC'
+        info['type'] = info['type'] or 'motorcycle'
+        info['engine_fuel'] = info['engine_fuel'] or 'Carburetor'
 
     return info
 
 
-def _jarvis_gemini(message, user, history=None):
+def _jarvis_gemini_general(message, user, history=None):
+    """Broad motorcycle-assistant call for maintenance/how-to/info questions."""
+    client = _get_gemini_client()
+    if client is None:
+        return None
+
+    sir = _jarvis_address(user)
+
+    convo_history_str = ""
+    if history and isinstance(history, list):
+        formatted_turns = []
+        for turn in history[-8:]:
+            r = "User" if turn.get('role') == 'user' else "J.A.R.V.I.S."
+            txt = turn.get('text', '').strip()
+            txt = re.sub(r'\[chips:.*?\]', '', txt).strip()
+            if txt:
+                formatted_turns.append(f"{r}: {txt}")
+        if formatted_turns:
+            convo_history_str = (
+                "\n## PREVIOUS CONVERSATION TURNS (use any vehicle details the user already gave; do not re-ask them):\n"
+                + "\n".join(formatted_turns)
+                + "\n"
+            )
+
+    full_prompt = f"""You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), a master motorcycle mechanic, maintenance coach, and riding advisor. You speak like Tony Stark's assistant: professional, courteous, precise, witty, and safety-first. Address the user respectfully as '{sir}'.
+
+The user is asking a GENERAL motorcycle question — maintenance, how-to, service intervals, pre-ride/pre-repair checks, tools, parts, riding technique, buying advice, comparisons between models, riding gear/safety equipment, or general information about a motorcycle model. They are not necessarily reporting a breakdown.
+
+## RESPONSE RULES
+1. ANSWER DIRECTLY FIRST. Give the answer or recommendation in the first 1–3 sentences. Never open by asking for the make, model, or year.
+2. DO NOT request vehicle intake and NEVER emit `[vehicle-form: ...]`. If an exact specification depends on the bike, give the typical range and say "confirm in your owner's manual" instead of inventing a number.
+3. MATCH THE DEPTH TO THE QUESTION. For a simple interval or spec question, answer directly and briefly — no full tutorial unless the user asks for one. For a full how-to, include the interval, tools/parts, a short `- [ ] 1. ...` checklist, and safety notes.
+4. For "what should I check before changing X" questions, give a pre-check list: condition, size/fitment, tools, safety, and post-fit checks.
+4b. For COMPARISON questions (e.g. "Aerox vs NMAX", "which is better X or Y"):
+   - Give an objective side-by-side comparison: engine, features, target user, riding style, price range.
+   - State which is better FOR WHAT USE CASE, not an absolute winner.
+4c. For "tell me about [bike]" / model info questions:
+   - Brief overview: type, displacement, fuel system, key features, pros/cons, and common maintenance points.
+4d. For BUYING / RECOMMENDATION questions ("best motorcycle for beginners", "what should I buy"):
+   - Give 2–3 concrete recommendations with a brief reason each (budget, skill level, use case, parts availability).
+4e. For RIDING GEAR / SAFETY EQUIPMENT questions ("what helmet", "what gear to wear"):
+   - Recommend gear appropriate to the use case (commuting, sport, touring).
+   - Always mention helmet safety standards (DOT/ECE/SNELL) and the ATGATT principle.
+5. Never refuse a motorcycle-related question. If you do not know an exact figure, say so and give safe general guidance. Never invent torque values, clearances, fluid capacities, or part numbers.
+6. Use any vehicle details already present in the conversation. If none are known, keep the advice general — do not demand them.
+7. Match the user's language: English, Tagalog/Taglish, or Hiligaynon. Keep technical terms natural (oil, chain, brake pads, CVT, coolant).
+8. End with 3–5 clickable chips in the exact format `[chips: Option 1 | Option 2 | Option 3]`.
+9. Do not emit `[part-image: ...]` unless the user explicitly asks for a picture.
+10. Be conversational and context-aware. Acknowledge the user's previous message when it matters, build on it, and never repeat a previous answer verbatim.
+11. If the user asks a follow-up, answer that follow-up first. Do not restart the conversation or re-ask for details already in the history.
+12. For "where is X located?" questions, give the typical location first, then note that it varies by model and tell the user to confirm in the owner's manual. Do not ask for make/model/year before giving the typical location.
+13. If the user says "that part" or "it", use the part mentioned in the previous turn. If the part is genuinely unclear, ask which part they mean and offer 3–5 example chips — never repeat a generic capabilities answer.
+
+## TYPICAL BASELINES (ranges only — confirm the owner's manual)
+- Engine oil: every 2,000–4,000 km or 3–6 months for everyday scooters/underbones; sooner in heavy traffic, short trips, or dusty conditions. Use JASO MA/MA2 4T motorcycle oil; replace the filter per manual.
+- Tyres: check cold pressure weekly (often around 29–33 psi front / 33–36 psi rear), tread at least 1.6 mm, no cracks/bulges/nails.
+- Chain: clean and lube every 500 km or after rain; 20–35 mm slack at the midpoint; replace chain and sprockets together when worn.
+- Brakes: pads at least 2 mm; check fluid level/colour; bleed every 1–2 years or when spongy; never ride with a sinking lever or a leak.
+- CVT: inspect belt/rollers around 8,000–12,000 km; replace per wear and manual.
+- Air filter: clean every 2,000–4,000 km; replace per manual.
+- Spark plug: inspect/clean every 4,000–6,000 km; replace per manual.
+- Battery: 12.6 V+ at rest, 13.5–14.5 V charging; typical life 3–5 years.
+- Coolant: check cold monthly; replace every 2 years or per manual.
+- Suspension/steering: check for leaks, play, and uneven tyre wear at every service.
+
+## COMMON COMPONENT LOCATIONS (typical motorcycle/scooter layout; confirm on the specific model)
+- Oil filter: side or bottom of the engine crankcase, behind a circular cover or as an external spin-on canister.
+- Air filter: inside the airbox, usually under the seat or behind a side panel.
+- Battery: under the seat, behind a side panel, or under the front fairing on some scooters.
+- Spark plug: top/center of the cylinder head, sometimes under the fuel tank or a small access cover.
+- Main fuse / fuse box: near the battery, under the seat, or behind a side cover.
+- ECU/CDI: under the seat, near the battery, behind a side panel, or under the front fairing; layout varies widely.
+- Horn: near the front fork, behind the front panel, or close to the headlight/radiator.
+- Starter relay/solenoid: near the battery, usually under the seat or behind a side cover.
+- Fuel pump: inside the fuel tank on EFI bikes; near the tank on carbureted bikes.
+- Fuel filter: inline under the tank or near the fuel pump; some are inside the tank.
+- Regulator/rectifier: behind a front panel or near the battery; follow the wiring from the stator.
+- Chain: left side of the rear wheel and swingarm.
+- Brake pads/caliper: at the wheel, on the front fork or rear swingarm.
+- Brake fluid reservoir/master cylinder: at the handlebar for the front brake; near the rear pedal if separate.
+- CVT: large casing on the left side of the rear wheel on scooters.
+- Radiator cap: on top of the radiator, often behind the front panel.
+- Coolant reservoir: behind the front panel or near the engine, depending on the model.
+- Throttle body/injector: under the seat/airbox, on the intake side of the engine.
+- Headlight bulb: inside the headlight housing, behind the rear connector.
+- Tail light: rear fender/body panel.
+- Sidestand switch: at the sidestand pivot.
+- Clutch: right side of the engine on manual bikes; scooters use a CVT instead.
+
+{convo_history_str}
+## CURRENT USER MESSAGE
+User: {message}
+
+Your response as J.A.R.V.I.S.:"""
+
+    try:
+        from google.genai import types
+        response = client.models.generate_content(
+            model='gemini-3.1-flash-lite',
+            contents=full_prompt,
+            config=types.GenerateContentConfig(temperature=0.7),
+        )
+        reply_text = response.text
+        if reply_text:
+            _save_offline_knowledge(message, reply_text)
+            try:
+                from apps.core.models import GeminiUsageTracker
+                meta = getattr(response, 'usage_metadata', None)
+                p_tokens = getattr(meta, 'prompt_token_count', 0) or 0
+                c_tokens = getattr(meta, 'candidates_token_count', 0) or 0
+                GeminiUsageTracker.record_usage(prompt_tokens=p_tokens, candidates_tokens=c_tokens)
+            except Exception:
+                pass
+        return reply_text
+    except Exception as exc:
+        logger.warning('General Gemini call failed; using offline fallback: %s', exc)
+        return None
+
+
+def _jarvis_gemini(message, user, history=None, mode='diagnostic'):
     """
     Calls Gemini AI with full multi-turn conversational vehicle diagnostic mechanic system.
     """
+    if mode == 'general':
+        return _jarvis_gemini_general(message, user, history=history)
+
     client = _get_gemini_client()
     if client is None:
         return None
@@ -588,7 +994,12 @@ You have access to the workshop diagnostic database:
   - Fuel Injector: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Fuel_injector.jpg/480px-Fuel_injector.jpg | Fuel Injector]`
   - Throttle Body: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Throttle_body.jpg/480px-Throttle_body.jpg | Throttle Body]`
 
-## 8. NON-DIAGNOSTIC OR UNKNOWN COMPONENT QUERIES
+## 8. NO VOLUNTARY OR ASSUMED SYMPTOMS (CRITICAL)
+- NEVER invent, assume, or voluntarily draft troubleshooting for a symptom (such as assuming a "No-Start" condition) if the user has NOT reported a problem or breakdown!
+- If the user mentions, inquires about, or switches to a vehicle without stating a problem, answer any question they asked directly and courteously ask what symptom, mechanical issue, or routine service they need help with.
+- When the user transitions from one vehicle to another, smoothly update focus without lecturing them about profile discrepancies.
+
+## 9. NON-DIAGNOSTIC OR UNKNOWN COMPONENT QUERIES
 - When the user asks "what is [X]", asks for a picture of something, or asks about a fictional/joke component (e.g. flux capacitor, time warp drive), or something outside vehicle mechanics, DO NOT output a `[vehicle-form: ...]` tag!
 - Only output `[vehicle-form: ...]` when diagnosing an actual mechanical trouble symptom (e.g. engine won't start, squealing brakes, overheating, transmission slipping).
 - If you don't know the answer or the component does not exist on a motorcycle/vehicle, politely and wittily say so without asking for vehicle diagnostic intake.
@@ -599,25 +1010,42 @@ User: {message}
 
 Your response as J.A.R.V.I.S.:"""
 
-    try:
-        response = client.models.generate_content(
-            model='gemini-3.1-flash-lite',
-            contents=full_prompt,
-        )
-        reply_text = response.text
-        if reply_text:
-            _save_offline_knowledge(message, reply_text)
-            try:
-                from apps.core.models import GeminiUsageTracker
-                meta = getattr(response, 'usage_metadata', None)
-                p_tokens = getattr(meta, 'prompt_token_count', 0) or 0
-                c_tokens = getattr(meta, 'candidates_token_count', 0) or 0
-                GeminiUsageTracker.record_usage(prompt_tokens=p_tokens, candidates_tokens=c_tokens)
-            except Exception:
-                pass
-        return reply_text
-    except Exception:
+    model = model_name()
+    if not model:
+        logger.warning('Legacy AI request skipped: no Gemini model is configured.')
         return None
+
+    try:
+        response = client.models.generate_content(model=model, contents=full_prompt)
+    except Exception as exc:
+        # Do not log provider text: it can contain request details or clues
+        # about server credentials.  The exception type is enough for support.
+        logger.warning('Legacy AI request failed (%s).', type(exc).__name__)
+        fallback = fallback_model_name()
+        if not fallback or fallback == model:
+            return None
+        try:
+            response = client.models.generate_content(model=fallback, contents=full_prompt)
+        except Exception as fallback_exc:
+            logger.warning('Legacy AI fallback failed (%s).', type(fallback_exc).__name__)
+            return None
+
+    try:
+        reply_text = response.text
+    except Exception as exc:
+        logger.warning('Legacy AI response was unreadable (%s).', type(exc).__name__)
+        return None
+    if reply_text:
+        _save_offline_knowledge(message, reply_text)
+        try:
+            from apps.core.models import GeminiUsageTracker
+            meta = getattr(response, 'usage_metadata', None)
+            p_tokens = getattr(meta, 'prompt_token_count', 0) or 0
+            c_tokens = getattr(meta, 'candidates_token_count', 0) or 0
+            GeminiUsageTracker.record_usage(prompt_tokens=p_tokens, candidates_tokens=c_tokens)
+        except Exception:
+            pass
+    return reply_text
 
 
 # ---------------------------------------------------------------------------
@@ -1200,8 +1628,13 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
     `guided_state` is only passed by the HTTP endpoint (it lives in the user's
     session). Internal/direct callers pass None and keep the previous behaviour.
     """
+    from .guided_diagnostic import is_general_motorcycle_query
+
     msg = message.lower().strip()
-    is_visual_query = _has_visual_intent(message)
+    is_general_query = is_general_motorcycle_query(message, history)
+    # A maintenance/how-to question must not be mistaken for a request to see a
+    # part picture, even if it starts with "what is ...".
+    is_visual_query = _has_visual_intent(message) and not is_general_query
 
     # Guided narrowing flow (identify the bike first, then narrow the fault).
     if guided_state is not None:
@@ -1215,7 +1648,16 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
 
     reply = None
 
-    if is_visual_query:
+    if is_general_query:
+        # Maintenance/how-to/service question: answer directly, no intake form.
+        reply = _jarvis_gemini(message, user, history=history, mode='general')
+        if not reply:
+            reply = _find_offline_knowledge(message, user)
+        if not reply:
+            reply = _jarvis_general_fallback(
+                message, user, history=history, language=language
+            )
+    elif is_visual_query:
         # Visual reference or "what is" query
         reply = _jarvis_gemini(message, user, history=history)
         if not reply:
@@ -1245,8 +1687,9 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
             "no such thing", "fictional", "don't know", "cannot identify", "outside my", "not aware", "temporal displacement"
         ])
 
-        # Strip vehicle-form if this was an informational/what-is query or if the reply states it doesn't know / fictional item
-        if is_visual_query or is_unknown_or_fictional:
+        # Strip vehicle-form if this was an informational/what-is/general query
+        # or if the reply states it doesn't know / fictional item.
+        if is_visual_query or is_general_query or is_unknown_or_fictional:
             reply = re.sub(r'\[vehicle-form:[^\]]+\]', '', reply).strip()
             # Clean robotic "as an AI I cannot transmit live images" disclaimers & accidental intake text
             reply = re.sub(r'I apologize,?\s*(?:sir;?\s*)?as an AI,?\s*I cannot (?:transmit|provide|display|send) (?:live )?images [^.]*\.\s*(?:However,\s*)?', '', reply, flags=re.IGNORECASE).strip()
@@ -1272,8 +1715,10 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
         # omits them on short answers, so guarantee their presence — in the
         # language the user is speaking.
         if '[chips:' not in reply:
-            lang = _detect_language(message, history)
-            if is_visual_query:
+            lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+            if is_general_query:
+                chips = FALLBACK_CHIPS['general'].get(lang, FALLBACK_CHIPS['general']['english'])
+            elif is_visual_query:
                 chips = FALLBACK_CHIPS['visual'].get(lang, FALLBACK_CHIPS['visual']['english'])
             else:
                 chips = FALLBACK_CHIPS['diagnostic'].get(lang, FALLBACK_CHIPS['diagnostic']['english'])
@@ -2024,11 +2469,11 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
         return f"The diagnostic archive is currently empty, {sir}."
 
     if any(k in msg for k in ['list parts', 'show parts', 'all parts', 'parts list']):
-        parts_list = Part.objects.values('part_name', 'category', 'estimated_cost')[:20]
-        if parts_list:
+        available_parts = Part.objects.values('part_name', 'category', 'estimated_cost')[:20]
+        if available_parts:
             p_str = '\n'.join(
                 f"• {p['part_name']} ({p['category'] or 'General'}) — ${p['estimated_cost']}"
-                for p in parts_list
+                for p in available_parts
             )
             return (
                 f"Here is the workshop parts inventory, {sir}:\n\n{p_str}\n\n"
@@ -2119,28 +2564,60 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
 
 
 @login_required(login_url='login')
-@require_http_methods(['POST'])
+@require_POST
 def jarvis_chat(request):
     try:
-        data = json.loads(request.body)
-        message = data.get('message', '').strip()
-        history = data.get('history', [])
-        reset = bool(data.get('reset'))
-    except (json.JSONDecodeError, KeyError):
+        data = json.loads(request.body or b'{}')
+        if not isinstance(data, dict):
+            raise ValueError
+    except (json.JSONDecodeError, TypeError, ValueError):
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
-    # "Clear chat" also clears the guided diagnostic context on the server.
+    message = str(data.get('message') or '').strip()
+    reset = bool(data.get('reset'))
+    image_id = data.get('image_id')
+    structured_mode = bool(data.get('structured')) or bool(image_id)
+
+    # "Clear chat" closes the active server-side session and the guided
+    # workflow state.  Legacy browser history is cleared by the client.
     if reset:
         request.session.pop('jarvis_guided', None)
         request.session.modified = True
-        if not message:
-            return JsonResponse({'ok': True})
+        if structured_mode:
+            conversation = get_or_create_conversation(
+                request.user, data.get('conversation_id'), create=False,
+            )
+            if conversation is not None:
+                assistant_service.reset(request.user, conversation.pk)
+        if not message and not image_id:
+            return JsonResponse({'ok': True, 'conversation_id': None})
 
-    if not message:
+    allowed, retry_after, _ = check_rate_limit(
+        'chat', request.user.pk,
+        limit=getattr(settings, 'CHAT_RATE_LIMIT_PER_MINUTE', 30),
+        window_seconds=60,
+    )
+    if not allowed:
+        return JsonResponse(
+            {
+                'error': 'Too many chat requests. Please wait a moment and try again.',
+                'retry_after': retry_after,
+            },
+            status=429,
+            headers={'Retry-After': str(retry_after)},
+        )
+
+    max_chars = (
+        int(getattr(settings, 'ASSISTANT_MAX_MESSAGE_CHARS', 2000))
+        if structured_mode else 1000
+    )
+    if len(message) > max_chars:
+        return JsonResponse(
+            {'error': f'Message too long (max {max_chars} characters)'},
+            status=400,
+        )
+    if not message and not image_id:
         return JsonResponse({'error': 'Empty message'}, status=400)
-
-    if len(message) > 1000:
-        return JsonResponse({'error': 'Message too long (max 1000 chars)'}, status=400)
 
     language = data.get('language')
     if language in ('auto', '', None):
@@ -2149,6 +2626,58 @@ def jarvis_chat(request):
     if experience_level not in ('beginner', 'mechanic'):
         experience_level = 'beginner'
 
+    quota = None
+    if structured_mode:
+        from apps.core.models import ImageUpload
+
+        conversation = get_or_create_conversation(
+            request.user, data.get('conversation_id'), create=True,
+            language=language if language in ('english', 'tagalog', 'hiligaynon') else 'auto',
+        )
+        image = None
+        if image_id:
+            try:
+                image_pk = int(image_id)
+            except (TypeError, ValueError):
+                return JsonResponse({'error': 'Invalid photo reference.'}, status=400)
+            image = ImageUpload.objects.filter(pk=image_pk, user=request.user).first()
+            if image is None:
+                return JsonResponse({'error': 'Photo not found.'}, status=404)
+            try:
+                image = attach_to_conversation(image, conversation, request.user)
+            except InvalidImageError as exc:
+                return JsonResponse({'error': str(exc)}, status=400)
+
+        request.session.pop('jarvis_guided', None)
+        request.session.modified = True
+        try:
+            result = assistant_service.respond(
+                request.user,
+                message,
+                conversation_id=conversation.pk,
+                language=language,
+                experience_level=experience_level,
+                image=image,
+            )
+        except ValueError as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        except Exception:
+            logger.exception('Structured assistant failed')
+            return JsonResponse(
+                {'error': 'The diagnostic assistant could not complete that request. Please retry.'},
+                status=500,
+            )
+
+        from apps.core.models import GeminiUsageTracker
+        quota = GeminiUsageTracker.get_current_quota()
+        result['quota'] = quota
+        result['ai_available'] = is_ai_available()
+        result['ai_configured'] = is_ai_configured()
+        if image is not None:
+            result['image_id'] = image.pk
+            result['image_url'] = reverse('jarvis_image', args=[image.pk])
+        return JsonResponse(result)
+
     # Guided narrowing state (identify motorcycle -> narrow the fault).
     # Kept in the Django session so it survives turns and page navigation.
     guided_state = request.session.get('jarvis_guided')
@@ -2156,7 +2685,7 @@ def jarvis_chat(request):
         guided_state = {}
 
     reply = _jarvis_response(
-        message, request.user, history=history, language=language,
+        message, request.user, history=data.get('history', []), language=language,
         experience_level=experience_level, guided_state=guided_state,
     )
 
@@ -2176,12 +2705,101 @@ def jarvis_chat(request):
 
 
 @login_required(login_url='login')
-@require_http_methods(['GET'])
+@require_POST
+def jarvis_image_upload(request):
+    allowed, retry_after, _ = check_rate_limit(
+        'upload', request.user.pk,
+        limit=getattr(settings, 'UPLOAD_RATE_LIMIT_PER_MINUTE', 10),
+        window_seconds=60,
+    )
+    if not allowed:
+        return JsonResponse(
+            {
+                'error': 'Too many photo uploads. Please wait a moment and try again.',
+                'retry_after': retry_after,
+            },
+            status=429,
+            headers={'Retry-After': str(retry_after)},
+        )
+
+    upload = request.FILES.get('image') or request.FILES.get('photo')
+    if upload is None:
+        return JsonResponse({'error': 'Choose a photo to upload.'}, status=400)
+
+    conversation = None
+    conversation_id = request.POST.get('conversation_id')
+    if conversation_id:
+        conversation = get_or_create_conversation(
+            request.user, conversation_id, create=False,
+        )
+        if conversation is None:
+            return JsonResponse({'error': 'Conversation not found.'}, status=404)
+
+    try:
+        image = save_uploaded_image(
+            request.user,
+            upload,
+            conversation=conversation,
+            description=request.POST.get('description', ''),
+        )
+    except InvalidImageError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+    except Exception:
+        logger.exception('Chat photo upload failed')
+        return JsonResponse(
+            {'error': 'The photo could not be stored. Please retry with another image.'},
+            status=500,
+        )
+
+    return JsonResponse({
+        'ok': True,
+        'image_id': image.pk,
+        'url': reverse('jarvis_image', args=[image.pk]),
+        'original_name': image.original_name,
+        'mime_type': image.mime_type,
+        'size': image.size,
+        'width': image.width,
+        'height': image.height,
+        'conversation_id': image.conversation_id,
+    })
+
+
+@login_required(login_url='login')
+@require_GET
+def jarvis_image(request, image_id):
+    from apps.core.models import ImageUpload
+
+    image = ImageUpload.objects.filter(pk=image_id, user=request.user).first()
+    if image is None:
+        raise Http404('Photo not found.')
+    try:
+        handle = image.file.open('rb')
+    except (OSError, ValueError) as exc:
+        raise Http404('Photo file is unavailable.') from exc
+    response = FileResponse(handle, content_type=image.mime_type or 'application/octet-stream')
+    safe_name = re.sub(r'[^A-Za-z0-9._-]+', '_', image.original_name or 'photo.jpg')
+    response['Content-Disposition'] = f'inline; filename="{safe_name}"'
+    response['Cache-Control'] = 'private, max-age=300'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+@login_required(login_url='login')
+@require_GET
 def jarvis_status(request):
-    """Returns current Gemini API quota and usage statistics."""
+    """Return AI availability and the app's own usage budget.
+
+    This deliberately does not expose the API key, provider quota, or raw
+    provider errors.  The request budget is local to this application.
+    """
     from apps.core.models import GeminiUsageTracker
     quota = GeminiUsageTracker.get_current_quota()
     return JsonResponse({
         'status': 'online',
         'quota': quota,
+        'ai_configured': is_ai_configured(),
+        'ai_available': is_ai_available(),
+        'image_input_supported': bool(getattr(settings, 'GEMINI_INPUT_IMAGE_SUPPORTED', True)),
+        'max_message_chars': int(getattr(settings, 'ASSISTANT_MAX_MESSAGE_CHARS', 2000)),
+        'languages': ['english', 'tagalog', 'hiligaynon'],
     })

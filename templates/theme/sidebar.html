@@ -40,18 +40,19 @@
     </li>
 
     <li class="jarvis-nav-item">
-      <a href="{% url 'motor:viewer' %}" class="jarvis-nav-link {% if request.resolver_match.app_name == 'motor' %}active{% endif %}">
+      <a href="{% url 'motor:viewer' %}" class="jarvis-nav-link {% if request.resolver_match.app_name == 'motor' and request.resolver_match.url_name == 'viewer' %}active{% endif %}">
         <div class="jarvis-nav-link-left">
           <span class="jarvis-nav-link-icon">
             <i class="fa-solid fa-cube" style="font-size: 13px;"></i>
           </span>
           <span>3D Viewer</span>
         </div>
-        {% if request.resolver_match.app_name == 'motor' %}
+        {% if request.resolver_match.app_name == 'motor' and request.resolver_match.url_name == 'viewer' %}
         <span class="jarvis-nav-indicator-dot"></span>
         {% endif %}
       </a>
     </li>
+
   </ul>
 
   <!-- New Diagnosis Action Button -->
@@ -77,8 +78,8 @@
       <span class="jarvis-recent-title">Front brake inspection</span>
       <span class="jarvis-recent-time">Yesterday</span>
     </button>
-    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Routine maintenance: recommended checks for 5000 km">
-      <span class="jarvis-recent-title">Routine maintenance</span>
+    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Tire pressure check: what should I inspect before a ride?">
+      <span class="jarvis-recent-title">Tire pressure check</span>
       <span class="jarvis-recent-time">Oct 18</span>
     </button>
   </div>

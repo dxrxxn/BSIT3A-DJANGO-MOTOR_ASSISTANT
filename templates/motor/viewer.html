@@ -73,23 +73,32 @@
       <button type="button" class="mv-part-btn active" data-part="overview" title="Full exterior view">
         <i class="fa-solid fa-motorcycle"></i><span>Exterior</span>
       </button>
-      <button type="button" class="mv-part-btn" data-part="engine" title="Engine & cylinder block">
-        <i class="fa-solid fa-gear"></i><span>Engine (Inside)</span>
-      </button>
-      <button type="button" class="mv-part-btn" data-part="sprocket" title="Front sprocket & drive">
-        <i class="fa-solid fa-circle-notch"></i><span>Front Sprocket</span>
-      </button>
-      <button type="button" class="mv-part-btn" data-part="battery" title="Battery & electrical">
-        <i class="fa-solid fa-bolt"></i><span>Battery</span>
+      <button type="button" class="mv-part-btn" data-part="engine" title="Engine case & transmission cover">
+        <i class="fa-solid fa-gear"></i><span>Engine Case</span>
       </button>
       <button type="button" class="mv-part-btn" data-part="exhaust" title="Exhaust pipe & muffler">
         <i class="fa-solid fa-smog"></i><span>Exhaust</span>
       </button>
-      <button type="button" class="mv-part-btn" data-part="brakes" title="Brake system & calipers">
-        <i class="fa-solid fa-circle-stop"></i><span>Brakes</span>
+      <button type="button" class="mv-part-btn" data-part="brakes" title="Front brake disc & hub">
+        <i class="fa-solid fa-circle-stop"></i><span>Front Disc</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="wheels" title="Front & rear wheels">
+        <i class="fa-solid fa-circle-dot"></i><span>Wheels</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="bodywork" title="Fairings, panels & body trim">
+        <i class="fa-solid fa-layer-group"></i><span>Bodywork</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="controls" title="Controls, lights & suspension">
+        <i class="fa-solid fa-sliders"></i><span>Controls</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="sprocket" title="Front sprocket & drive — not modelled" disabled>
+        <i class="fa-solid fa-circle-notch"></i><span>Front Sprocket</span>
+      </button>
+      <button type="button" class="mv-part-btn" data-part="battery" title="Battery & electrical — not modelled" disabled>
+        <i class="fa-solid fa-bolt"></i><span>Battery</span>
       </button>
       <span class="mv-preset-sep"></span>
-      <button type="button" class="mv-part-btn mv-part-tour-btn" id="mv-btn-tour" title="Cinematic Outside-to-Inside Part Tour">
+      <button type="button" class="mv-part-btn mv-part-tour-btn" id="mv-btn-tour" title="Cinematic tour of available components">
         <i class="fa-solid fa-film"></i><span>Cinematic Tour</span>
       </button>
     </div>
@@ -104,6 +113,7 @@
       </div>
       <h3 class="mv-part-hud-title" id="mv-hud-title">Engine Core</h3>
       <p class="mv-part-hud-desc" id="mv-hud-desc">Power unit inspection.</p>
+      <p class="mv-part-hud-limit d-none" id="mv-hud-limit"></p>
       <div class="mv-part-hud-actions">
         <a href="{% url 'dashboard' %}" class="mv-hud-btn" id="mv-hud-diagnose" title="Consult Jarvis AI about this part">
           <i class="fa-solid fa-robot me-1"></i>Ask Jarvis
@@ -125,6 +135,11 @@
 
     <div class="mv-hint">Drag to rotate&ensp;·&ensp;Scroll to zoom&ensp;·&ensp;Click part to inspect</div>
   </div>
+  <p class="mv-coverage-note" id="mv-coverage-note">
+    <i class="fa-solid fa-circle-info"></i>
+    <span id="mv-coverage-text">Checking which components are present in the model…</span>
+    This viewer shows geometry only. It cannot confirm wear, torque, fluid condition or part compatibility.
+  </p>
 </div>
 
 <script type="importmap">

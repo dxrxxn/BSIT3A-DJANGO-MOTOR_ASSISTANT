@@ -355,6 +355,78 @@ def test_question_mid_flow_uses_the_full_knowledge_engine():
     assert is_guided_intent('Still not fixed', state={'stage': 'verdict'})
 
 
+def test_general_maintenance_questions_bypass_the_guided_intake():
+    from apps.core.guided_diagnostic import is_general_motorcycle_query, is_guided_intent
+
+    questions = [
+        'how many km does my motorcycle need to change oil',
+        'what should I do if I want to change oil',
+        'what should I check before changing my tire',
+        'how do i bleed the brakes?',
+        'how to check for oil leaks',
+        'how do i check if my battery is dead',
+        'how to check for a punctured tire',
+        'oil capacity for Honda Click 125i',
+        'spark plug gap for Honda Click 125i',
+    ]
+    for question in questions:
+        assert is_general_motorcycle_query(question), question
+        assert not is_guided_intent(question), question
+
+    # Actual fault reports must keep using the guided diagnostic flow.
+    assert not is_general_motorcycle_query("my engine won't start")
+    assert is_guided_intent("my engine won't start")
+    assert not is_general_motorcycle_query('my brakes are soft')
+    assert is_guided_intent('my brakes are soft')
+
+
+def test_part_location_questions_are_general_not_diagnostic():
+    from apps.core.guided_diagnostic import is_general_motorcycle_query, is_guided_intent
+
+    questions = [
+        'where to locate that part',
+        'where is the ECU located',
+        'where is the CDI located',
+        'where is the horn located',
+        'where is the starter relay',
+        'where is the oil filter located',
+        'where can i find the battery',
+        'where is the main fuse',
+        'saan matatagpuan ang battery',
+    ]
+    for question in questions:
+        assert is_general_motorcycle_query(question), question
+        assert not is_guided_intent(question, state={'stage': 'area'}), question
+
+    # Pronoun follow-ups can use a part named in the recent conversation.
+    history = [{'role': 'user', 'text': 'what is an oil filter?'}]
+    assert is_general_motorcycle_query('where is it located', history=history)
+    assert is_general_motorcycle_query('where can i find it', history=history)
+    assert not is_general_motorcycle_query('where is it located')
+    assert not is_general_motorcycle_query(
+        'where is it located',
+        history=[{'role': 'user', 'text': "my engine won't start"}],
+    )
+
+    # "Where is the symptom coming from?" is still a diagnostic question.
+    assert not is_general_motorcycle_query('where is the noise coming from')
+    assert not is_general_motorcycle_query('where is the oil coming from')
+    assert not is_general_motorcycle_query('where is the coolant leaking from')
+    assert not is_general_motorcycle_query('where is the brake noise')
+    assert not is_general_motorcycle_query('where is the oil leak')
+    assert not is_general_motorcycle_query('where is the nearest mechanic')
+
+
+def test_maintenance_chips_leave_the_guided_flow_for_a_direct_answer():
+    from apps.core.guided_diagnostic import is_guided_intent
+
+    assert not is_guided_intent('Oil change / maintenance', state={'stage': 'area'})
+    assert not is_guided_intent('Engine oil and filter change', state={'stage': 'narrow'})
+    assert not is_guided_intent('Chain clean and lubricate', state={'stage': 'area'})
+    # A genuine guided option must still continue the narrowing flow.
+    assert is_guided_intent('When the engine is cold', state={'stage': 'narrow'})
+
+
 def test_new_symptom_after_a_verdict_restarts_narrowing():
     state = start_state()
     _turn("2022 Honda Click 125i", state, [{'role': 'user', 'text': 'brakes are soft'}])
