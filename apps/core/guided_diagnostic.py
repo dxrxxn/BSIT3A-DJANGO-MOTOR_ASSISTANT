@@ -269,6 +269,8 @@ AREAS = {
             {
                 'key': 'start_behavior',
                 'text': 'What happens when you press the starter button?',
+                'text_tl': 'Ano ang nangyayari pag pinipindot mo ang starter button?',
+                'text_hil': 'Ano ang nagakatabo kon ginapindot mo ang starter button?',
                 'options': [
                     ('dead', 'Completely dead - no dashboard lights'),
                     ('click', 'Rapid clicking / relay chatter'),
@@ -280,6 +282,8 @@ AREAS = {
             {
                 'key': 'spark_state',
                 'text': 'If you checked the spark plug, what did you see?',
+                'text_tl': 'Kung na-check mo ang spark plug, ano ang nakita mo?',
+                'text_hil': 'Kon na-check mo ang spark plug, ano ang nakita mo?',
                 'options': [
                     ('spark_ok', 'Strong blue spark'),
                     ('spark_none', 'No spark'),
@@ -1251,7 +1255,7 @@ T = {
         'reset_chips': "Click 125i | Mio | Wave 125 | Not sure",
         'safe_stop': "If you are unsure or the bike feels unsafe, stop and have a qualified mechanic check it. Do not test faulty brakes or a knocking engine on the road.",
         'again': "Let us narrow it further. Choose the closest answer:",
-        'verdict_chips': "It worked | Still not fixed | Another check | Start over",
+        'verdict_chips': "Begin procedure | It worked | Still not fixed | Another check | Start over",
         'checks_repeat': "Here are the free checks again. Tell me what you find:",
     },
     'tagalog': {
@@ -1276,7 +1280,7 @@ T = {
         'reset_chips': "Click 125i | Mio | Wave 125 | Hindi sigurado",
         'safe_stop': "Kung hindi ka sigurado o parang delikado ang motor, huminto at ipatingin sa kwalipikadong mekaniko. Huwag subukan ang sira na preno o kumatok na makina sa kalsada.",
         'again': "Paliitin pa natin. Piliin ang pinakamalapit na sagot:",
-        'verdict_chips': "Nagana na | Hindi pa | Ibang check | Simula ulit",
+        'verdict_chips': "Simulan ang procedure | Nagana na | Hindi pa | Ibang check | Simula ulit",
         'checks_repeat': "Ito ulit ang libreng checks. Sabihin kung ano ang nakita mo.",
     },
     'hiligaynon': {
@@ -1301,7 +1305,7 @@ T = {
         'reset_chips': "Click 125i | Mio | Wave 125 | Indi sigurado",
         'safe_stop': "Kon indi ka sigurado ukon mabudlay ang motor, magpundo kag ipatan-aw sa kwalipikado nga mekaniko. Indi pagtestingi ang guba nga preno ukon nagakatok nga makina sa dalan.",
         'again': "Paliiton pa naton. Pilia ang pinakamalapit nga sabat:",
-        'verdict_chips': "Nagana na | Indi gihapon | Iban nga check | Sugod liwat",
+        'verdict_chips': "Suguran ang procedure | Nagana na | Indi gihapon | Iban nga check | Sugod liwat",
         'checks_repeat': "Ari liwat ang libre nga checks. Sabta ako kon ano ang nakita mo.",
     },
 }
@@ -1322,6 +1326,54 @@ SKIP_PHRASES = [
     'hindi sigurado', 'ewan', 'indi sigurado', 'wala ko kabalo', 'skip',
 ]
 
+# Phrases that mean the user does not know where a part/step is located.
+LOCATION_UNKNOWN_PHRASES = [
+    "don't know where", "dont know where", "not sure where", "i don't know where",
+    "i dont know where", "where is it", "where can i find", "where do i find",
+    "how do i find", "can't find", "cant find", "cannot find", "i can't find",
+    "i cant find", "i cannot find", "where to look", "saan ko mahahanap",
+    "saan matatagpuan", "saan ito", "hindi ko alam saan", "indi ko alam diin",
+    "diin ko maabot", "wala ko kabalo diin", "where is the", "where's the",
+    "how to locate", "how to find", "find the", "locate the",
+    "hindi ko alam", "di ko alam saan",
+]
+
+# Phrases meaning "yes, continue / resume the session".
+CONTINUE_SESSION_PHRASES = [
+    'can we continue', 'continue please', 'lets continue', "let's continue",
+    'continue the session', 'continue diagnosis', 'resume', 'go on', 'go ahead',
+    'oo continue', 'sige continue', 'tuloy na', 'padayon na', 'tuloy',
+    'yes continue', 'yeah continue', 'ok continue', 'okay continue',
+    'sige na', 'proceed', 'continue from where', 'where were we',
+    'magpatuloy', 'ituloy natin', 'saan tayo', 'ano ulit', 'ano yung sinabi mo',
+    'ano na yung next', 'oo sige', 'yes sige', 'oo padayon', 'continue to next step',
+    'can we continue in that session', 'continue in that session', 'continue the procedure',
+]
+
+# Phrases for beginners asking HOW to do a procedure step or fix
+HOWTO_UNKNOWN_PHRASES = [
+    'how to do this', 'how do i do this', 'how do i do it', 'how can we fix it',
+    'how to fix it', 'how to fix', 'how can i fix', 'how do we fix',
+    'teach me how', 'teach me step by step', 'teach me', 'how to check',
+    'how do i check', 'how can i check', 'how do i test', 'how to test',
+    "i don't know how", 'i dont know how', 'i am a beginner', 'im a beginner',
+    "i'm a beginner", 'not good at motorcycle', 'not good with bikes',
+    'explain how', 'how does it work', 'step by step how', 'guide me how',
+    'paano gawin', 'paano ito ayusin', 'paano ayusin', 'paano ko aayusin', 'paano i-check',
+    'paano i check', 'turo mo paano', 'tudlui ko', 'diin paagi',
+    'how to do step', 'how to do this step', 'how', 'what do i do',
+    'what should i do', 'what do we do', 'paano', 'ano gagawin', 'ano gagawin ko',
+    'how to perform', 'how do i perform', 'teach how', 'teach me how to fix it',
+    'teach step by step', 'how to do',
+]
+
+# Phrases when user asks again to be sure
+REASSURE_CONFIRM_PHRASES = [
+    'just to be sure', 'are you sure', 'sure ba', 'sigurado ka', 'is that right',
+    'is this right', 'will this work', 'to be sure', 'sigurado ka ba', 'sure ka ba',
+    'are we sure', 'ask again', 'tanong lang ulit', 'are you really sure',
+]
+
 GREETING_PREFIXES = [
     'hello', 'hi ', 'hi', 'hey', 'good morning', 'good afternoon',
     'good evening', 'kamusta', 'kumusta', 'maayong',
@@ -1335,40 +1387,54 @@ SYMPTOM_KEYWORDS = {
         'wont fire', "won't fire", 'refuses to start', 'ayaw mag-start',
         'ayaw umandar', 'indi mag-andar', 'indi magstart', 'hindi mag-start',
         'no start', 'mag-start', 'mag-andar', 'magstart', 'ayaw mag-andar',
+        'engine wont start', "engine won't start", 'engine will not start',
+        'engine does not start', 'engine doesnt start',
+        'wont crank', "won't crank", 'does not crank', 'not cranking', 'no crank',
+        'wont turn over', "won't turn over", 'not turning over',
+        'wont fire up', "won't fire up", 'wont run', "won't run",
+        'starter click', 'starter clicking', 'starter dead', 'relay clicking',
+        'starting problem', 'starter problem',
+        'di nagstart', 'di mag-start', 'di magstart', 'hindi magstart',
+        'ayaw mag start', 'ayaw magpaandar', 'hindi umaandar', 'di umaandar',
+        'indi mag andar', 'ayaw umilaw ang dash',
     ],
     'brakes': [
         'brake', 'brakes', 'preno', 'spongy', 'soft lever', 'malambot', 'humok',
-        'stopping', 'caliper', 'brake pad',
+        'stopping', 'caliper', 'brake pad', 'walang preno', 'mahina preno',
+        'di kumakagat', 'hindi kumakagat',
     ],
     'overheat': [
         'overheat', 'overheating', 'radiator', 'coolant', 'steam', 'boiling',
         'nag-o-overheat', 'nagabukal', 'singaw', 'temp light', 'temperature',
+        'sobrang init', 'mainit ang makina',
     ],
     'noise': [
         'noise', 'noisy', 'knock', 'knocking', 'ticking', 'rattle', 'rattling',
         'ingay', 'maingay', 'katok', 'kumatok', 'lagabog', 'ticking sound',
-        'tingog', 'kakaiba nga tingog',
+        'tingog', 'kakaiba nga tingog', 'kumakaluskos', 'kumakatok',
     ],
     'smoke': [
-        'smoke', 'smoking', 'usok', 'umuusok', 'aso',
+        'smoke', 'smoking', 'usok', 'umuusok', 'aso', 'mausok', 'ma-aso',
     ],
     'power': [
         'no power', 'lose power', 'loss of power', 'slow', 'sluggish', 'bog',
         'sputter', 'hesitate', 'jerking', 'won\'t accelerate', 'wont accelerate',
         'nawawalan ng power', 'nawad-an power', 'walang power', 'wala power',
-        'mabagal', 'hindi bumibilis',
+        'mabagal', 'hindi bumibilis', 'walang hatak', 'mahina hatak', 'pumapalya',
     ],
     'electrical': [
         'battery', 'baterya', 'charging', 'alternator', 'stator', 'rectifier',
         'dim light', 'no lights', 'electrical', 'kuryente', 'dead battery',
+        'walang kuryente', 'palit baterya',
     ],
     'chassis': [
         'tyre', 'tire', 'gulong', 'chain', 'sprocket', 'suspension', 'wobble',
-        'steering', 'shock', 'fork', 'bearing',
+        'steering', 'shock', 'fork', 'bearing', 'alambre', 'kadena', 'manibela',
+        'kumakalog', 'gewang', 'gumegewang',
     ],
     'maintenance': [
         'oil change', 'change oil', 'oil', 'maintenance', 'tune up', 'tune-up',
-        'langis', 'change oil', 'filter',
+        'langis', 'change oil', 'filter', 'pms', 'regular service',
     ],
 }
 
@@ -1396,13 +1462,83 @@ def _flag(lang, key):
     return _tr(lang, key)
 
 
+def _user_history_texts(history):
+    """Return text list from user turns only, in reverse chronological order (newest first)."""
+    if not history:
+        return []
+    if isinstance(history, str):
+        return [history.strip()] if history.strip() else []
+    texts = []
+    for turn in reversed(list(history)):
+        if isinstance(turn, dict):
+            role = str(turn.get('role', '')).lower()
+            if role in ('bot', 'assistant', 'system'):
+                continue
+            txt = str(turn.get('text') or turn.get('message') or turn.get('content') or '').strip()
+            if txt:
+                texts.append(txt)
+        elif isinstance(turn, str) and turn.strip():
+            texts.append(turn.strip())
+    return texts
+
+
+def detect_area_from_history(history):
+    """Finds the most recent diagnostic symptom area mentioned by the user in history."""
+    for text in _user_history_texts(history):
+        area = detect_area(text)
+        if area:
+            return area
+    return None
+
+
+def _symptom_ack(area, lang, sir='sir'):
+    """Provides a warm, reassuring acknowledgement of the user's issue before vehicle intake."""
+    if not area:
+        return ""
+    acks = {
+        'english': {
+            'starting': f"I can help diagnose why your motorcycle won't start, {sir}. ",
+            'brakes': f"Let us check the brakes right away, {sir} — safety first. ",
+            'overheat': f"I can help diagnose that overheating issue, {sir}. ",
+            'noise': f"I can help you pinpoint that engine noise, {sir}. ",
+            'smoke': f"I can help inspect that exhaust smoke issue, {sir}. ",
+            'power': f"I can help find why your motorcycle is losing power, {sir}. ",
+            'electrical': f"I can help check your electrical and battery system, {sir}. ",
+            'chassis': f"I can help diagnose that handling and chassis issue, {sir}. ",
+            'maintenance': f"I can guide you through the maintenance checks, {sir}. ",
+        },
+        'tagalog': {
+            'starting': f"Tutulungan kitang alamin kung bakit ayaw mag-start ng motor mo, {sir}. ",
+            'brakes': f"Tingnan natin agad ang preno mo, {sir} — unahin natin ang kaligtasan. ",
+            'overheat': f"Tutulungan kitang tingnan ang overheat ng makina, {sir}. ",
+            'noise': f"Tutulungan kitang hanapin kung saan nanggagaling ang ingay, {sir}. ",
+            'smoke': f"Tutulungan kitang alamin ang sanhi ng usok, {sir}. ",
+            'power': f"Tutulungan kitang alamin kung bakit mahina ang hatak, {sir}. ",
+            'electrical': f"Tutulungan kitang i-check ang kuryente at baterya, {sir}. ",
+            'chassis': f"Tutulungan kitang i-check ang gulong, kadena, at tindig, {sir}. ",
+            'maintenance': f"Tutulungan kitang mag-maintenance check, {sir}. ",
+        },
+        'hiligaynon': {
+            'starting': f"Buligan ta ka usisa kon ngaa indi mag-start ang motor mo, {sir}. ",
+            'brakes': f"Tan-awon ta dayon ang preno mo, {sir} — unahon naton ang kaluwasan. ",
+            'overheat': f"Buligan ta ka usisa sang pag-init sang makina, {sir}. ",
+            'noise': f"Buligan ta ka pangita kon diin nagahalin ang gahod, {sir}. ",
+            'smoke': f"Buligan ta ka usisa sang aso, {sir}. ",
+            'power': f"Buligan ta ka kon ngaa nagaluya ang karga, {sir}. ",
+            'electrical': f"Buligan ta ka i-check ang kuryente kag baterya, {sir}. ",
+            'chassis': f"Buligan ta ka i-check ang ligid kag kadena, {sir}. ",
+            'maintenance': f"Buligan ta ka sa maintenance check, {sir}. ",
+        },
+    }
+    lang_key = _lang_key(lang)
+    return acks.get(lang_key, acks['english']).get(area, "")
+
+
 def resolve_profile(vehicle_info, message='', history=None):
     """Returns a bike profile dict for the extracted vehicle info."""
     corpus = _norm(message)
-    history_corpus = ''
-    if history:
-        for turn in history:
-            history_corpus += " " + _norm(turn.get('text', ''))
+    user_turns = _user_history_texts(history)
+    history_corpus = " ".join(_norm(t) for t in user_turns)
 
     # Prefer a model named in the CURRENT message; only then look at history,
     # so an old bike in the chat log can never override a new one.
@@ -1831,6 +1967,9 @@ def _history_texts(history):
     texts = []
     for turn in list(history)[-8:]:
         if isinstance(turn, dict):
+            role = str(turn.get('role', '')).lower()
+            if role in ('bot', 'assistant', 'system'):
+                continue
             texts.append(
                 str(
                     turn.get('text')
@@ -2071,6 +2210,39 @@ def _is_guided_area_choice(msg):
     return bool(detect_area(msg)) or _has_any(msg, GUIDED_AREA_WORDS)
 
 
+def _is_procedure_or_step_msg(msg):
+    """True for commands that continue, request, or report on a diagnostic procedure."""
+    if re.search(r'\b(?:step|hakbang|tikang)\s*\d+\b', msg):
+        return True
+    if re.search(r'\b(?:next\s*step|susunod\s*na\s*step|sunod\s*nga\s*tikang)\b', msg):
+        return True
+    if _has_any(msg, [
+        'what next', "what's next", 'what do i do next', 'what to do next', 'what now',
+        'ano susunod', 'ano na', 'ano sunod', 'paano ang step', 'paano susunod',
+        'next', 'proceed', 'continue', 'tuloy', 'padayon',
+        'begin', 'start', 'commence', 'ready to start', 'yes, ready', 'ready',
+        'begin procedure', 'start procedure', 'simulan', 'umpisahan', 'suguran',
+        'it worked', 'that worked', 'worked', 'fixed', 'okay now', 'nagana na', 'ok na', 'naayos na',
+        'still not fixed', 'not fixed', "didn't work", 'did not work', 'didnt work',
+        'hindi pa', 'hindi gumana', 'ayaw pa rin', 'wala pa rin', 'wala nagbago', 'indi gihapon',
+        'failed', 'wala epekto', 'show all steps', 'all steps',
+    ]):
+        return True
+    # Continuation / resume phrases
+    if _has_any(msg, CONTINUE_SESSION_PHRASES):
+        return True
+    # Location-unknown signals during a procedure
+    if _has_any(msg, LOCATION_UNKNOWN_PHRASES):
+        return True
+    # Beginner how-to requests during a procedure
+    if _has_any(msg, HOWTO_UNKNOWN_PHRASES):
+        return True
+    # User asking again to be sure
+    if _has_any(msg, REASSURE_CONFIRM_PHRASES):
+        return True
+    return False
+
+
 def is_guided_intent(message, history=None, state=None):
     """True when the guided flow should handle this turn."""
     msg = _norm(message)
@@ -2080,7 +2252,7 @@ def is_guided_intent(message, history=None, state=None):
     # form. The exception is a guided chip/area answer mid-session, which must
     # continue the flow the user is already in.
     if is_general_motorcycle_query(message, history):
-        if state and state.get('stage') in ('area', 'checks', 'narrow', 'verdict'):
+        if state and state.get('stage') in ('area', 'checks', 'narrow', 'verdict', 'procedure'):
             # Comparison/info queries always escape the guided flow.
             if COMPARISON_INFO_RE.search(msg):
                 return False
@@ -2100,7 +2272,13 @@ def is_guided_intent(message, history=None, state=None):
                       'image', 'photo', 'who are you']):
         return False
     if state and state.get('stage') not in (None, '', 'done'):
-        # A real question ("how do I bleed the brakes?") deserves the full
+        # Step/procedure progression commands and how-to requests in procedure stay in guided flow
+        if _is_procedure_or_step_msg(msg):
+            return True
+        # If currently in procedure stage, beginner how-to and location questions must be handled here
+        if state.get('stage') == 'procedure' and (_has_any(msg, HOWTO_UNKNOWN_PHRASES) or _has_any(msg, LOCATION_UNKNOWN_PHRASES) or _has_any(msg, REASSURE_CONFIRM_PHRASES)):
+            return True
+        # A real standalone question ("how do I bleed the brakes?") deserves the full
         # knowledge engine; the diagnostic state is kept for the next turn.
         if _is_followup_question(msg):
             return False
@@ -2121,7 +2299,11 @@ def is_guided_intent(message, history=None, state=None):
 def start_state():
     return {'stage': 'identify', 'bike': None, 'area': None, 'answers': {},
             'q_index': 0, 'checks_shown': False, 'fresh': True,
-            'year_skipped': False}
+            'year_skipped': False,
+            # procedure tracking (Bug 1): steps list and current index
+            'procedure_steps': [], 'procedure_index': 0,
+            # issue resolution tracking (Bug 2): was the current problem confirmed fixed?
+            'issue_resolved': False}
 
 
 def _safety_prefix(message, lang, force_brake=False):
@@ -2169,6 +2351,484 @@ def _enter_checks(state, profile, area, lang, safety_message='', suppress_safety
     )
 
 
+def _get_procedure_steps_for_area(area, answers):
+    v = pick_verdict(area, answers)
+    free = v.get('free', [])
+    if len(free) > 1 and free[0] != 'Work through the free checks above and tell me what you find.':
+        return free
+    if area in AREAS and AREAS[area].get('checks'):
+        return [f"{c[0]} — {c[1]} ({c[2]})" for c in AREAS[area]['checks']]
+    return free or ["Inspect the affected assembly for wear, damage, or loose connections."]
+
+
+# ---------------------------------------------------------------------------
+# Step-by-step location guides for common parts referenced in procedures
+# ---------------------------------------------------------------------------
+
+PART_LOCATION_GUIDES = {
+    'battery': {
+        'title': 'How to Find the Battery',
+        'steps': [
+            "Stand beside your motorcycle.",
+            "Look under the seat — lift the seat latch or key slot to open it.",
+            "The battery is usually a rectangular black or grey box with two cable terminals (red = positive, black = negative).",
+            "On some scooters it may be behind a side panel: look for a plastic panel on either side of the bike secured by screws or push-clips.",
+            "On underbone/backbone bikes, it is often under a side cover near the frame.",
+            "Once found, check the terminals for white or green corrosion.",
+        ],
+    },
+    'spark plug': {
+        'title': 'How to Find the Spark Plug',
+        'steps': [
+            "The spark plug sits at the top or center of the engine cylinder head.",
+            "On scooters: lift the seat, then look for a rubber boot or wire going into the engine block — follow it down.",
+            "On underbones/standard bikes: look at the top of the engine. There is a thick rubber plug cap connected to a wire — the spark plug is directly under it.",
+            "On some bikes a plastic cover or shroud may hide it; remove the two or three screws to expose it.",
+            "Use a spark plug socket (usually 16mm or 21mm) to remove it after disconnecting the plug cap.",
+        ],
+    },
+    'fuse': {
+        'title': 'How to Find the Fuse / Fuse Box',
+        'steps': [
+            "The main fuse or fuse box is almost always near the battery.",
+            "Open the seat or side panel to expose the battery area.",
+            "Look for a small rubber or plastic box with a lid — it is often zip-tied to the wiring harness near the battery.",
+            "Some bikes have a single inline fuse holder clipped directly onto the positive battery cable (red cable).",
+            "Open the fuse box lid; the fuses look like small coloured plastic plugs with metal legs.",
+            "A blown fuse will have a broken wire inside visible through the clear plastic body.",
+        ],
+    },
+    'oil filter': {
+        'title': 'How to Find the Oil Filter',
+        'steps': [
+            "The oil filter is on the engine crankcase — typically on the side or bottom.",
+            "Crouch or kneel beside the motorcycle and look at the lower sides of the engine block.",
+            "On many bikes it looks like a round metal canister (spin-on type) or a circular cover with bolts (cartridge type).",
+            "It is usually near the oil drain bolt, which is at the very bottom of the engine.",
+            "Look for oil staining or a different-coloured round cap — that is the filter cover.",
+            "Always use your owner's manual to confirm its exact location for your model.",
+        ],
+    },
+    'air filter': {
+        'title': 'How to Find the Air Filter',
+        'steps': [
+            "The air filter lives inside the airbox — a plastic box connected to the engine via a rubber intake tube.",
+            "On scooters: open the seat; the airbox is usually visible near the engine with a cover held by screws.",
+            "On underbones/standard bikes: the airbox is on the right or left side of the frame, often behind a side panel.",
+            "Remove the side panel (push-clips or screws), then unscrew the airbox cover.",
+            "Inside you will see the air filter element — a folded paper or foam block.",
+            "Hold it up to light; if it blocks light, it needs cleaning or replacement.",
+        ],
+    },
+    'brake fluid': {
+        'title': 'How to Find the Brake Fluid Reservoir',
+        'steps': [
+            "The front brake fluid reservoir is at the handlebar, on the right side (where the brake lever is).",
+            "Look at the master cylinder — a small rectangular or round container attached to the handlebar near the brake lever.",
+            "It has a rubber cap or screw cap on top. Remove it only when the engine is cold and the bike is level.",
+            "The rear brake reservoir (if separate) is near the rear brake pedal — look for a small bottle near the foot area or frame.",
+            "On scooters without a separate rear reservoir, rear brake fluid is in the same unit as the lever.",
+            "The fluid level is visible through the translucent side of the container.",
+        ],
+    },
+    'brake pad': {
+        'title': 'How to Find and Inspect the Brake Pads',
+        'steps': [
+            "The brake pads sit inside the brake caliper, which clamps onto the brake disc (rotor).",
+            "For the front brake: look at the wheel hub — the silver disc is the rotor, and the caliper (metal block gripping the disc) is the front caliper.",
+            "Look through the open side of the caliper; you will see the pads pressing against the disc.",
+            "The pads have a friction lining on one side. If only about 2 mm or less of lining remains, replace them.",
+            "For the rear brake disc: look at the rear wheel in the same way.",
+            "For rear drum brakes: the shoes are inside the drum — look for a small inspection window, or have the drum removed to check.",
+        ],
+    },
+    'fuel pump': {
+        'title': 'How to Find the Fuel Pump',
+        'steps': [
+            "On fuel-injected (FI) bikes, the fuel pump is inside the fuel tank.",
+            "Look at the top of the fuel tank — there is a round or square access cover secured by bolts.",
+            "The pump module sits directly below that cover inside the tank.",
+            "To confirm the pump is running: turn the key ON (do not start). You should hear a faint whirring or clicking for about 2 seconds — that is the pump priming.",
+            "On carbureted bikes, the fuel pump (if electric) is usually mounted on the frame near the tank or along the fuel line.",
+            "Follow the fuel hose from the petcock at the tank bottom to find any inline fuel pump.",
+        ],
+    },
+    'starter relay': {
+        'title': 'How to Find the Starter Relay (Solenoid)',
+        'steps': [
+            "The starter relay is a small box (about the size of a matchbox) near the battery.",
+            "Open the seat to access the battery area.",
+            "Look for a cube-shaped component with two large cables (going to the battery and to the starter motor) and two thin wires.",
+            "It is often mounted on a rubber grommet near the battery or on the inner fender.",
+            "You can test it: when you press the starter button, a healthy relay makes ONE solid click. Rapid clicking = weak battery; no click = relay, fuse, or circuit.",
+        ],
+    },
+    'chain': {
+        'title': 'How to Find and Check the Drive Chain',
+        'steps': [
+            "The drive chain runs along the left side of the rear wheel and swingarm.",
+            "Stand on the left side of the motorcycle and look at the rear wheel area.",
+            "You will see the metal chain linking the engine sprocket (small gear near the footpeg) to the rear wheel sprocket (large gear at the wheel center).",
+            "Push up at the middle of the chain with your finger — correct slack is typically 20–35 mm (about one finger width up and down).",
+            "The chain should feel smooth to the touch — a dry or rusty chain needs lubrication.",
+            "Check the sprocket teeth: worn teeth look like shark fins or hooks instead of straight peaks.",
+        ],
+    },
+    'cvt': {
+        'title': 'How to Find the CVT (on Scooters)',
+        'steps': [
+            "The CVT is inside the large plastic casing on the left side of the rear wheel.",
+            "Stand on the left side of the scooter and look at the engine/rear wheel area.",
+            "The CVT cover is the large oval or rectangular black/grey casing behind the left footboard.",
+            "It is held on by several bolts around its edge.",
+            "Signs of a worn CVT: slipping (engine revs high but speed doesn't increase), squealing, or shuddering on acceleration.",
+            "CVT inspection requires removing the cover — only proceed if you have the tools or visit a mechanic.",
+        ],
+    },
+    'kill switch': {
+        'title': 'How to Find the Kill Switch',
+        'steps': [
+            "The kill switch is on the right handlebar, near your right thumb.",
+            "Look for a small red or black switch on the right side of the handlebar controls.",
+            "It is usually labelled 'RUN / OFF' or has a red indicator.",
+            "Make sure it is set to RUN (not OFF) before trying to start.",
+            "On some scooters it is combined with the starter button in one unit.",
+        ],
+    },
+    'side stand switch': {
+        'title': 'How to Find the Side Stand Switch',
+        'steps': [
+            "The side stand switch is at the base of the side stand (kickstand) pivot.",
+            "Look at the left side of the motorcycle near the footpeg.",
+            "The side stand is the metal arm that props the bike up when parked.",
+            "At the top of the pivot point you will see a small electrical switch or plunger.",
+            "The switch cuts ignition when the stand is down and a gear is selected.",
+            "Make sure the stand is fully UP before starting — the switch should release automatically.",
+        ],
+    },
+    'coolant reservoir': {
+        'title': 'How to Find the Coolant Reservoir',
+        'steps': [
+            "The coolant reservoir is a translucent plastic bottle connected to the radiator by a hose.",
+            "On scooters: it is usually behind the front panel or inside the body near the engine — open the panel carefully.",
+            "On underbones/standard bikes: look along the frame near the radiator for a small bottle secured with a bracket.",
+            "The bottle has LOW and FULL markings on the side — check the level only when the engine is completely cold.",
+            "Never open the radiator cap while the engine is hot — coolant is under pressure and extremely hot.",
+            "If the reservoir is empty or has an oily film, stop riding and have the cooling system inspected.",
+        ],
+    },
+        'banjo bolts': {
+        'title': 'How to Find Banjo Bolts and Bleeder Valve',
+        'steps': [
+            "The bleeder valve is located on the brake caliper at the wheel (front fork or rear swingarm). It has a small hex nut with a rubber cap or hole in the center.",
+            "The banjo bolts connect the flexible brake fluid hose to the master cylinder (at the handlebar) and to the caliper (at the wheel).",
+            "Inspect both ends of the brake hose: look around the bolt heads and copper crush washers for any wetness or weeping brake fluid.",
+            "Wipe the area clean with a dry cloth and pump the brake lever to see if any fresh fluid escapes.",
+        ],
+    },
+    'radiator': {
+        'title': 'How to Find the Radiator',
+        'steps': [
+            "The radiator is in the front of the engine, behind the front fairing or panel.",
+            "It looks like a metal grid with many thin fins — similar to a car radiator but smaller.",
+            "On scooters: remove the front inner panel or look through the grille opening at the front.",
+            "The radiator cap is usually on top. The fan (electric motor with blades) is behind the radiator.",
+            "Check that the fins are not clogged with mud or leaves — a blocked radiator causes overheating.",
+            "The cooling fan should spin automatically when the engine reaches operating temperature.",
+        ],
+    },
+}
+
+
+def _extract_part_from_step(step_text):
+    """Try to identify the main part being checked in a procedure step."""
+    step_lower = step_text.lower()
+    # Order matters: more specific patterns first
+    part_patterns = [
+        ('spark plug', ['spark plug']),
+        ('oil filter', ['oil filter']),
+        ('air filter', ['air filter']),
+        ('fuel pump', ['fuel pump']),
+        ('starter relay', ['starter relay', 'solenoid', 'relay']),
+        ('banjo bolts', ['banjo', 'bleeder']),
+        ('brake fluid', ['brake fluid', 'master cylinder', 'reservoir', 'bleed']),
+        ('brake pad', ['brake pad', 'caliper', 'brake disc', 'pad']),
+        ('kill switch', ['kill switch']),
+        ('side stand switch', ['side stand', 'side-stand', 'kickstand']),
+        ('chain', ['chain']),
+        ('cvt', ['cvt', 'belt', 'variator']),
+        ('coolant reservoir', ['coolant reservoir', 'coolant level', 'coolant']),
+        ('radiator', ['radiator', 'fan']),
+        ('battery', ['battery', 'terminal']),
+        ('fuse', ['fuse']),
+    ]
+    for part_key, keywords in part_patterns:
+        if any(kw in step_lower for kw in keywords):
+            return part_key
+    return None
+
+
+STEP_HOWTO_GUIDES = {
+    'battery': {
+        'title': 'How to Test Battery Voltage & Clean Terminals',
+        'tools': '10 mm wrench or socket, clean dry rag, digital multimeter (if available), wire brush or toothbrush',
+        'safety': 'Always turn the ignition key OFF. Disconnect the black negative (-) cable first when removing, and connect the red positive (+) cable first when reinstalling.',
+        'steps': [
+            'Locate the battery under your seat or side panel.',
+            'Inspect the two terminals: if you see white, green, or blue powdery corrosion, wipe it clean with a rag dipped in baking soda water or scrub gently with a brush.',
+            'Tighten terminal bolts: use your 10 mm wrench to verify both bolt connections are completely snug. A loose ground cable frequently prevents the bike from starting.',
+            'Voltage check with a multimeter: set the dial to DC Volts (20V range). Place the RED probe on (+) positive and BLACK probe on (-) negative.',
+            'Cranking load test: have a friend watch the meter while you press the starter button.',
+        ],
+        'good': '12.6V or higher at rest. When cranking the starter, the voltage stays above 9.6V and the engine spins vigorously.',
+        'bad': 'Below 12.0V at rest (discharged/dead). During cranking, voltage plunges below 9.0V with rapid relay clicking chatter.',
+    },
+    'starter relay': {
+        'title': 'How to Check the Starter Relay (Solenoid)',
+        'tools': 'Flashlight, clean rag, screwdriver',
+        'safety': 'Keep your hands clear of moving parts. Make sure motorcycle is in NEUTRAL and on its center stand.',
+        'steps': [
+            'Locate the starter relay near the battery (the small box with two heavy-gauge cables).',
+            'Turn the ignition key ON, make sure the kill switch is set to RUN, and hold the brake lever (scooter) or clutch (manual).',
+            'Listen closely to the relay while pressing the starter button.',
+            'Check the small trigger wiring connector on top of the relay: pull it off, check for green corrosion, and push it firmly back on.',
+        ],
+        'good': 'A single, crisp, authoritative "CLICK" sound every time the starter button is pressed, sending full power to the starter motor.',
+        'bad': 'Rapid machine-gun chattering (click-click-click), or absolute dead silence with no click at all.',
+    },
+    'spark plug': {
+        'title': 'How to Remove, Inspect & Test the Spark Plug',
+        'tools': 'Spark plug wrench or 16 mm deep socket, clean dry rag',
+        'safety': 'Allow the engine to cool down completely before touching the spark plug to prevent thread damage in the aluminum cylinder head.',
+        'steps': [
+            'Locate the spark plug on the cylinder head and firmly pull off the thick rubber plug cap by hand.',
+            'Fit your spark plug wrench over the hex body and turn counter-clockwise (lefty-loosey) until unscrewed.',
+            'Inspect the electrode tip: clean off any loose soot with a dry cloth.',
+            'Spark test: push the spark plug firmly back into the rubber cap. Hold the metal threaded outer shell securely against bare, unpainted metal on the engine block.',
+            'Turn key ON and tap the starter button for 1 second while watching the tiny gap between the electrodes.',
+            'Carefully reinstall the plug by turning it with your fingers first to prevent cross-threading, then tighten gently with the wrench until snug.',
+        ],
+        'good': 'Clean light-tan or grey tip. When tested against the engine, a bright, snappy blue/white spark jumps across the gap.',
+        'bad': 'Tip is wet black with oil/fuel, or no spark appears at all (failing plug, ignition coil, or side-stand switch cutoff).',
+    },
+    'brake fluid': {
+        'title': 'How to Inspect & Bleed Brake Fluid and Caliper',
+        'tools': '8 mm or 10 mm box wrench, clear plastic hose (aquarium tubing), small clean jar, Philips screwdriver, fresh DOT 4 brake fluid, rag',
+        'safety': 'Brake fluid instantly damages motorcycle paint and fairings. Wrap a clean cloth around the handlebar reservoir and immediately rinse any spills with clean water.',
+        'steps': [
+            'Level the motorcycle on its center stand so the handlebar reservoir is flat.',
+            'Unscrew the two Philips screws on the reservoir cap and lift off the metal plate and rubber diaphragm.',
+            'Inspect fluid level and color: top up with fresh DOT 4 fluid if below the MIN mark.',
+            'Slip your clear plastic tubing over the caliper bleeder nipple at the wheel and put the other end into a jar with a little fluid.',
+            'Perform the 4-step bleed cycle: (1) Pump brake lever 3 times and HOLD it tight; (2) Crack bleeder nut open 1/4 turn (lever will sink to grip); (3) Snug bleeder nut closed; (4) Release brake lever.',
+            'Repeat until no air bubbles are seen entering the tube, keeping the reservoir topped up so air does not enter from the top.',
+        ],
+        'good': 'Clear amber fluid without trapped air bubbles. The brake lever becomes firm and resists movement well before touching the handlebar grip.',
+        'bad': 'Fluid is black/muddy, or bubbles keep appearing while the lever feels squishy and spongy all the way to the grip.',
+    },
+    'banjo bolts': {
+        'title': 'How to Check Banjo Bolts & Brake Line Fittings',
+        'tools': '12 mm box wrench, clean dry rag, flashlight',
+        'safety': 'Do NOT overtighten banjo bolts — they are hollow brass/steel bolts and will snap if forced. Tighten gently.',
+        'steps': [
+            'Locate the banjo bolts: one at the handlebar master cylinder and one at the wheel brake caliper.',
+            'Wipe both bolt fittings, copper crush washers, and the hose joints completely dry with a rag.',
+            'Firmly squeeze and hold the brake lever for 30 seconds.',
+            'Inspect closely with a flashlight: run a clean dry finger under the bolt head and washers.',
+            'If you see or feel any wet brake fluid, gently snug the bolt with your 12 mm wrench, or replace the copper crush washers.',
+        ],
+        'good': 'Fittings and copper washers remain bone dry with no weeping or moisture under heavy brake pressure.',
+        'bad': 'A wet sheen or active dripping around the crush washers or crimped hose collar, causing lever pressure loss.',
+    },
+    'brake pad': {
+        'title': 'How to Inspect & Clean Brake Pads and Disc',
+        'tools': 'Flashlight, can of brake cleaner spray, clean rag',
+        'safety': 'Never spray WD-40, motor oil, or grease anywhere near brake discs or pads. Use dedicated automotive brake cleaner only.',
+        'steps': [
+            'Crouch next to the wheel and shine your flashlight into the open slot of the brake caliper.',
+            'Observe the friction lining pressed against the shiny steel brake disc.',
+            'Check the thickness of the friction material remaining on the metal backing plate.',
+            'Clean road grit and brake dust: spray generously with brake cleaner through the caliper gap and wipe the steel disc with a clean rag.',
+            'Spin the wheel by hand: it should turn smoothly without severe rubbing or metal grinding.',
+        ],
+        'good': 'At least 3 mm to 5 mm of friction material with visible wear indicator grooves. Wheel spins freely with light brush against pads.',
+        'bad': 'Less than 1.5 mm of pad left, or bare metal backing plate grinding against the rotor with deep grooves.',
+    },
+    'chain': {
+        'title': 'How to Clean, Measure Slack & Lubricate the Drive Chain',
+        'tools': 'Ruler or tape measure, chain cleaner or kerosene, chain lubricant spray, clean cloth',
+        'safety': 'ALWAYS keep the engine OFF. Spin the rear wheel by hand only. Never run the motorcycle in gear while your hands are near the chain.',
+        'steps': [
+            'Prop the motorcycle on its center stand so the rear wheel can turn freely.',
+            'Measure chain slack: find the midpoint of the bottom chain run. Push down, then push up with your finger and measure total movement with a ruler.',
+            'Normal slack is 20 mm to 35 mm (about one thumb width). If touching the swingarm or tight like a guitar string, it needs adjustment.',
+            'Cleaning: spray chain cleaner onto the chain and wipe off heavy road grime with a rag.',
+            'Lubricating: slowly rotate the wheel backwards by hand while spraying chain lube along the inside edges of the rollers where the teeth contact.',
+            'Allow the lubricant to dry for 10-15 minutes before riding.',
+        ],
+        'good': 'Clean, moist with lubricant, 25-30 mm flexible slack, and sprocket teeth straight and symmetrical.',
+        'bad': 'Dry, red rust patches, stiff links that kink, loose enough to slap the swingarm, or sprocket teeth hooked like shark fins.',
+    },
+    'cvt': {
+        'title': 'How to Inspect the Scooter CVT Belt & Rollers',
+        'tools': '8 mm socket or T-wrench, dry clean cloth, flashlight',
+        'safety': 'Ensure engine is switched off and completely cold before opening the CVT cover.',
+        'steps': [
+            'Stand on the left side of the scooter and remove the 8 mm bolts around the CVT transmission cover.',
+            'Pull the cover off carefully to reveal the rubber drive belt and front/rear pulley assemblies.',
+            'Twist and inspect the drive belt: check the inner rubber teeth for cracks, missing chunks, or fraying side threads.',
+            'Check for belt slip: look for black rubber dust accumulated on the floor of the case or glazed shiny pulley faces.',
+            'Wipe the inside clean with a dry cloth (never apply any grease or solvent to the belt or pulley faces).',
+        ],
+        'good': 'Belt is flexible with deep, sharp teeth and no cracks. Case is clean and dry.',
+        'bad': 'Cracks in the cog valleys, fraying cords, or belt is excessively narrow causing sluggish uphill take-off.',
+    },
+    'coolant': {
+        'title': 'How to Check & Top Up Engine Coolant',
+        'tools': 'Pre-mixed 50/50 motorcycle coolant, clean funnel, clean rag',
+        'safety': 'NEVER open the radiator cap when the engine is warm or hot. Pressurized boiling coolant will spray and cause serious burns.',
+        'steps': [
+            'Allow the engine to cool for at least 45 minutes.',
+            'Locate the translucent coolant expansion reservoir.',
+            'With the bike standing upright on level ground, check the fluid level against the LOW and FULL lines on the bottle.',
+            'If below LOW, remove the reservoir cap and slowly add pre-mixed coolant through a clean funnel up to the FULL line.',
+            'Inspect radiator fins from the front: remove trapped mud or leaves with gentle water spray.',
+            'Inspect rubber hoses for swelling, cracks, or green/white dried crust at clamp fittings.',
+        ],
+        'good': 'Coolant level between LOW and FULL, bright green, blue, or pink color with no oil residue or milky foam.',
+        'bad': 'Reservoir bone dry, brown cloudy coolant, milky emulsion in engine oil, or active dripping under the water pump.',
+    },
+    'air filter': {
+        'title': 'How to Inspect & Clean the Air Filter',
+        'tools': 'Philips (+) screwdriver, clean cloth',
+        'safety': 'Never ride the motorcycle without an air filter element installed, as road dust will score the cylinder bore.',
+        'steps': [
+            'Locate the plastic airbox under the seat or behind the side panel.',
+            'Unscrew the 4 to 6 Philips screws and remove the airbox lid.',
+            'Extract the filter cartridge (paper pleats or foam element).',
+            'Hold the filter up toward daylight or a flashlight: light should easily pass through the pleats.',
+            'Tap it gently face-down against a hard surface to shake loose heavy dust.',
+            'Wipe out any dust or moisture inside the airbox housing with a clean damp rag before reassembling.',
+        ],
+        'good': 'Clean paper or foam element allowing light through with no engine oil saturation.',
+        'bad': 'Clogged with thick black dirt, wet with engine oil blow-by, or torn paper pleats allowing unfiltered air into the engine.',
+    },
+    'fuse': {
+        'title': 'How to Inspect & Replace Blown Fuses',
+        'tools': 'Fuse puller or small needle-nose pliers, spare fuse of exact same amp rating (e.g. 10A, 15A, 20A)',
+        'safety': 'Turn ignition OFF. Never install a fuse with a higher amp rating or bridge with wire, as this can cause an electrical fire.',
+        'steps': [
+            'Locate the fuse box near the battery under the seat and flip open the plastic latch cover.',
+            'Identify the fuse for the affected circuit (e.g. MAIN, IGNITION, LIGHTS).',
+            'Grip the fuse and pull it straight upward.',
+            'Hold the fuse up to the light and examine the S-shaped or U-shaped metal wire inside the clear colored plastic.',
+            'If the wire is broken or has a dark burn mark, replace it with a spare of the identical amp rating.',
+            'Press the new fuse firmly into the socket and snap the lid closed.',
+        ],
+        'good': 'Metal wire inside is continuous and unbroken.',
+        'bad': 'Wire inside is separated, melted, or blackened, cutting all power to that circuit.',
+    },
+    'kill switch': {
+        'title': 'How to Check & Free the Kill Switch and Side-Stand Switch',
+        'tools': 'Electrical contact cleaner or WD-40, clean rag',
+        'safety': 'Engine off and bike on center stand in neutral.',
+        'steps': [
+            'Handlebar kill switch: click the red rocker switch back and forth firmly between RUN and OFF several times.',
+            'If sticky, spray a 1-second burst of electrical contact cleaner into the switch crevices.',
+            'Side stand: crouch on the left side and locate the small spring-loaded plunger switch at the kickstand pivot point.',
+            'Road grit and chain lube often cake around the plunger: spray with contact cleaner and wipe with a rag.',
+            'Flick the stand up and down: verify the spring snaps the stand all the way up so the plunger releases fully.',
+        ],
+        'good': 'Switches click crisply and the side-stand plunger extends smoothly when the stand is raised.',
+        'bad': 'Plunger is jammed with dried mud/grit, tricking the motorcycle into thinking the kickstand is down and cutting spark.',
+    },
+    'oil': {
+        'title': 'How to Check Engine Oil Level and Condition',
+        'tools': 'Clean cloth or paper towel',
+        'safety': 'Check on level ground with engine stopped for 5 minutes after running.',
+        'steps': [
+            'Place the bike on its center stand on flat, level ground.',
+            'Locate the oil dipstick or sight glass on the right side of the engine crankcase.',
+            'Unscrew the dipstick, wipe the oil off with a clean rag.',
+            'Insert the dipstick back in WITHOUT screwing it in (standard motorcycle procedure), then withdraw it.',
+            'Check where the oil film sits on the crosshatched tip.',
+        ],
+        'good': 'Oil level sits squarely between the upper (MAX) and lower (MIN) marks. Color is clear amber to light brown.',
+        'bad': 'Below the MIN mark (engine running dry), pitch black with strong burnt odor, or milky light-brown (coolant mixing with oil).',
+    },
+}
+
+
+def _build_howto_guide(part_key, step_text, step_number, sir='sir', lang='english'):
+    """Build a comprehensive, beginner-friendly how-to tutorial for a procedure step."""
+    guide = STEP_HOWTO_GUIDES.get(part_key)
+    if not guide:
+        # Build tailored 4-step beginner guide based on the step text
+        lines = [
+            f"No problem, {sir}! Here is a beginner-friendly, step-by-step guide on how to perform **Step {step_number}**:\n",
+            f"**🛠️ Step {step_number} Task:** {step_text}\n",
+            f"**🧰 What you need:** Basic hand tools (wrench or screwdriver), a clean rag, and a flashlight.\n",
+            f"**⚠️ Safety Note:** Ensure the motorcycle engine is turned OFF and cool to the touch before starting.\n",
+            f"**📋 How to do it step-by-step:**\n",
+            f"1. **Position the bike:** Place the motorcycle upright on its center stand on flat ground with good lighting.\n",
+            f"2. **Inspect the component:** Carefully observe the assembly mentioned: *{step_text}*. Look for obvious loose screws, cracks, or fluid weeping.\n",
+            f"3. **Perform the test/cleaning:** Follow the task action carefully without applying excessive force.\n",
+            f"4. **Observe the result:** Check if the component responds smoothly or remains stuck/abnormal.\n",
+            f"\n**🔍 Expected Benchmark:**\n",
+            f"- **Normal:** Component is secure, clean, and operates without unusual noise, stiffness, or fluid leaks.\n",
+            f"- **Abnormal:** Loose, corroded, leaking, or fails to operate.\n",
+            f"\nTry this out, {sir}, and let me know what you observe!\n\n",
+            f"[chips: Step {step_number} passed (normal) | Step {step_number} failed (abnormal) | Where is it? | Next step | It worked]",
+        ]
+        return "\n".join(lines)
+
+    lines = [
+        f"No problem at all, {sir}! Here is a complete beginner-friendly tutorial for **Step {step_number}**:\n",
+        f"**🎓 {guide['title']}**\n",
+        f"**Task:** {step_text}\n",
+        f"**🧰 Tools Needed:** {guide['tools']}\n",
+        f"**⚠️ Safety First:** {guide['safety']}\n",
+        f"\n**📋 Step-by-Step Instructions:**\n",
+    ]
+    for idx, inst in enumerate(guide['steps'], 1):
+        lines.append(f"{idx}. {inst}")
+
+    lines.append(f"\n**🔍 What to Look For (Good vs. Bad):**\n")
+    lines.append(f"- **✅ Good (Normal):** {guide['good']}")
+    lines.append(f"- **❌ Bad (Faulty):** {guide['bad']}\n")
+    lines.append(f"Take your time, {sir}. Once you have tested this, tell me what you found!\n\n")
+    lines.append(f"[chips: Step {step_number} passed (normal) | Step {step_number} failed (abnormal) | Where is it? | Next step | It worked]")
+    return "\n".join(lines)
+def _build_location_guide(part_key, step_number, sir='sir'):
+    """Build a formatted location guide for a part, ready to send to the user."""
+    guide = PART_LOCATION_GUIDES.get(part_key)
+    if not guide:
+        # Generic fallback using part_locations.py
+        from .part_locations import location_hint
+        hint = location_hint(part_key)
+        if hint:
+            return (
+                f"No problem, {sir}! Let me show you where to find it.\n\n"
+                f"**Location:** {hint}\n\n"
+                f"Always confirm the exact position in your owner's manual, as it varies by model.\n\n"
+                f"[chips: Found it, continue | Still can't find it | Show all steps | Start over]"
+            )
+        return None
+
+    lines = [
+        f"No problem, {sir}! Here is a step-by-step guide to find the **{guide['title'].replace('How to Find the ', '')}** "
+        f"before we continue with Step {step_number}:\n",
+        f"**📍 {guide['title']}**\n",
+    ]
+    for i, loc_step in enumerate(guide['steps'], 1):
+        lines.append(f"{i}. {loc_step}")
+    lines.append(
+        f"\nOnce you've located it, come back and tell me what you see — we'll continue with **Step {step_number}**.\n\n"
+        f"[chips: Found it, continue Step {step_number} | Still can't find it | Ask a mechanic | Show all steps]"
+    )
+    return "\n".join(lines)
+
+
 def handle_guided_turn(message, user, history, state, lang='english', sir='sir'):
     """
     Runs one turn of the guided flow.
@@ -2205,11 +2865,12 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
         prev_name = f"{prev_bike.get('make', '')} {prev_bike.get('model', '')}".strip().lower()
         new_name = f"{cur_prof.get('make', '')} {cur_prof.get('model', '')}".strip().lower()
         if prev_name and new_name and prev_name != new_name:
+            prev_area = state.get('area')
             state.clear()
             state.update(start_state())
             state['bike'] = cur_prof
             state['fresh'] = False
-            new_area = detect_area(message)
+            new_area = detect_area(message) or prev_area
             if new_area:
                 state['area'] = new_area
                 return _enter_checks(state, cur_prof, new_area, lang, message)
@@ -2248,6 +2909,7 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                       'fixed it', 'it is fixed', "it's fixed", 'feel better',
                       'feels better', 'okay now', 'ok now', 'noise is gone',
                       'smoke is gone', 'nagana na', 'naayos na', 'ok na', 'ayos na']):
+        state['issue_resolved'] = True
         state.clear()
         state.update({'stage': 'done'})
         return (
@@ -2268,6 +2930,49 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             return (
                 f"{checks_block(area, bike, lang)}\n\n"
                 f"{question_block(area, 0, lang)}"
+            )
+
+    # --- User asks to continue / resume the current session ---------------
+    # Use ONLY unambiguous resume phrases here. Action words like "proceed",
+    # "begin", "yes", "start" stay handled in the stage-specific blocks below
+    # so they correctly advance the diagnostic flow (e.g. verdict → procedure).
+    _RESUME_ONLY_PHRASES = [
+        'can we continue', 'continue the session', 'continue diagnosis',
+        'resume', 'where were we', 'magpatuloy', 'ituloy natin',
+        'saan tayo', 'let us continue', 'can we go on',
+        'tuloy na natin', 'ituloy na',
+    ]
+    if _has_any(msg, _RESUME_ONLY_PHRASES) or (
+        _has_any(msg, CONTINUE_SESSION_PHRASES) and state.get('stage') == 'procedure'
+    ):
+        cur_stage = state.get('stage', '')
+        area = state.get('area')
+        bike = state.get('bike')
+        if cur_stage == 'procedure' and area and bike:
+            steps = state.get('procedure_steps', [])
+            idx = state.get('procedure_index', 0)
+            state.pop('awaiting_location_confirm', None)
+            curr_step = steps[idx] if idx < len(steps) else "Inspect the affected assembly."
+            return (
+                f"Of course, {sir}! We were on **Step {idx + 1}** of the {area} diagnosis. "
+                f"Let's pick up right where we left off.\n\n"
+                f"**Step {idx + 1}:** {curr_step}\n\n"
+                f"Perform this check and tell me what you find.\n\n"
+                f"[chips: Step {idx + 1} done | How to do this step | Where is it? | Next step | It worked]"
+            )
+        if cur_stage in ('narrow', 'verdict', 'checks') and area and bike:
+            # Resume from narrow/verdict — re-ask the current question
+            q_index = int(state.get('q_index', 0))
+            questions = AREAS.get(area, {}).get('questions', [])
+            if q_index < len(questions):
+                return (
+                    f"Of course, {sir}! We were narrowing down the **{area}** issue. Here's where we were:\n\n"
+                    f"{question_block(area, q_index, lang)}"
+                )
+            # If past all questions, remind of verdict stage
+            return (
+                f"Of course, {sir}! We have all the information needed. Let me show you the diagnosis.\n\n"
+                f"[chips: Begin procedure | Start over | Another check]"
             )
 
     # --- Stage: identify the motorcycle -----------------------------------
@@ -2291,13 +2996,16 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 f"[chips: {_tr(lang, 'type_chips')}]"
             )
 
+        # Detect and persist symptom area if mentioned by the user
+        detected_area = detect_area(message) or state.get('area') or detect_area_from_history(history)
+        if detected_area:
+            state['area'] = detected_area
+
         profile = resolve_profile(vehicle, message, history)
         if vehicle.get('make') or vehicle.get('model'):
             state['bike'] = profile
             state['fresh'] = False
-            area = detect_area(message) or detect_area(" ".join(
-                t.get('text', '') for t in (history or [])
-            ))
+            area = state.get('area') or detect_area(message) or detect_area_from_history(history)
             if area:
                 state['area'] = area
 
@@ -2319,8 +3027,12 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             )
 
         # No vehicle yet: ask for it.
+        # Provide a warm acknowledgment if the user already stated their symptom
+        prefix = _safety_prefix(message, lang, force_brake=(state.get('area') == 'brakes'))
+        ack = _symptom_ack(state.get('area'), lang, sir)
         return (
-            f"{_safety_prefix(message, lang)}"
+            f"{prefix}"
+            f"{ack}"
             f"{_tr(lang, 'identify')}\n\n"
             f"[chips: {_tr(lang, 'identify_chips')}]"
         )
@@ -2341,8 +3053,9 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
         state['bike'] = profile
         state['stage'] = 'area'
 
-        area = detect_area(message)
+        area = detect_area(message) or state.get('area') or detect_area_from_history(history)
         if area:
+            state['area'] = area
             return _enter_checks(state, profile, area, lang, message)
         return (
             f"{focus_block(profile, lang)}\n\n"
@@ -2363,8 +3076,10 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             state['year_skipped'] = True
 
         new_area = detect_area(message)
-        area = new_area or state.get('area') or detect_area(state.get('year_context', ''))
+        area = new_area or state.get('area') or detect_area(state.get('year_context', '')) or detect_area_from_history(history)
         state.pop('year_context', None)
+        if area:
+            state['area'] = area
 
         if area:
             return _enter_checks(
@@ -2405,6 +3120,8 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                     area = value
                     break
         if not area:
+            area = state.get('area') or detect_area_from_history(history)
+        if not area:
             return (
                 f"I can help with that, {sir}, but I need the system. Which one matches best?\n\n"
                 f"[chips: {_tr(lang, 'area_chips')}]"
@@ -2440,8 +3157,44 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                     f"{question_block(area, q_index, lang)}"
                 )
 
+            # User doesn't know where a part is — give a location guide
+            if _has_any(msg, LOCATION_UNKNOWN_PHRASES):
+                # Find the part from the current check
+                checks = AREAS[area].get('checks', [])
+                part_key = None
+                if q_index < len(checks):
+                    part_key = _extract_part_from_step(checks[q_index][0])
+                if part_key is None:
+                    # Try from the question text
+                    q_text = AREAS[area]['questions'][q_index].get('text', '')
+                    part_key = _extract_part_from_step(q_text)
+                if part_key:
+                    guide = _build_location_guide(part_key, q_index + 1, sir)
+                    if guide:
+                        state['awaiting_location_confirm'] = True
+                        return guide
+                # Generic fallback
+                return (
+                    f"No problem, {sir}. Here are the checks with location hints:\n\n"
+                    f"{checks_block(area, profile, lang)}\n\n"
+                    f"{question_block(area, q_index, lang)}"
+                )
+
+            # User says "continue / found it / ok" after a location guide
+            if state.get('awaiting_location_confirm') and _has_any(msg, [
+                'found it', 'found', 'i see it', 'i found it', 'ok continue', 'continue',
+                'nakita ko', 'nandito', 'nahanap ko', 'okay', 'got it', 'i see',
+                'continue step', 'yes', 'sige', 'oo',
+            ] + CONTINUE_SESSION_PHRASES):
+                state.pop('awaiting_location_confirm', None)
+                return (
+                    f"Great, {sir}! Now let us continue.\n\n"
+                    f"{question_block(area, q_index, lang)}"
+                )
+
             answer = _match_option(area, q_index, message)
             if answer:
+                state.pop('awaiting_location_confirm', None)
                 state.setdefault('answers', {})[questions[q_index]['key']] = answer
                 state['q_index'] = q_index + 1
 
@@ -2452,6 +3205,22 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 # Also accept a direct "show verdict" request.
                 if _has_any(msg, ['likely cause', 'what is the cause', 'diagnose it', 'just tell me']):
                     state['stage'] = 'verdict'
+                elif _has_any(msg, [
+                    'begin', 'start', 'proceed', 'commence', 'step 1', 'step one', 'first step',
+                    'ready to start', 'ready', 'yes, ready', 'start procedure', 'begin procedure',
+                    'simulan', 'umpisahan', 'gawin natin', 'read step 1',
+                ]):
+                    answers = state.get('answers', {})
+                    state['procedure_steps'] = _get_procedure_steps_for_area(area, answers)
+                    state['stage'] = 'procedure'
+                    state['procedure_index'] = 0
+                    steps = state['procedure_steps']
+                    step_1 = steps[0] if steps else "Inspect the affected assembly."
+                    return (
+                        f"**Step 1:** {step_1}\n\n"
+                        f"Perform this check, {sir}, and let me know what you find.\n\n"
+                        f"[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]"
+                    )
                 else:
                     return (
                         f"{_tr(lang, 'again')}\n\n"
@@ -2469,6 +3238,25 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
 
         answers = state.get('answers', {})
         verdict = pick_verdict(area, answers)
+        state['procedure_steps'] = _get_procedure_steps_for_area(area, answers)
+
+        # If user asks to start/commence procedure from verdict
+        if _has_any(msg, [
+            'begin', 'start', 'proceed', 'commence', 'step 1', 'step one', 'first step',
+            'yes', 'oo', 'sige', 'umpisahan', 'simulan', 'suguran', "let's start",
+            "lets start", "let's do it", "lets do it", 'cge', 'padayon', 'tuloy',
+            'begin procedure', 'start procedure', 'gawin natin', 'read step 1',
+            'ready to start', 'yes, ready', 'ready',
+        ] + CONTINUE_SESSION_PHRASES):
+            state['stage'] = 'procedure'
+            state['procedure_index'] = 0
+            steps = state['procedure_steps']
+            step_1 = steps[0] if steps else "Inspect the affected assembly."
+            return (
+                f"**Step 1:** {step_1}\n\n"
+                f"Perform this check, {sir}, and let me know what you find.\n\n"
+                f"[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]"
+            )
 
         lines = [
             f"**{_tr(lang, 'verdict')}: {verdict['title']}**",
@@ -2491,6 +3279,168 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
         lines.append("")
         lines.append(f"[chips: {_tr(lang, 'verdict_chips')}]")
         return "\n".join(lines)
+
+    # --- Stage: procedure --------------------------------------------------
+    if state.get('stage') == 'procedure':
+        new_area = detect_area(message)
+        if new_area:
+            state['answers'] = {}
+            return _enter_checks(state, profile, new_area, lang, message)
+
+        steps = state.get('procedure_steps', [])
+        idx = state.get('procedure_index', 0)
+
+        # Did user say "show all steps"?
+        if _has_any(msg, ['show all steps', 'all steps', 'ipakita lahat', 'tanan nga tikang']):
+            lines = [f"**All Procedure Steps for {bike_label(profile)}:**", ""]
+            for i, st in enumerate(steps, start=1):
+                lines.append(f"**Step {i}:** {st}")
+            lines.append("")
+            lines.append(f"[chips: Step 1 | It worked | Still not fixed | Start over]")
+            return "\n".join(lines)
+
+        # Did user confirm fix?
+        if _has_any(msg, ['it worked', 'that worked', 'worked', 'fixed', 'okay now', 'nagana na', 'ok na', 'naayos na']):
+            state['issue_resolved'] = True
+            state.clear()
+            state.update({'stage': 'done'})
+            return (
+                f"Outstanding, {sir}! The problem is resolved and the motorcycle is back in service.\n\n"
+                "Ride safely, and reach out any time you need diagnostic assistance.\n\n"
+                "[chips: Start over | Engine will not start | Brakes weak or spongy | Oil change / maintenance]"
+            )
+
+        # Did user ask for a specific step number? (e.g. "step 2", "what is step 2", "step 3", "step 1")
+        step_match = re.search(r'\b(?:step|hakbang|tikang)\s*(\d+)\b', msg)
+        if step_match:
+            target_step = int(step_match.group(1)) - 1
+            if 0 <= target_step < len(steps):
+                state['procedure_index'] = target_step
+                state.pop('awaiting_location_confirm', None)
+                return (
+                    f"**Step {target_step + 1}:** {steps[target_step]}\n\n"
+                    f"Perform this check, {sir}, and let me know what you find.\n\n"
+                    f"[chips: Step {target_step + 1} done | It worked | Still not fixed | Next step | Show all steps]"
+                )
+
+        # User asks again just to be sure: reassure with technical clarity and offer to continue
+        if _has_any(msg, REASSURE_CONFIRM_PHRASES):
+            curr_step = steps[idx] if idx < len(steps) else "Inspect the affected assembly."
+            return (
+                f"Yes, {sir}! Rest assured, this is the safest and most reliable manufacturer-standard diagnostic check for your motorcycle's {area} system. "
+                f"We always rule out the free, simple mechanical and electrical causes first before touching any expensive replacement parts.\n\n"
+                f"Whenever you are ready, we can continue on what we are trying to fix:\n\n"
+                f"**Step {idx + 1}:** {curr_step}\n\n"
+                f"[chips: How to do this step | Where is it? | Can we continue in that session | Next step | Start over]"
+            )
+
+        # User asks HOW to perform the current step or how to fix it (beginner tutorial)
+        if _has_any(msg, HOWTO_UNKNOWN_PHRASES):
+            curr_step_text = steps[idx] if idx < len(steps) else ""
+            part_key = _extract_part_from_step(curr_step_text)
+            state['awaiting_howto_confirm'] = True
+            return _build_howto_guide(part_key, curr_step_text, idx + 1, sir=sir, lang=lang)
+
+        # User doesn't know where to find the part for the current step
+        if _has_any(msg, LOCATION_UNKNOWN_PHRASES):
+            curr_step_text = steps[idx] if idx < len(steps) else ""
+            part_key = _extract_part_from_step(curr_step_text)
+            if part_key:
+                guide = _build_location_guide(part_key, idx + 1, sir)
+                if guide:
+                    state['awaiting_location_confirm'] = True
+                    return guide
+            # Generic fallback — describe the current step in more detail
+            return (
+                f"No problem, {sir}! Here is a step-by-step location guide on what to look for in Step {idx + 1}:\n\n"
+                f"**📍 Location & Inspection for Step {idx + 1}:**\n"
+                f"1. Stand near the assembly: {curr_step_text}.\n"
+                f"2. Inspect the component for loose fittings, weeping fluid, or wear.\n"
+                f"3. Confirm the exact position in your owner's manual diagram.\n\n"
+                f"Once you've found it, let me know what you see!\n\n"
+                f"[chips: Found it, continue | Still can't find it | Ask a mechanic | Show all steps]"
+            )
+
+        # User confirmed they found the part / ready to continue after location guide
+        if state.get('awaiting_location_confirm') and _has_any(msg, [
+            'found it', 'found', 'i see it', 'i found it', 'ok continue', 'continue',
+            'nakita ko', 'nandito', 'nahanap ko', 'okay', 'got it', 'i see',
+            'continue step', 'yes', 'sige', 'oo',
+        ] + CONTINUE_SESSION_PHRASES):
+            state.pop('awaiting_location_confirm', None)
+            curr_step = steps[idx] if idx < len(steps) else "Inspect the affected assembly."
+            return (
+                f"Great, {sir}! Now that you've found it, let's continue.\n\n"
+                f"**Step {idx + 1}:** {curr_step}\n\n"
+                f"Perform this check and tell me what you find.\n\n"
+                f"[chips: Step {idx + 1} done | How to do this step | Where is it? | Next step | It worked]"
+            )
+
+        # User says "can we continue?" / resume session after any pause
+        if _has_any(msg, CONTINUE_SESSION_PHRASES):
+            state.pop('awaiting_location_confirm', None)
+            curr_step = steps[idx] if idx < len(steps) else "Inspect the affected assembly."
+            return (
+                f"Of course, {sir}! We were on Step {idx + 1}. Let's pick up right where we left off.\n\n"
+                f"**Step {idx + 1}:** {curr_step}\n\n"
+                f"Perform this check and tell me what you find.\n\n"
+                f"[chips: Step {idx + 1} done | How to do this step | Where is it? | Next step | It worked]"
+            )
+
+        # Did user say next step / done?
+        if _has_any(msg, [
+            'next', 'proceed', 'done', 'susunod', 'sunod', 'tuloy', 'padayon',
+            'what next', "what's next", 'what do i do next', 'what to do next', 'what now',
+            'ano susunod', 'ano na', 'sunod nga tikang', 'yes'
+        ]):
+            state.pop('awaiting_location_confirm', None)
+            idx += 1
+            state['procedure_index'] = idx
+            if idx < len(steps):
+                return (
+                    f"**Step {idx + 1}:** {steps[idx]}\n\n"
+                    f"Check this and tell me the result, {sir}.\n\n"
+                    f"[chips: Step {idx + 1} done | How to do this step | Where is it? | Next step | It worked]"
+                )
+            else:
+                state['stage'] = 'verdict'
+                return (
+                    f"You have completed all {len(steps)} free diagnostic checks, {sir}.\n\n"
+                    f"Did these steps resolve the issue with your motorcycle?\n\n"
+                    f"[chips: It worked | Still not fixed | Another check | Start over]"
+                )
+
+        # Still not fixed / unsuccessful attempt
+        if _has_any(msg, [
+            'still not fixed', 'not fixed', "didn't work", 'did not work', 'didnt work',
+            'hindi pa', 'hindi gumana', 'ayaw pa rin', 'wala pa rin', 'wala nagbago',
+            'indi gihapon', 'failed', 'wala epekto', 'still having problem'
+        ]):
+            state.pop('awaiting_location_confirm', None)
+            if idx + 1 < len(steps):
+                state['procedure_index'] = idx + 1
+                return (
+                    f"Understood, {sir}. Since Step {idx + 1} did not resolve the {area} problem, let us move to the next check:\n\n"
+                    f"**Step {idx + 2}:** {steps[idx + 1]}\n\n"
+                    f"Perform this check and let me know your findings.\n\n"
+                    f"[chips: Step {idx + 2} done | It worked | Next step | Where is it? | Start over]"
+                )
+            else:
+                state['stage'] = 'narrow'
+                state['q_index'] = 0
+                return (
+                    f"Understood, {sir}. The initial free steps did not clear the fault. Let us inspect deeper causes for the {area} issue:\n\n"
+                    f"{checks_block(area, profile, lang)}\n\n"
+                    f"{question_block(area, 0, lang)}"
+                )
+
+        # Default in procedure: remind current step
+        curr_step = steps[idx] if idx < len(steps) else "Inspect the assembly."
+        return (
+            f"**Step {idx + 1} (in progress):** {curr_step}\n\n"
+            f"Tell me what you find, {sir}.\n\n"
+            f"[chips: Step {idx + 1} done | How to do this step | Where is it? | Next step | It worked]"
+        )
 
     # Unknown stage -> restart cleanly.
     state.clear()

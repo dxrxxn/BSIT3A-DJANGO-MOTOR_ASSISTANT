@@ -577,6 +577,228 @@
   .jarvis-structured-test dl { grid-template-columns: 1fr; gap: 1px; }
   .jarvis-moto-quickstat strong { font-size: 13px; }
 }
+
+/* Hands-Free Voice HUD & Controls */
+.jarvis-handsfree-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #233147;
+  background: #0b1420;
+  border-radius: 9px;
+  padding: 4px 10px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.jarvis-handsfree-btn:hover {
+  border-color: rgba(0, 240, 255, 0.4);
+  color: #e2e8f0;
+}
+.jarvis-handsfree-btn.active {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--jarvis-cyan, #00f0ff);
+  color: #00f0ff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+}
+.jarvis-voice-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(8, 20, 36, 0.96) 0%, rgba(13, 27, 46, 0.96) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 20px -4px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 240, 255, 0.05);
+  animation: jarvis-voice-slide-up 0.25s ease-out;
+}
+@keyframes jarvis-voice-slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.jarvis-voice-hud-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.jarvis-voice-waves {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+.jarvis-voice-waves span {
+  width: 3.5px;
+  height: 6px;
+  background: var(--jarvis-cyan, #00f0ff);
+  border-radius: 3px;
+  transition: height 0.15s ease;
+}
+.jarvis-voice-hud.is-listening .jarvis-voice-waves span {
+  animation: jarvis-wave-bounce 1s ease-in-out infinite;
+}
+.jarvis-voice-hud.is-listening .jarvis-voice-waves span:nth-child(1) { animation-delay: 0.1s; }
+.jarvis-voice-hud.is-listening .jarvis-voice-waves span:nth-child(2) { animation-delay: 0.3s; }
+.jarvis-voice-hud.is-listening .jarvis-voice-waves span:nth-child(3) { animation-delay: 0.2s; }
+.jarvis-voice-hud.is-listening .jarvis-voice-waves span:nth-child(4) { animation-delay: 0.4s; }
+.jarvis-voice-hud.is-speaking .jarvis-voice-waves span {
+  background: #a855f7;
+  animation: jarvis-wave-bounce 0.8s ease-in-out infinite;
+}
+@keyframes jarvis-wave-bounce {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.jarvis-voice-hud-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.jarvis-voice-hud-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--jarvis-cyan, #00f0ff);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.jarvis-voice-hud.is-speaking .jarvis-voice-hud-status {
+  color: #c084fc;
+}
+.jarvis-voice-hud-preview {
+  font-size: 12px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.jarvis-voice-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.jarvis-voice-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.jarvis-voice-action-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.jarvis-voice-action-btn.jarvis-voice-exit-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+.jarvis-bar-icon.is-listening {
+  color: #ef4444 !important;
+  position: relative;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  border-radius: 50%;
+  animation: jarvis-mic-glow 1.5s infinite;
+}
+@keyframes jarvis-mic-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); transform: scale(1.08); }
+}
+.jarvis-bar-icon.is-muted {
+  color: #64748b !important;
+  opacity: 0.6;
+}
+.jarvis-bar-icon.is-speaking {
+  color: #c084fc !important;
+  animation: jarvis-speaking-glow 1.2s infinite;
+}
+@keyframes jarvis-speaking-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); color: #e879f9 !important; }
+}
+
+/* Voice Confirmation Banner & States */
+.jarvis-confirmation-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-left: 3px solid #f59e0b;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.jarvis-confirmation-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fde68a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.jarvis-confirmation-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.jarvis-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.jarvis-confirm-yes {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #86efac;
+}
+.jarvis-confirm-yes:hover {
+  background: rgba(34, 197, 94, 0.35);
+  color: #ffffff;
+}
+.jarvis-confirm-wait {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fde047;
+}
+.jarvis-confirm-wait:hover {
+  background: rgba(245, 158, 11, 0.35);
+  color: #ffffff;
+}
+.jarvis-voice-hud.is-confirming {
+  border-color: #f59e0b !important;
+  box-shadow: 0 4px 20px -4px rgba(245, 158, 11, 0.35), inset 0 0 15px rgba(245, 158, 11, 0.08) !important;
+}
+.jarvis-voice-hud.is-confirming .jarvis-voice-hud-status {
+  color: #fde047 !important;
+}
+
+
 </style>
 {% endblock %}
 
@@ -660,6 +882,9 @@
             </label>
             <button type="button" class="jarvis-pill-btn" id="btn-hero-new-conversation">
               New conversation
+            </button>
+            <button type="button" class="jarvis-handsfree-btn" id="btn-toggle-handsfree" title="Hands-Free Voice Mode — Ask questions without touching your screen or keyboard">
+              <i class="fa-solid fa-headset"></i> <span id="btn-handsfree-label">Hands-Free</span>
             </button>
           </div>
         </div>
@@ -830,6 +1055,29 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
+    <!-- Hands-Free Voice HUD -->
+    <div class="jarvis-voice-hud d-none" id="jarvis-voice-hud" aria-live="polite">
+      <div class="jarvis-voice-hud-main">
+        <div class="jarvis-voice-waves" id="jarvis-voice-waves" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="jarvis-voice-hud-text">
+          <span class="jarvis-voice-hud-status" id="jarvis-voice-status">Hands-Free Active</span>
+          <span class="jarvis-voice-hud-preview" id="jarvis-voice-preview">Speak your motorcycle question hands-free...</span>
+        </div>
+      </div>
+      <div class="jarvis-voice-hud-actions">
+        <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-test-btn" title="Hear Jarvis voice test" aria-label="Test Jarvis voice">
+          <i class="fa-solid fa-volume-high text-cyan"></i> <span class="d-none d-sm-inline">Test Voice</span>
+        </button>
+        <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-stop-btn" title="Stop speaking" aria-label="Stop speaking">
+          <i class="fa-solid fa-stop"></i> <span class="d-none d-sm-inline">Stop</span>
+        </button>
+        <button type="button" class="jarvis-voice-action-btn jarvis-voice-exit-btn" id="jarvis-voice-exit-btn" title="Exit hands-free mode" aria-label="Exit hands-free">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
     <input type="file" id="jarvis-image-input" accept="image/jpeg,image/png,image/webp" hidden>
     <form id="jarvis-chat-form" class="jarvis-bottom-form" onsubmit="return false;">
       <div class="jarvis-floating-bar">
@@ -845,7 +1093,10 @@
           aria-label="Message Jarvis"
           autofocus
         ></textarea>
-        <button type="button" class="jarvis-bar-icon" id="jarvis-mic-btn" title="Voice input" aria-label="Voice input">
+        <button type="button" class="jarvis-bar-icon" id="jarvis-speaker-btn" title="Jarvis Voice Replies (Read answers aloud)" aria-label="Toggle voice replies">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button type="button" class="jarvis-bar-icon" id="jarvis-mic-btn" title="Voice input (Hands-free)" aria-label="Voice input">
           <i class="fa-solid fa-microphone"></i>
         </button>
         <button type="submit" id="jarvis-btn-send" class="jarvis-bar-send-btn" aria-label="Send message">
@@ -1714,20 +1965,35 @@
     block.className = 'jarvis-msg-block jarvis-msg-block--bot';
     if (id) block.id = 'msg-node-' + id;
 
-    // Bot Badge
+    // Bot Badge with Listen/Speak Button
     const badge = document.createElement('div');
     badge.className = 'jarvis-msg-badge jarvis-msg-badge--bot';
+    badge.style.display = 'flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'space-between';
+    badge.style.width = '100%';
     badge.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-        <path d="M2 10v4"/>
-        <path d="M6 6v12"/>
-        <path d="M10 3v18"/>
-        <path d="M14 8v8"/>
-        <path d="M18 5v14"/>
-        <path d="M22 10v4"/>
-      </svg>
-      <span>J.A.R.V.I.S.</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/>
+        </svg>
+        <span>J.A.R.V.I.S.</span>
+      </div>
+      <button type="button" class="jarvis-speak-answer-btn" title="Click to hear J.A.R.V.I.S. read this aloud" aria-label="Listen to answer" style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; color: var(--jarvis-cyan, #00f0ff); cursor: pointer; font-size: 11px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; transition: all 0.15s ease;">
+        <i class="fa-solid fa-volume-high"></i> Listen
+      </button>
     `;
+    const listenBtn = badge.querySelector('.jarvis-speak-answer-btn');
+    if (listenBtn) {
+      listenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.jarvisVoiceAssistant) {
+          window.jarvisVoiceAssistant.playJarvisSound('activate');
+          const rawSpeech = (parsed.title ? parsed.title + '. ' : '') + (parsed.intro || '');
+          window.jarvisVoiceAssistant.speakText(rawSpeech, { force: true });
+        }
+      });
+    }
     block.appendChild(badge);
 
     // Card Container
@@ -1992,7 +2258,29 @@
 
     const badge = document.createElement('div');
     badge.className = 'jarvis-msg-badge jarvis-msg-badge--bot';
-    badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/></svg><span>J.A.R.V.I.S.</span>';
+    badge.style.display = 'flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'space-between';
+    badge.style.width = '100%';
+    badge.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M2 10v4"/><path d="M6 6v12"/><path d="M10 3v18"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/></svg>
+        <span>J.A.R.V.I.S.</span>
+      </div>
+      <button type="button" class="jarvis-speak-answer-btn" title="Click to hear J.A.R.V.I.S. read this aloud" aria-label="Listen to answer" style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; color: var(--jarvis-cyan, #00f0ff); cursor: pointer; font-size: 11px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; transition: all 0.15s ease;">
+        <i class="fa-solid fa-volume-high"></i> Listen
+      </button>
+    `;
+    const listenBtn = badge.querySelector('.jarvis-speak-answer-btn');
+    if (listenBtn) {
+      listenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.jarvisVoiceAssistant) {
+          window.jarvisVoiceAssistant.playJarvisSound('activate');
+          window.jarvisVoiceAssistant.speakStructured(structured, { force: true });
+        }
+      });
+    }
     block.appendChild(badge);
 
     const card = document.createElement('div');
@@ -2663,6 +2951,10 @@
       });
       saveHistory(history);
 
+      if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
+        window.jarvisVoiceAssistant.speakStructured(structured);
+      }
+
       if (data.quota) updateQuotaUI(data.quota);
       updateAIStatus(data);
 
@@ -2746,7 +3038,7 @@
     await new Promise(r => setTimeout(r, 380));
 
     try {
-      const recentHistory = history.slice(-8).map(h => ({
+      const recentHistory = history.slice(-30).map(h => ({
         role: h.role,
         text: (h.text || '')
           .replace(/\[chips:.*?\]/gi, '')
@@ -2796,6 +3088,10 @@
       };
       history.push(botEntry);
       saveHistory(history);
+
+      if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
+        window.jarvisVoiceAssistant.speakGuidedOrGeneral(reply);
+      }
 
     } catch (err) {
       hideTyping();
@@ -3020,32 +3316,792 @@
     });
   });
 
-  // Speech-to-text mic button (if supported by browser)
+  // =========================================================================
+  // REAL-TIME J.A.R.V.I.S. INTERACTIVE VOICE & AUDIO CHIME ENGINE
+  // =========================================================================
+  const voiceHud = document.getElementById('jarvis-voice-hud');
+  const voiceStatus = document.getElementById('jarvis-voice-status');
+  const voicePreview = document.getElementById('jarvis-voice-preview');
+  const voiceTestBtn = document.getElementById('jarvis-voice-test-btn');
+  const voiceStopBtn = document.getElementById('jarvis-voice-stop-btn');
+  const voiceExitBtn = document.getElementById('jarvis-voice-exit-btn');
+  const handsFreeToggleBtn = document.getElementById('btn-toggle-handsfree');
+  const handsFreeLabel = document.getElementById('btn-handsfree-label');
+  const speakerBtn = document.getElementById('jarvis-speaker-btn');
   const micBtn = document.getElementById('jarvis-mic-btn');
-  if (micBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
 
-    recognition.onstart = () => {
-      micBtn.style.color = '#ef4444';
-    };
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      inputEl.value = transcript;
-      inputEl.focus();
-    };
-    recognition.onend = () => {
-      micBtn.style.color = '';
-    };
-    micBtn.addEventListener('click', () => {
-      try { recognition.start(); } catch(e) {}
+  const VOICE_SPEAKER_KEY = 'jarvis_voice_speaker_' + USER_KEY;
+  const HANDSFREE_KEY = 'jarvis_handsfree_mode_' + USER_KEY;
+
+  let isHandsFree = false;
+  let isListening = false;
+  let isSpeaking = false;
+  let voiceReplyEnabled = true;
+  let recognition = null;
+  let silenceTimer = null;
+  let lastFinalTranscript = '';
+  let speechSynthUtterance = null;
+  let manuallyStopped = false;
+
+  // Confirmation Flow State
+  let isAwaitingConfirmation = false;
+  let pendingProcedure = null;
+
+  // Web Audio Context for Authentic J.A.R.V.I.S. HUD Sound Effects
+  let audioCtx = null;
+  function getAudioContext() {
+    if (!audioCtx) {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) audioCtx = new AudioCtxClass();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playJarvisSound(type, force = false) {
+    if (!voiceReplyEnabled && !force) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      if (type === 'activate') {
+        // Louder, clear futuristic HUD sweep: 520Hz -> 920Hz (volume 0.5)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(920, now + 0.18);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.38);
+      } else if (type === 'thinking') {
+        // Subtle dual sci-fi telemetry chirp
+        [659.25, 987.77].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const start = now + (idx * 0.06);
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.35, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.22);
+        });
+      } else if (type === 'confirm') {
+        // Harmonic two-tone confirmation
+        [587.33, 880].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          const start = now + (idx * 0.08);
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.4, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.3);
+        });
+      }
+    } catch (e) {}
+  }
+
+  // Voice catalogue management (Loads real British / English voices for Tony Stark\'s Jarvis)
+  let availableVoices = [];
+  function loadVoices() {
+    if (!('speechSynthesis' in window)) return;
+    availableVoices = window.speechSynthesis.getVoices();
+  }
+  loadVoices();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function pickBestJarvisVoice() {
+    if (!availableVoices.length) loadVoices();
+    const isTagalog = languageSelect && languageSelect.value === 'tagalog';
+    if (isTagalog) {
+      const filVoice = availableVoices.find(v => v.lang.startsWith('fil') || v.lang.startsWith('tl'));
+      if (filVoice) return filVoice;
+    }
+
+    // 1. Prioritize British English male voices (Paul Bettany style)
+    const ukMaleVoice = availableVoices.find(v =>
+      (v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB')) &&
+      (v.name.includes('George') || v.name.includes('Oliver') || v.name.includes('Ryan') || v.name.includes('Male') || v.name.includes('Daniel') || v.name.includes('Arthur'))
+    );
+    if (ukMaleVoice) return ukMaleVoice;
+
+    // 2. Any UK English voice
+    const ukVoice = availableVoices.find(v => v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB'));
+    if (ukVoice) return ukVoice;
+
+    // 3. Natural / Google US English voice
+    const usNatural = availableVoices.find(v =>
+      v.lang.startsWith('en') &&
+      (v.name.includes('Natural') || v.name.includes('Google UK') || v.name.includes('David') || v.name.includes('Guy'))
+    );
+    if (usNatural) return usNatural;
+
+    return availableVoices.find(v => v.lang.startsWith('en')) || null;
+  }
+
+  try {
+    const savedSpeaker = localStorage.getItem(VOICE_SPEAKER_KEY);
+    if (savedSpeaker !== null) voiceReplyEnabled = savedSpeaker === '1';
+    const savedHF = localStorage.getItem(HANDSFREE_KEY);
+    if (savedHF === '1') isHandsFree = true;
+  } catch (e) {}
+
+  function updateSpeakerUI() {
+    if (!speakerBtn) return;
+    if (voiceReplyEnabled) {
+      speakerBtn.classList.remove('is-muted');
+      speakerBtn.title = "Jarvis Voice Replies: Active (Read answers aloud)";
+      speakerBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+    } else {
+      speakerBtn.classList.add('is-muted');
+      speakerBtn.title = "Jarvis Voice Replies: Muted (Click to enable speech output)";
+      speakerBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+    }
+  }
+
+  if (speakerBtn) {
+    updateSpeakerUI();
+    speakerBtn.addEventListener('click', () => {
+      voiceReplyEnabled = !voiceReplyEnabled;
+      try { localStorage.setItem(VOICE_SPEAKER_KEY, voiceReplyEnabled ? '1' : '0'); } catch (e) {}
+      updateSpeakerUI();
+      if (!voiceReplyEnabled && ('speechSynthesis' in window)) {
+        window.speechSynthesis.cancel();
+      }
     });
   }
 
-  // Initial boot
+  const hasSpeechRec = ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  const SpeechRecClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function getRecLanguage() {
+    const sel = languageSelect ? languageSelect.value : 'auto';
+    if (sel === 'tagalog') return 'fil-PH';
+    if (sel === 'hiligaynon') return 'en-PH';
+    return 'en-US';
+  }
+
+  function setVoiceHudState(state, previewText) {
+    if (!voiceHud) return;
+    if (state === 'hidden') {
+      voiceHud.classList.add('d-none');
+      voiceHud.classList.remove('is-listening', 'is-speaking', 'is-confirming');
+      return;
+    }
+
+    voiceHud.classList.remove('d-none');
+    if (state === 'confirming') {
+      voiceHud.classList.add('is-confirming');
+      voiceHud.classList.remove('is-speaking', 'is-listening');
+      if (voiceStatus) voiceStatus.innerHTML = '<i class="fa-solid fa-hourglass-half text-warning"></i> Awaiting Your Confirmation';
+      if (voicePreview) voicePreview.innerHTML = previewText || 'Say <strong>"Yes"</strong> or <strong>"Ready"</strong> to begin · Say <strong>"Wait"</strong> to pause';
+    } else if (state === 'listening') {
+      voiceHud.classList.add('is-listening');
+      voiceHud.classList.remove('is-speaking', 'is-confirming');
+      if (voiceStatus) voiceStatus.innerHTML = '<i class="fa-solid fa-microphone text-danger"></i> Listening (Hands-Free)';
+      if (voicePreview && previewText) voicePreview.textContent = previewText;
+    } else if (state === 'processing') {
+      voiceHud.classList.remove('is-listening', 'is-speaking', 'is-confirming');
+      if (voiceStatus) voiceStatus.innerHTML = '<i class="fa-solid fa-gear fa-spin text-cyan"></i> Jarvis analyzing...';
+      if (voicePreview && previewText) voicePreview.textContent = previewText;
+    } else if (state === 'speaking') {
+      voiceHud.classList.add('is-speaking');
+      voiceHud.classList.remove('is-listening', 'is-confirming');
+      if (voiceStatus) voiceStatus.innerHTML = '<i class="fa-solid fa-volume-high text-purple"></i> Jarvis Speaking...';
+      if (voicePreview) voicePreview.textContent = previewText || 'Say "Stop" to interrupt speech';
+    }
+  }
+
+  function initSpeechRecognition() {
+    if (!hasSpeechRec) return null;
+    try {
+      const rec = new SpeechRecClass();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = getRecLanguage();
+
+      rec.onstart = () => {
+        isListening = true;
+        manuallyStopped = false;
+        if (micBtn) {
+          micBtn.classList.add('is-listening');
+          micBtn.title = "Microphone active — Listening";
+        }
+        if (isAwaitingConfirmation) {
+          setVoiceHudState('confirming', 'Say "Yes" / "Ready" to start Step 1 · Say "Wait" to hold on');
+        } else if (isHandsFree) {
+          setVoiceHudState('listening', 'Speak your motorcycle question anytime...');
+        }
+      };
+
+      rec.onresult = (event) => {
+        if (isSpeaking) return; // Prevent mic from hearing Jarvis\'s own speech
+        let interim = '';
+        let final = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const res = event.results[i];
+          if (res.isFinal) {
+            final += res[0].transcript;
+          } else {
+            interim += res[0].transcript;
+          }
+        }
+
+        const spokenNow = (final || interim).trim();
+        if (spokenNow) {
+          if (inputEl) {
+            inputEl.value = spokenNow;
+            inputEl.style.height = 'auto';
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+          }
+          if (voicePreview) {
+            voicePreview.innerHTML = `Hearing: <strong>&ldquo;${escapeHtml(spokenNow)}&rdquo;</strong>`;
+          }
+
+          // Voice commands check
+          const lower = spokenNow.toLowerCase();
+
+          // Interrupt command
+          if (/\b(jarvis stop|please stop|stop talking|quiet|silence|cancel)\b/i.test(lower)) {
+            stopSpeaking();
+            if (inputEl) inputEl.value = '';
+            setVoiceHudState('listening', 'Speech stopped. Speak next question...');
+            return;
+          }
+
+          // Exit hands free
+          if (/\b(exit hands free|turn off hands free|stop listening|disable hands free)\b/i.test(lower)) {
+            toggleHandsFree(false);
+            if (inputEl) inputEl.value = '';
+            return;
+          }
+
+          // Clear history
+          if (/\b(clear logs|clear chat|clear history)\b/i.test(lower)) {
+            if (clearBtn) clearBtn.click();
+            if (inputEl) inputEl.value = '';
+            setVoiceHudState('listening', 'Chat logs cleared. At your service, sir.');
+            return;
+          }
+
+          // ── CONFIRMATION INTERACTION (Wait for user confirmation before starting) ──
+          if (isAwaitingConfirmation) {
+            const isAffirmative = /\b(yes|ready|start|proceed|go ahead|sure|let's go|let's do it|sige|oo|ok|okay|game|simulan)\b/i.test(lower);
+            const isNegativeOrWait = /\b(wait|hold on|not yet|no|pause|sandali|teka|hindi|wait a moment|wait lang)\b/i.test(lower);
+
+            if (isAffirmative) {
+              if (silenceTimer) clearTimeout(silenceTimer);
+              confirmAndStartProcedure(true);
+              return;
+            } else if (isNegativeOrWait) {
+              if (silenceTimer) clearTimeout(silenceTimer);
+              confirmAndStartProcedure(false);
+              return;
+            }
+          }
+        }
+
+        if (final) {
+          lastFinalTranscript = final.trim();
+        }
+
+        // Automatic silence detection: when user pauses for 950ms after speaking, send with immediate real-time verbal feedback!
+        if (spokenNow.length > 2 && !isAwaitingConfirmation) {
+          if (silenceTimer) clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => {
+            const queryToSend = (lastFinalTranscript || spokenNow).trim();
+            if (queryToSend && !isLoading && !isSpeaking) {
+              lastFinalTranscript = '';
+              setVoiceHudState('processing', `J.A.R.V.I.S. analyzing: "${queryToSend}"`);
+              
+              // 1. Play immediate sci-fi sound effect
+              playJarvisSound('thinking');
+
+              // 2. Real-time verbal acknowledgement so the user immediately hears J.A.R.V.I.S. talking
+              const immediateAcks = [
+                "Right away, sir. Analyzing your motorcycle now.",
+                "Looking into that for you now, sir.",
+                "Checking the diagnostic schematics, sir.",
+                "Scanning systems now, sir."
+              ];
+              const chosenAck = immediateAcks[Math.floor(Math.random() * immediateAcks.length)];
+              speakText(chosenAck, { immediateOnly: true });
+
+              // 3. Send query
+              sendMessage(queryToSend);
+            }
+          }, 950);
+        }
+      };
+
+      rec.onerror = (event) => {
+        if (event.error === 'no-speech') return;
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          alert('Microphone access was denied. Please allow microphone permission in your browser address bar.');
+          toggleHandsFree(false);
+        }
+      };
+
+      rec.onend = () => {
+        isListening = false;
+        if (micBtn) {
+          micBtn.classList.remove('is-listening');
+          micBtn.title = "Voice input (Hands-Free)";
+        }
+        if (isHandsFree && !manuallyStopped && !isSpeaking) {
+          setTimeout(() => {
+            if (isHandsFree && !isListening && !isSpeaking) {
+              try {
+                rec.lang = getRecLanguage();
+                rec.start();
+              } catch (e) {}
+            }
+          }, 350);
+        } else if (!isHandsFree && !isSpeaking) {
+          setVoiceHudState('hidden');
+        }
+      };
+
+      return rec;
+    } catch (e) {
+      console.warn('SpeechRecognition initialization error:', e);
+      return null;
+    }
+  }
+
+  recognition = initSpeechRecognition();
+
+  function startListening() {
+    if (!recognition) {
+      alert("Voice recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or a Web Speech API compatible browser.");
+      return;
+    }
+    manuallyStopped = false;
+    try {
+      recognition.lang = getRecLanguage();
+      recognition.start();
+    } catch (e) {}
+  }
+
+  function stopListening() {
+    manuallyStopped = true;
+    if (silenceTimer) clearTimeout(silenceTimer);
+    if (recognition) {
+      try { recognition.stop(); } catch (e) {}
+    }
+    isListening = false;
+    if (micBtn) micBtn.classList.remove('is-listening');
+  }
+
+  function stopSpeaking() {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    isSpeaking = false;
+    if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+    if (isHandsFree) {
+      if (isAwaitingConfirmation) {
+        setVoiceHudState('confirming', 'Say "Yes" / "Ready" to start Step 1 · Say "Wait" to hold on');
+      } else {
+        setVoiceHudState('listening', 'Ready · Speak your question hands-free...');
+      }
+      startListening();
+    }
+  }
+
+  function toggleHandsFree(forceVal) {
+    const nextVal = forceVal !== undefined ? forceVal : !isHandsFree;
+    isHandsFree = nextVal;
+    try { localStorage.setItem(HANDSFREE_KEY, isHandsFree ? '1' : '0'); } catch (e) {}
+
+    // Unlock Web Audio API context with gesture
+    getAudioContext();
+
+    if (handsFreeToggleBtn) {
+      handsFreeToggleBtn.classList.toggle('active', isHandsFree);
+      if (handsFreeLabel) {
+        handsFreeLabel.textContent = isHandsFree ? 'Hands-Free: ON' : 'Hands-Free';
+      }
+    }
+
+    if (isHandsFree) {
+      playJarvisSound('activate');
+      setVoiceHudState('listening', 'Speak your motorcycle question without touching your screen or keyboard...');
+      startListening();
+
+      // Talk to the user immediately on activation in real time!
+      if (voiceReplyEnabled && ('speechSynthesis' in window)) {
+        setTimeout(() => {
+          speakText("Hands-Free protocol online, sir. What motorcycle issue shall we inspect? Whenever you are ready, ask your question or say 'Start'.");
+        }, 300);
+      }
+    } else {
+      isAwaitingConfirmation = false;
+      pendingProcedure = null;
+      stopListening();
+      stopSpeaking();
+      setVoiceHudState('hidden');
+    }
+  }
+
+  if (handsFreeToggleBtn) {
+    if (isHandsFree) {
+      handsFreeToggleBtn.classList.add('active');
+      if (handsFreeLabel) handsFreeLabel.textContent = 'Hands-Free: ON';
+    }
+    handsFreeToggleBtn.addEventListener('click', () => toggleHandsFree());
+  }
+
+  if (voiceExitBtn) {
+    voiceExitBtn.addEventListener('click', () => toggleHandsFree(false));
+  }
+
+  if (voiceStopBtn) {
+    voiceStopBtn.addEventListener('click', () => {
+      stopSpeaking();
+      if (!isHandsFree) setVoiceHudState('hidden');
+    });
+  }
+
+  if (voiceTestBtn) {
+    voiceTestBtn.addEventListener('click', () => {
+      // 1. Force unmute immediately
+      voiceReplyEnabled = true;
+      try { localStorage.setItem(VOICE_SPEAKER_KEY, '1'); } catch(e) {}
+      updateSpeakerUI();
+
+      // 2. Resume browser AudioContext & play loud futuristic chime
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      playJarvisSound('activate', true);
+
+      // 3. Show immediate status in HUD
+      setVoiceHudState('speaking', 'Testing J.A.R.V.I.S. voice output...');
+
+      // 4. Force speech playback
+      speakText("J.A.R.V.I.S. audio systems calibrated and operational, sir. Standing by for your command.", { force: true });
+    });
+  }
+
+  if (micBtn) {
+    micBtn.addEventListener('click', () => {
+      getAudioContext();
+      if (isHandsFree) {
+        toggleHandsFree(false);
+      } else {
+        toggleHandsFree(true);
+      }
+    });
+  }
+
+  if (languageSelect) {
+    languageSelect.addEventListener('change', () => {
+      if (recognition && isListening) {
+        recognition.lang = getRecLanguage();
+      }
+    });
+  }
+
+  // ── Confirmation Protocol Handlers ────────────────────────────────────────
+  function requestProcedureConfirmation(procedureData) {
+    isAwaitingConfirmation = true;
+    pendingProcedure = procedureData;
+
+    playJarvisSound('confirm');
+    setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin Step 1 · Say "Wait" to hold on');
+
+    // Render confirmation banner in the latest bot turn
+    const banners = document.querySelectorAll('.jarvis-confirmation-banner');
+    banners.forEach(b => b.remove());
+
+    const confirmDiv = document.createElement('div');
+    confirmDiv.className = 'jarvis-confirmation-banner';
+    confirmDiv.innerHTML = `
+      <div class="jarvis-confirmation-text">
+        <i class="fa-solid fa-hand text-warning"></i>
+        <span>J.A.R.V.I.S. is waiting for your confirmation before starting what we have to do:</span>
+      </div>
+      <div class="jarvis-confirmation-actions">
+        <button type="button" class="jarvis-confirm-btn jarvis-confirm-yes" id="btn-confirm-yes-ui">
+          <i class="fa-solid fa-check"></i> Yes, ready to start Step 1
+        </button>
+        <button type="button" class="jarvis-confirm-btn jarvis-confirm-wait" id="btn-confirm-wait-ui">
+          <i class="fa-solid fa-pause"></i> Wait a moment
+        </button>
+      </div>
+    `;
+
+    if (messagesContainer) {
+      messagesContainer.appendChild(confirmDiv);
+      scrollToBottom();
+    }
+
+    const yesBtn = confirmDiv.querySelector('#btn-confirm-yes-ui');
+    const waitBtn = confirmDiv.querySelector('#btn-confirm-wait-ui');
+    if (yesBtn) yesBtn.addEventListener('click', () => confirmAndStartProcedure(true));
+    if (waitBtn) waitBtn.addEventListener('click', () => confirmAndStartProcedure(false));
+
+    // Verbal talk-to-user confirmation question:
+    const confirmPrompt = procedureData.verbalPrompt ||
+      "I have prepared the step-by-step diagnostic plan for your motorcycle. Before we start what we have to do, please ensure the bike is parked securely on its center stand. Are you ready to begin Step 1? Say 'Yes' or 'Ready' to proceed, or say 'Wait'.";
+    speakText(confirmPrompt);
+  }
+
+  function confirmAndStartProcedure(isConfirmed) {
+    if (isConfirmed) {
+      isAwaitingConfirmation = false;
+      const proc = pendingProcedure;
+      pendingProcedure = null;
+
+      playJarvisSound('confirm');
+
+      const banners = document.querySelectorAll('.jarvis-confirmation-banner');
+      banners.forEach(b => {
+        b.innerHTML = '<div style="font-size:11px;color:#86efac;font-weight:700;"><i class="fa-solid fa-check-circle me-1"></i> Confirmation received: Commencing Step 1...</div>';
+      });
+
+      setVoiceHudState('listening', 'Starting Step 1... Speak next observation anytime');
+
+      // Dispatch confirmation to assistant to generate and speak Step 1
+      sendMessage("Yes, ready to start Step 1");
+    } else {
+      // User requested wait / hold on
+      isAwaitingConfirmation = false;
+      const banners = document.querySelectorAll('.jarvis-confirmation-banner');
+      banners.forEach(b => {
+        b.innerHTML = '<div style="font-size:11px;color:#fcd34d;font-weight:700;"><i class="fa-solid fa-pause me-1"></i> Standing by: Say "Ready" or "Yes" whenever you want to begin Step 1.</div>';
+      });
+      setVoiceHudState('confirming', 'Standing by · Say "Ready" or "Yes" whenever you are prepared');
+      speakText("Understood, standing by, sir. Take your time. Say 'Ready' or 'Yes' whenever you want to begin.");
+    }
+  }
+
+  // Robust Chromium/Edge Text-To-Speech Engine
+  window._activeUtterances = window._activeUtterances || [];
+
+  function safeSpeak(utterance) {
+    window._activeUtterances.push(utterance);
+    utterance.onend = (e) => {
+      window._activeUtterances = window._activeUtterances.filter(u => u !== utterance);
+      if (typeof utterance._customOnEnd === 'function') utterance._customOnEnd(e);
+    };
+    utterance.onerror = (e) => {
+      console.warn("Jarvis TTS event error:", e);
+      window._activeUtterances = window._activeUtterances.filter(u => u !== utterance);
+      if (typeof utterance._customOnError === 'function') utterance._customOnError(e);
+    };
+
+    // Unpause stuck Chromium speech synthesizer
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function cleanTextForSpeech(text) {
+    if (!text) return '';
+    return text
+      .replace(/\[chips:.*?\]/gi, '')
+      .replace(/\[vehicle-form.*?\]/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/[*_#`~>]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function speakText(rawText, options = {}) {
+    if (!('speechSynthesis' in window)) {
+      setVoiceHudState('confirming', 'SpeechSynthesis API not supported in this browser.');
+      console.warn("SpeechSynthesis API not available in this browser.");
+      return;
+    }
+    if (!voiceReplyEnabled && !options.force) {
+      console.log("Jarvis voice replies are currently muted.");
+      return;
+    }
+
+    const clean = cleanTextForSpeech(rawText);
+    if (!clean) return;
+
+    // Pick top 2-3 sentences for natural, concise vocal delivery
+    const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+    const spokenScript = sentences.slice(0, 3).join(' ');
+
+    stopListening(); // Pause mic so Jarvis doesn't hear himself
+    isSpeaking = true;
+    if (speakerBtn) speakerBtn.classList.add('is-speaking');
+    setVoiceHudState('speaking', spokenScript);
+
+    // Cancel prior audio safely
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+
+    // 40ms timeout allows Chromium internal audio cancellation to settle before speaking
+    setTimeout(() => {
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        const utter = new SpeechSynthesisUtterance(spokenScript);
+        utter.volume = 1.0; // Ensure 100% volume
+        utter.rate = 1.03;
+        utter.pitch = 1.0;
+
+        const bestVoice = pickBestJarvisVoice();
+        if (bestVoice) {
+          utter.voice = bestVoice;
+          utter.lang = bestVoice.lang;
+        } else {
+          utter.lang = getRecLanguage();
+        }
+
+        utter._customOnEnd = () => {
+          isSpeaking = false;
+          if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+          if (isHandsFree && !options.immediateOnly) {
+            if (isAwaitingConfirmation) {
+              setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin · Say "Wait" to hold on');
+            } else {
+              setVoiceHudState('listening', 'Ready · Ask your next question hands-free...');
+            }
+            setTimeout(() => { if (isHandsFree && !isSpeaking) startListening(); }, 400);
+          } else if (!isHandsFree && !isAwaitingConfirmation) {
+            setVoiceHudState('hidden');
+          }
+        };
+
+        utter._customOnError = (err) => {
+          console.warn("Jarvis Speech synthesis error:", err);
+          isSpeaking = false;
+          if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+          if (isHandsFree && !options.immediateOnly) startListening();
+        };
+
+        safeSpeak(utter);
+      } catch (err) {
+        console.error("Jarvis speakText failed:", err);
+        isSpeaking = false;
+        if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+      }
+    }, 45);
+  }
+
+  function speakStructured(structured, options = {}) {
+    if (!voiceReplyEnabled || !('speechSynthesis' in window) || !structured) return;
+
+    // If there are repair steps or diagnostic tests, ask for user confirmation before starting!
+    const hasSteps = (structured.repair_steps && structured.repair_steps.length > 0) ||
+                     (structured.diagnostic_tests && structured.diagnostic_tests.length > 0);
+
+    if (hasSteps) {
+      const firstStep = structured.repair_steps && structured.repair_steps[0] ? structured.repair_steps[0].instruction : '';
+      const prompt = `I have diagnosed the primary suspect: ${structured.possible_causes && structured.possible_causes[0] ? structured.possible_causes[0].cause : 'fault condition'}. Before we begin what we have to do, please ensure the motorcycle is turned off and on its stand. Say 'Ready' or 'Yes' to start Step 1, or say 'Wait' if you need a moment.`;
+
+      requestProcedureConfirmation({
+        verbalPrompt: prompt,
+        stepText: firstStep
+      });
+      return;
+    }
+
+    let spokenParts = [];
+    if (structured.safety && structured.safety.severity && structured.safety.severity !== 'none') {
+      const sev = structured.safety.severity === 'critical' ? 'Critical safety alert.' : 'Safety notice.';
+      spokenParts.push(sev + ' ' + (structured.safety.summary || ''));
+    }
+    if (structured.possible_causes && structured.possible_causes.length > 0) {
+      const top = structured.possible_causes[0];
+      spokenParts.push(`Primary suspect: ${top.cause}.`);
+    } else if (structured.reply_text) {
+      speakText(structured.reply_text, options);
+      return;
+    }
+    const combined = spokenParts.join(' ');
+    if (combined) {
+      speakText(combined, options);
+    } else if (structured.reply_text) {
+      speakText(structured.reply_text);
+    }
+  }
+
+  function speakGuidedOrGeneral(replyText) {
+    if (!replyText) return;
+
+    // 1. If the reply delivers Step 1, Step 2, or any procedure step:
+    // READ IT DIRECTLY out loud! Clear any leftover confirmation banners.
+    const isStepDelivery = /\b(step\s*\d+|hakbang\s*\d+|tikang\s*\d+|first inspection)\b/i.test(replyText);
+    if (isStepDelivery) {
+      isAwaitingConfirmation = false;
+      const banners = document.querySelectorAll('.jarvis-confirmation-banner');
+      banners.forEach(b => b.remove());
+      speakText(replyText);
+      return;
+    }
+
+    // 2. Only show confirmation when the verdict proposes starting the procedure
+    const isVerdictProposal = /\b(verdict|likely cause|probable cause|begin procedure|pagsusuri sa malamang na sanhi)\b/i.test(replyText)
+      && /\b(begin procedure|free fixes?|action checklist|start procedure|simulan)\b/i.test(replyText);
+
+    if (isVerdictProposal && !isAwaitingConfirmation) {
+      requestProcedureConfirmation({
+        verbalPrompt: "I have prepared the step-by-step diagnostic plan for your motorcycle. Before we start what we have to do, please ensure the bike is parked securely on its center stand. Are you ready to begin Step 1? Say 'Yes' or 'Ready' to proceed, or say 'Wait'.",
+        stepText: "Step 1 inspection"
+      });
+      return;
+    }
+
+    // 3. For narrowing questions, checks, and general replies: speak the text directly
+    speakText(replyText);
+  }
+
+  // Unblock browser autoplay policy on first user gesture
+  function unlockBrowserAudio() {
+    getAudioContext();
+    if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  }
+  ['click', 'touchstart', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, unlockBrowserAudio, { passive: true, once: false });
+  });
+
+  window.jarvisVoiceAssistant = {
+    isVoiceReplyEnabled: () => voiceReplyEnabled,
+    speakText: speakText,
+    speakStructured: speakStructured,
+    speakGuidedOrGeneral: speakGuidedOrGeneral,
+    toggleHandsFree: toggleHandsFree,
+    isHandsFreeActive: () => isHandsFree,
+    requestProcedureConfirmation: requestProcedureConfirmation,
+    confirmAndStartProcedure: confirmAndStartProcedure,
+    playJarvisSound: playJarvisSound
+  };
+
+  if (isHandsFree) {
+    setTimeout(() => {
+      if (isHandsFree) startListening();
+    }, 1200);
+  }
+
+    // Initial boot
   initAssistantControls();
   const initialHistory = loadHistory();
   renderAll(initialHistory);

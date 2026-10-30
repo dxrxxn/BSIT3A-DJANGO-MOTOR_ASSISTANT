@@ -443,3 +443,164 @@ def test_new_symptom_after_a_verdict_restarts_narrowing():
 def _client():
     from django.test import Client
     return Client()
+
+
+def test_guided_step_by_step_procedure_walkthrough():
+    state = start_state()
+    _turn("2022 Honda Click 125i", state, [{'role': 'user', 'text': 'brakes are soft'}])
+    _turn("spongy", state)
+    _turn("above min", state)
+    assert state['stage'] == 'verdict'
+
+    # User says "proceed" to commence step-by-step procedure
+    reply1 = _turn("proceed", state)
+    assert state['stage'] == 'procedure'
+    assert 'Step 1:' in reply1
+    assert 'bleed' in reply1.lower() or 'fluid' in reply1.lower()
+
+    # User advances to next step
+    reply2 = _turn("next", state)
+    assert state['stage'] == 'procedure'
+    assert 'Step 2:' in reply2
+
+    # User confirms the fix worked
+    reply3 = _turn("it worked", state)
+    assert state['stage'] == 'done'
+    assert 'back in service' in reply3.lower()
+
+
+@pytest.mark.django_db
+def test_orchestrate_diagnostic_procedure_commence():
+    from apps.core.diagnostic_engine import orchestrate_diagnostic_response
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    user = User.objects.create_user(username='testdiaguser', password='password123')
+
+    history = [
+        {'role': 'user', 'text': 'My 2022 Honda Click 125i clicking sound when starting'},
+        {'role': 'assistant', 'text': 'I am here to help you inspect and troubleshoot your vehicle step-by-step. Would you like to commence the step-by-step procedure? - [ ] 1. Check battery terminals.'},
+    ]
+
+    # User agrees to commence
+    reply = orchestrate_diagnostic_response("proceed", user, history=history)
+    assert reply is not None
+    # Must NOT ask the user "what symptom would you like assistance with"
+    assert "What specific symptom, mechanical issue, or maintenance procedure" not in reply
+    # Must deliver Step 1
+    assert "Step 1" in reply or "battery" in reply.lower()
+
+
+@pytest.mark.django_db
+def test_orchestrate_diagnostic_unsuccessful_attempt_persists_symptom():
+    from apps.core.diagnostic_engine import orchestrate_diagnostic_response
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    user = User.objects.create_user(username='testdiaguser2', password='password123')
+
+    history = [
+        {'role': 'user', 'text': 'My 2022 Honda Click 125i clicking sound when starting'},
+        {'role': 'assistant', 'text': 'Inspect the battery terminals for looseness or sulfate corrosion.'},
+    ]
+
+    # User reports it did not work
+    reply = orchestrate_diagnostic_response("still not working", user, history=history)
+    assert reply is not None
+    # Must NOT ask the user what symptom they have
+    assert "What specific symptom, mechanical issue, or maintenance procedure" not in reply
+
+
+
+def test_procedure_teaches_location_when_user_does_not_know():
+    """If user doesn't know where the component is located, Jarvis teaches them step-by-step."""
+    state = start_state()
+    _turn("2022 Honda Click 125i", state, [{'role': 'user', 'text': 'engine will not start'}])
+    _turn("Rapid clicking / relay chatter", state)
+    _turn("Havent checked yet", state)
+    assert state['stage'] == 'verdict'
+
+    # Start procedure
+    reply_start = _turn("begin procedure", state)
+    assert state['stage'] == 'procedure'
+    assert "Step 1:" in reply_start
+
+    # User says they don't know where it is located
+    loc_reply = _turn("i don't know where it is located", state)
+    # Jarvis must teach step by step where to find it
+    assert "How to Find" in loc_reply or "📍" in loc_reply or "step-by-step" in loc_reply.lower()
+    assert any(term in loc_reply.lower() for term in ['seat', 'terminal', 'battery', 'panel'])
+    assert "1." in loc_reply
+
+    # User says "found it, can we continue in that session"
+    cont_reply = _turn("can we continue in that session", state)
+    assert state['stage'] == 'procedure'
+    assert "Step 1" in cont_reply
+    assert "pick up right where we left off" in cont_reply.lower() or "continue" in cont_reply.lower()
+
+
+def test_user_asks_to_continue_session_resumes_active_problem():
+    """If user asks to continue the session, Jarvis maintains focus on the active problem."""
+    state = start_state()
+    _turn("2022 Honda Click 125i", state, [{'role': 'user', 'text': 'brakes are soft'}])
+    _turn("spongy", state)
+    _turn("above min", state)
+    assert state['stage'] == 'verdict'
+
+    # Commence procedure
+    _turn("proceed", state)
+    assert state['stage'] == 'procedure'
+    assert state['procedure_index'] == 0
+
+    # Advance to step 2
+    _turn("next", state)
+    assert state['procedure_index'] == 1
+
+    # User asks "where is it"
+    loc_reply = _turn("where is it located?", state)
+    assert "How to Find" in loc_reply or "location" in loc_reply.lower() or "step-by-step" in loc_reply.lower()
+
+    # User asks "can we continue in that session"
+    resume_reply = _turn("can we continue in that session", state)
+    assert state['stage'] == 'procedure'
+    assert state['procedure_index'] == 1
+    assert "Step 2" in resume_reply
+
+
+
+def test_procedure_teaches_beginner_how_to_do_step_step_by_step():
+    """When a beginner user asks how to do the step, Jarvis provides a step-by-step tutorial."""
+    state = start_state()
+    _turn("2022 Honda Click 125i", state, [{'role': 'user', 'text': 'engine will not start'}])
+    _turn("Rapid clicking / relay chatter", state)
+    _turn("Havent checked yet", state)
+    assert state['stage'] == 'verdict'
+
+    # Begin procedure
+    _turn("begin procedure", state)
+    assert state['stage'] == 'procedure'
+    assert state['procedure_index'] == 0
+
+    # User is a beginner and asks how to do this
+    reply_how = _turn("i am a beginner, how do i do this?", state)
+    assert state['stage'] == 'procedure'
+    assert "How to Test" in reply_how or "Beginner" in reply_how or "Tools Needed" in reply_how
+    assert "Tools" in reply_how
+    assert "1." in reply_how
+    assert "Good" in reply_how or "Normal" in reply_how or "Bad" in reply_how
+
+    # User asks "how can we fix it?"
+    reply_fix = _turn("how can we fix it?", state)
+    assert state['stage'] == 'procedure'
+    assert "1." in reply_fix
+
+    # User asks again just to be sure
+    reply_sure = _turn("just to be sure, are you sure?", state)
+    assert state['stage'] == 'procedure'
+    assert "Rest assured" in reply_sure or "safest" in reply_sure.lower() or "Step 1" in reply_sure
+
+    # User says "can we continue in that session"
+    reply_continue = _turn("can we continue in that session", state)
+    assert state['stage'] == 'procedure'
+    assert "Step 1" in reply_continue
+    assert "continue on what we are trying to fix" in reply_continue.lower() or "pick up right where we left off" in reply_continue.lower()

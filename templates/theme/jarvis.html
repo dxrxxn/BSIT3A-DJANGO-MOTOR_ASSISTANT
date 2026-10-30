@@ -102,10 +102,14 @@
         maxlength="1000"
         aria-label="Message Jarvis"
       ></textarea>
+      <button id="jarvis-widget-mic" class="jarvis-send-btn" type="button" aria-label="Voice input" title="Voice input (Hands-free auto-send)" style="background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); color: #a5b4fc; margin-right: 4px;">
+        <i class="fa-solid fa-microphone"></i>
+      </button>
       <button id="jarvis-send" class="jarvis-send-btn" type="button" aria-label="Send message">
         <i class="fa-solid fa-paper-plane"></i>
       </button>
     </div>
+    <div id="jarvis-widget-voice-hint" style="display:none; font-size: 0.72rem; color: #818cf8; margin-top: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><i class="fa-solid fa-microphone text-danger"></i> <span id="jarvis-widget-voice-text">Listening...</span></div>
     <div class="jarvis-footer-hint">Motor Assistant AI · Powered by J.A.R.V.I.S. &amp; Gemini</div>
   </div>
 </div>
@@ -1600,6 +1604,11 @@
     const text = (customText !== undefined ? customText : input.value).trim();
     if (!text || isLoading) return;
 
+    // Reset voice flag when user sends a typed message (not from mic)
+    if (customText === undefined) {
+      lastInputWasVoice = false;
+    }
+
     input.value = '';
     input.style.height = 'auto';
 
@@ -1634,8 +1643,12 @@
       }
       const data = await res.json();
       if (data.quota) updateQuotaUI(data.quota);
-      const botMsgId = appendBotMessage(data.reply || 'I appear to have lost that thought, sir. One more time, if you would.');
+      const replyText = data.reply || 'I appear to have lost that thought, sir. One more time, if you would.';
+      const botMsgId = appendBotMessage(replyText);
       scrollToTurnResponse(userMsgId, botMsgId, 50);
+      if (lastInputWasVoice && 'speechSynthesis' in window) {
+        speakBotWidget(replyText);
+      }
     } catch (err) {
       removeTyping();
       const botFailId = appendBotMessage('I cannot reach the network, sir. Check the connection and I shall try again.');
@@ -1654,6 +1667,113 @@
   });
 
   // ─────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────
+  // Hands-free Voice Input for floating widget
+  // ─────────────────────────────────────────────────────
+  const widgetMic = document.getElementById('jarvis-widget-mic');
+  const widgetVoiceHint = document.getElementById('jarvis-widget-voice-hint');
+  const widgetVoiceText = document.getElementById('jarvis-widget-voice-text');
+  let lastInputWasVoice = false;
+  let widgetSilenceTimer = null;
+  let widgetRecognition = null;
+  let widgetIsListening = false;
+
+  window._widgetUtterances = window._widgetUtterances || [];
+  function speakBotWidget(raw) {
+    if (!('speechSynthesis' in window) || !raw) return;
+    const clean = raw.replace(/\[chips:.*?\]/gi, '').replace(/\[vehicle-form.*?\]/gi, '').replace(/<[^>]+>/g, '').replace(/[*_#`~>]/g, '').trim();
+    if (!clean) return;
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+    setTimeout(() => {
+      try {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+        const spoken = sentences.slice(0, 3).join(' ');
+        const utter = new SpeechSynthesisUtterance(spoken);
+        utter.volume = 1.0;
+        utter.rate = 1.03;
+        utter.pitch = 1.0;
+        window._widgetUtterances.push(utter);
+        utter.onend = () => {
+          window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
+        };
+        utter.onerror = () => {
+          window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
+        };
+        window.speechSynthesis.speak(utter);
+      } catch(e) {}
+    }, 45);
+  }
+
+  if (widgetMic && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    widgetRecognition = new SpeechRec();
+    widgetRecognition.continuous = false;
+    widgetRecognition.interimResults = true;
+    widgetRecognition.lang = 'en-US';
+
+    widgetRecognition.onstart = () => {
+      widgetIsListening = true;
+      widgetMic.style.color = '#ef4444';
+      widgetMic.style.borderColor = '#ef4444';
+      if (widgetVoiceHint) widgetVoiceHint.style.display = 'block';
+      if (widgetVoiceText) widgetVoiceText.textContent = 'Listening... Speak without touching';
+    };
+
+    widgetRecognition.onresult = (event) => {
+      let interim = '';
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+        else interim += event.results[i][0].transcript;
+      }
+      const spoken = (final || interim).trim();
+      if (spoken) {
+        input.value = spoken;
+        if (widgetVoiceText) widgetVoiceText.textContent = `Hearing: "${spoken}"`;
+      }
+      if (spoken.length > 2) {
+        if (widgetSilenceTimer) clearTimeout(widgetSilenceTimer);
+        widgetSilenceTimer = setTimeout(() => {
+          if (spoken && !isLoading) {
+            if (widgetVoiceText) widgetVoiceText.textContent = 'Auto-sending...';
+            lastInputWasVoice = true;
+            sendMessage(spoken);
+          }
+        }, 1100);
+      }
+    };
+
+    widgetRecognition.onerror = () => {
+      widgetIsListening = false;
+      lastInputWasVoice = false;
+      if (widgetSilenceTimer) { clearTimeout(widgetSilenceTimer); widgetSilenceTimer = null; }
+      widgetMic.style.color = '';
+      widgetMic.style.borderColor = '';
+      if (widgetVoiceHint) widgetVoiceHint.style.display = 'none';
+    };
+
+    widgetRecognition.onend = () => {
+      widgetIsListening = false;
+      widgetMic.style.color = '';
+      widgetMic.style.borderColor = '';
+      setTimeout(() => {
+        if (!isLoading && widgetVoiceHint) widgetVoiceHint.style.display = 'none';
+      }, 1500);
+      // Reset voice flag after recognition ends (silence timer may still fire)
+      // A 1200ms delay ensures the auto-send silence timer (1100ms) can still mark itself as voice
+      setTimeout(() => { lastInputWasVoice = false; }, 1200);
+    };
+
+    widgetMic.addEventListener('click', () => {
+      if (widgetIsListening) {
+        try { widgetRecognition.stop(); } catch(e) {}
+      } else {
+        try { widgetRecognition.start(); } catch(e) {}
+      }
+    });
+  }
+
   // Boot — restore history & panel state
   // ─────────────────────────────────────────────────────
   restoreHistory();

@@ -72,10 +72,11 @@ def evaluate_safety_hazards(query, lang='english'):
 class DiagnosticSession:
     """Tracks multi-turn vehicle details, symptom context, and answered questions."""
 
-    def __init__(self, message, history, user=None, language=None, experience_level=None):
+    def __init__(self, message, history, user=None, language=None, experience_level=None, guided_state=None):
         self.message = message or ''
         self.history = history or []
         self.user = user
+        self.guided_state = guided_state or {}
 
         # Build full conversation text corpus
         corpus_parts = [self.message]
@@ -99,16 +100,36 @@ class DiagnosticSession:
         else:
             self.vehicle_type = 'all'
 
-        # Check if an active symptom was mentioned
+        # Holistic session analysis (Bug 1 & Bug 2)
+        self.is_issue_resolved = self._check_issue_resolved()
+        self.is_reset = self._check_reset()
+        self.is_procedure_continuation = self._check_procedure_continuation()
+        self.is_unsuccessful_attempt = self._check_unsuccessful_attempt()
+
+        # Check if an active symptom was mentioned in current message
         from .guided_diagnostic import detect_area, _has_active_fault
         symptom_form_match = re.search(r'symptom:\s*(.+)', self.message, re.I)
         has_form_symptom = bool(symptom_form_match and len(symptom_form_match.group(1).strip()) > 3)
-        self.has_active_symptom = bool(detect_area(self.message) or _has_active_fault(self.message) or has_form_symptom)
+        current_symptom = detect_area(self.message) or _has_active_fault(self.message) or (symptom_form_match.group(1).strip() if symptom_form_match else None)
+
+        # Analyze session history if current message does not state a new symptom
+        history_symptom = None
+        if not current_symptom and not self.is_issue_resolved and not self.is_reset:
+            history_symptom = self._extract_history_symptom()
+
+        if not current_symptom and not history_symptom and not self.is_issue_resolved and not self.is_reset and self.guided_state:
+            history_symptom = self.guided_state.get('area')
+            if not self.vehicle_info.get('model') and self.guided_state.get('bike'):
+                self.vehicle_info['model'] = self.guided_state.get('bike')
+
+        self.active_symptom = current_symptom or history_symptom
+        self.has_active_symptom = bool(self.active_symptom)
 
         # Retrieve relevant verified knowledge only when a symptom is being diagnosed
         if self.has_active_symptom:
+            search_query = self.message if current_symptom else f"{self.active_symptom} {self.corpus[:200]}"
             self.verified_knowledge = retrieve_verified_knowledge(
-                self.message + " " + self.corpus[:200],
+                search_query,
                 vehicle_type=self.vehicle_type,
                 max_results=2
             )
@@ -117,6 +138,8 @@ class DiagnosticSession:
 
         # Safety evaluation
         self.safety_hazard = evaluate_safety_hazards(self.message, self.language)
+        if not self.safety_hazard and self.active_symptom and not current_symptom:
+            self.safety_hazard = evaluate_safety_hazards(str(self.active_symptom), self.language)
         if not self.safety_hazard and self.verified_knowledge:
             top_s = self.verified_knowledge[0]
             if top_s.get('urgency_level') == 'critical_stop' and top_s.get('safety_warning'):
@@ -177,9 +200,206 @@ class DiagnosticSession:
         has_answers = bool(self.answered_questions) or (self.next_question is None)
         return has_vehicle and has_answers
 
+    def _check_issue_resolved(self):
+        msg = self.message.lower().strip()
+        resolved_words = [
+            'it worked', 'that worked', 'worked, thanks', 'problem solved',
+            'fixed it', 'it is fixed', "it's fixed", 'feel better', 'feels better',
+            'okay now', 'ok now', 'noise is gone', 'smoke is gone', 'nagana na',
+            'naayos na', 'ok na', 'ayos na', 'all fixed', 'problem is fixed',
+        ]
+        return any(w in msg for w in resolved_words)
+
+    def _check_reset(self):
+        msg = self.message.lower().strip()
+        reset_words = [
+            'start over', 'start again', 'new problem', 'another problem', 'reset',
+            'simula ulit', 'bagong problema', 'sugod liwat', 'clear chat',
+        ]
+        return any(w in msg for w in reset_words)
+
+    def _check_procedure_continuation(self):
+        msg = self.message.lower().strip()
+        continue_words = [
+            'proceed', 'start', 'commence', 'begin', 'continue', 'next', 'next step',
+            'step 1', 'step one', 'first step', 'step 2', 'step two', 'step 3', 'step 4',
+            "let's start", "lets start", "let's do it", "lets do it", 'ready', 'sige', 'umpisahan',
+            'simulan', 'padayon', 'tuloy', 'read step 1', 'read step one', 'ok', 'okay',
+            'sure', 'go ahead', 'yes', 'oo', 'sige proceed', 'do it', 'gawin natin',
+            'ready to start', 'yes, ready', 'what is step 2', 'what is step 1', 'show step 2',
+            'what next', "what's next", 'what do i do next', 'what to do next', 'ano susunod',
+        ]
+        is_cont = any(w in msg for w in continue_words) or bool(re.search(r'\b(?:step|hakbang|tikang)\s*\d+\b', msg))
+        if not is_cont:
+            return False
+
+        if isinstance(self.history, list) and self.history:
+            last_assistant_turns = [t for t in self.history if t.get('role') != 'user']
+            if last_assistant_turns:
+                last_txt = last_assistant_turns[-1].get('text', '').lower()
+                if any(w in last_txt for w in ['step', 'procedure', 'commence', 'checklist', 'troubleshoot', 'inspect', '- [ ]', 'checks']):
+                    return True
+
+        return bool(self._extract_history_symptom() or self.guided_state.get('area'))
+
+    def _extract_requested_step(self):
+        msg = self.message.lower().strip()
+        m = re.search(r'\b(?:step|hakbang|tikang)\s*(\d+)\b', msg)
+        if m:
+            return int(m.group(1))
+        # Check history to see what was the last step given
+        if isinstance(self.history, list):
+            for turn in reversed(self.history):
+                txt = turn.get('text', '')
+                sm = re.search(r'\b(?:Step|Hakbang|Tikang)\s*(\d+)\b', txt)
+                if sm:
+                    return int(sm.group(1)) + 1
+        return 1
+
+    def _check_unsuccessful_attempt(self):
+        msg = self.message.lower().strip()
+        unsuccessful_words = [
+            "didn't work", 'didnt work', 'still not fixed', 'still not working',
+            'still broken', 'hindi pa', 'hindi gumana', 'ayaw pa rin', 'wala pa rin',
+            'wala nagbago', 'indi gihapon', 'indi nag-andar', 'same problem', 'no difference',
+            'abnormal', 'failed', 'wala epekto', 'hindi nagbago', 'still having problem',
+            'did not work', 'does not work either', 'didnt fix it',
+        ]
+        if any(w in msg for w in unsuccessful_words):
+            return True
+        if ('not working' in msg or 'not work' in msg) and isinstance(self.history, list) and len(self.history) >= 2:
+            return True
+        return False
+
+    def _extract_history_symptom(self):
+        """Scans session history backwards to recover an active, unresolved symptom."""
+        if not isinstance(self.history, list):
+            return None
+        from .guided_diagnostic import detect_area, _has_active_fault
+        for turn in reversed(self.history):
+            txt = (turn.get('text') or '').strip()
+            area = detect_area(txt)
+            if area:
+                return area
+            if _has_active_fault(txt):
+                return txt[:80]
+            match = re.search(r'symptom:\s*(.+)', txt, re.I)
+            if match and len(match.group(1).strip()) > 3:
+                return match.group(1).strip()
+        return None
+
+
+def extract_procedure_steps(text):
+    if not text:
+        return []
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    steps = []
+    current_step = []
+    for line in lines:
+        if re.match(r'^(?:-\s*\[\s*\]\s*)?\d+[\.\)]', line):
+            if current_step:
+                steps.append("\n".join(current_step).strip())
+                current_step = []
+            cleaned = re.sub(r'^(?:-\s*\[\s*\]\s*)?\d+[\.\)]\s*', '', line).strip()
+            current_step.append(cleaned)
+        elif current_step:
+            current_step.append(line)
+    if current_step:
+        steps.append("\n".join(current_step).strip())
+    if not steps and text:
+        steps = [text.strip()]
+    return steps
+
 
 class LocalTutorFormatter:
     """Formats verified database knowledge into the strict 9-point Step-by-Step Repair Tutor."""
+
+    @staticmethod
+    def format_step(session, step_num=1):
+        lang = session.language
+        v_info = session.vehicle_info
+        veh_label = " ".join(filter(None, [v_info.get('year'), v_info.get('make'), v_info.get('model')])).strip()
+        if not veh_label:
+            veh_label = "Your Vehicle" if lang == 'english' else ("Sasakyan mo" if lang == 'tagalog' else "Salakyan mo")
+
+        symptom_name = session.active_symptom or "Mechanical Fault"
+        top_symptom = session.verified_knowledge[0] if session.verified_knowledge else None
+        if top_symptom:
+            symptom_name = top_symptom.get('symptom_name', symptom_name)
+            guides = top_symptom.get('guides', [])
+            primary_guide = guides[0] if guides else {}
+            raw_instructions = primary_guide.get('repair_instructions', '').strip()
+            steps = extract_procedure_steps(raw_instructions)
+            tools = primary_guide.get('tools_required') or "Basic metric hand tools and clean shop towels."
+            expected = primary_guide.get('expected_result') or "Operating parameter returns to normal factory specification."
+            differs = primary_guide.get('alternative_outcome') or "If abnormal, proceed to subsequent component tests."
+        else:
+            from .guided_diagnostic import AREAS, pick_verdict
+            area_info = AREAS.get(session.active_symptom, {})
+            v = pick_verdict(session.active_symptom, {}) if session.active_symptom in AREAS else {}
+            steps = v.get('free', []) or [c[1] for c in area_info.get('checks', [])]
+            tools = "Basic metric hand tools, safety glasses, and clean shop towels."
+            expected = "Component operates smoothly within manufacturer specification."
+            differs = "If condition does not improve, proceed to secondary component tests."
+
+        step_idx = max(0, step_num - 1)
+        step_text = steps[step_idx] if steps and step_idx < len(steps) else (
+            steps[-1] if steps else f"Inspect the {symptom_name} assembly for leaks, wear, or loose connections."
+        )
+
+        l_map = {
+            'english': {
+                'title': f"Step-by-Step Procedure for **{veh_label}** — {symptom_name}",
+                'safety_label': "CRITICAL SAFETY DIRECTIVE",
+                'step_label': f"Step {step_num}",
+                'tools_label': "Required Tools & Preparation",
+                'expected_label': "Expected Benchmark Reading",
+                'differs_label': "What to do if the result differs",
+                'ask': f"Perform this check, sir, and let me know what you find — did Step {step_num} pass or show an abnormal reading?",
+                'chips': f"Step {step_num} passed (normal) | Step {step_num} failed (abnormal) | Next step | Show all steps | It worked",
+            },
+            'tagalog': {
+                'title': f"Hakbang-Hakbang na Pagsusuri para sa **{veh_label}** — {symptom_name}",
+                'safety_label': "MAHIGPIT NA DIREKTIBA SA KALIGTASAN",
+                'step_label': f"Hakbang {step_num}",
+                'tools_label': "Mga Kailangang Gamit at Paghahanda",
+                'expected_label': "Inaasahang Normal na Sukat / Kundisyon",
+                'differs_label': "Ano ang gagawin kapag iba ang lumabas na resulta",
+                'ask': f"Gawin po ang hakbang na ito, sir, at sabihin kung ano ang inyong nakita sa Hakbang {step_num}.",
+                'chips': f"Maayos ang Hakbang {step_num} | May depekto | Susunod na hakbang | Ipakita lahat | Nagana na",
+            },
+            'hiligaynon': {
+                'title': f"Sunod-Sunod nga Pagsusuri para sa **{veh_label}** — {symptom_name}",
+                'safety_label': "MAHUGOD NGA DIREKTIBA SA KALIGTASAN",
+                'step_label': f"Tikang {step_num}",
+                'tools_label': "Mga Kinahanglan nga Gamit kag Paghanda",
+                'expected_label': "Ginalauman nga Normal nga Takus / Kahimtangan",
+                'differs_label': "Ano ang himuon kon maglain ang resulta",
+                'ask': f"Himua ini nga tikang, sir, kag sabta ako kon ano ang imo nakit-an sa Tikang {step_num}.",
+                'chips': f"Maayo ang Tikang {step_num} | May diperensya | Sunod nga tikang | Ipakita tanan | Nagana na",
+            },
+        }
+
+        L = l_map.get(lang, l_map['english'])
+        out = []
+        out.append(f"### {L['title']}\n")
+
+        if session.safety_hazard:
+            out.append(f"> [!CAUTION]\n> **{L['safety_label']}:** {session.safety_hazard['alert_text']}\n")
+        elif top_symptom and top_symptom.get('safety_warning'):
+            out.append(f"> [!WARNING]\n> **{L['safety_label']}:** {top_symptom['safety_warning']}\n")
+
+        out.append(f"**{L['step_label']}:**\n{step_text}\n")
+        out.append(f"**{L['tools_label']}:**\n{tools}\n")
+        out.append(f"**{L['expected_label']}:**\n{expected}\n")
+        out.append(f"**{L['differs_label']}:**\n{differs}\n")
+        out.append(f"**{L['ask']}**")
+        out.append(f"\n\n[chips: {L['chips']}]")
+        return "\n".join(out)
+
+    @staticmethod
+    def format_step_one(session):
+        return LocalTutorFormatter.format_step(session, step_num=1)
 
     @staticmethod
     def format_tutor(session, explanation_level='beginner'):
@@ -384,7 +604,7 @@ def call_configured_ai(prompt, system_instruction=None):
         raise ValueError(f"Unsupported AI_PROVIDER: {provider}")
 
 
-def orchestrate_diagnostic_response(message, user, history=None, language=None, experience_level=None):
+def orchestrate_diagnostic_response(message, user, history=None, language=None, experience_level=None, guided_state=None):
     """
     Main entry point for intelligent diagnostic workflow:
     1. Evaluates session state, vehicle info, and safety tripwires.
@@ -396,14 +616,73 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
     from .guided_diagnostic import _is_greeting
     if _is_greeting(message):
         return None
-    session = DiagnosticSession(message, history, user=user, language=language, experience_level=experience_level)
+    session = DiagnosticSession(message, history, user=user, language=language, experience_level=experience_level, guided_state=guided_state)
 
     # 1. Immediate Critical Safety Notice
     safety_header = ""
     if session.safety_hazard and session.safety_hazard['urgency'] == 'critical_stop':
         safety_header = f"> [!CAUTION]\n> **SAFETY ALERT:** {session.safety_hazard['alert_text']}\n\n"
 
-    # If the user has NOT provided an active symptom or fault, do NOT voluntarily assume one!
+    # 1a. User confirmed to COMMENCE or CONTINUE step-by-step procedure: Deliver requested Step!
+    if session.is_procedure_continuation and session.active_symptom:
+        step_num = session._extract_requested_step()
+        from .views import _jarvis_address
+        sir = _jarvis_address(user)
+        ai_step_system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic assistant. Address user respectfully as '{sir}'.
+The user requested Step {step_num} of the step-by-step diagnostic/repair procedure for active fault: {session.active_symptom}.
+MANDATE:
+1. Immediately present **Step {step_num}** of the diagnostic/repair procedure with complete detail:
+   - Clear, step-by-step instructions.
+   - Required tools & materials.
+   - Expected benchmark reading / normal result.
+   - What to do if the result differs / abnormal.
+2. DO NOT ask what symptom they have or repeat intake questions.
+3. Conclude with action chips: `[chips: Step {step_num} passed (normal) | Step {step_num} failed (abnormal) | Next step | Show all steps | It worked]`.
+4. Language: Respond in {session.language.upper()}.
+"""
+        ai_step_prompt = f"User Request: '{message}'. Deliver Step {step_num} for vehicle: {session.vehicle_info}. Active Fault: {session.active_symptom}"
+        try:
+            ai_reply = call_configured_ai(ai_step_prompt, system_instruction=ai_step_system_prompt)
+            if ai_reply and len(ai_reply.strip()) > 30:
+                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
+                    ai_reply = safety_header + ai_reply
+                return ai_reply
+        except Exception:
+            pass
+
+        local_step = LocalTutorFormatter.format_step(session, step_num=step_num)
+        if local_step:
+            return safety_header + local_step
+
+    # 1b. If previous check/test was unsuccessful: Acknowledge & proceed to next check
+    if session.is_unsuccessful_attempt and session.active_symptom:
+        step_num = session._extract_requested_step()
+        from .views import _jarvis_address
+        sir = _jarvis_address(user)
+        unsuccess_system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic assistant. Address user respectfully as '{sir}'.
+The user reports that the previous check/step was UNSUCCESSFUL ('{message}').
+MANDATE:
+1. Acknowledge that the previous check did not resolve the {session.active_symptom} problem.
+2. Deliver the next diagnostic check (Step {step_num}) or secondary hypothesis.
+3. DO NOT ask what symptom they have or start over from scratch!
+4. Conclude with 3-5 action chips.
+5. Language: Respond in {session.language.upper()}.
+"""
+        unsuccess_prompt = f"User Feedback: '{message}'. Issue: {session.active_symptom}. Vehicle: {session.vehicle_info}. Advance to Step {step_num}."
+        try:
+            ai_reply = call_configured_ai(unsuccess_prompt, system_instruction=unsuccess_system_prompt)
+            if ai_reply and len(ai_reply.strip()) > 30:
+                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
+                    ai_reply = safety_header + ai_reply
+                return ai_reply
+        except Exception:
+            pass
+
+        local_step = LocalTutorFormatter.format_step(session, step_num=step_num)
+        if local_step:
+            return safety_header + local_step
+
+    # If the user has NOT provided an active symptom or fault anywhere in the session, do NOT voluntarily assume one!
     if not session.has_active_symptom and not session.answered_questions:
         from .views import _jarvis_address
         sir = _jarvis_address(user)

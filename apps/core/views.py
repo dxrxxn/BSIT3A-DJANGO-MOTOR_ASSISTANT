@@ -559,7 +559,13 @@ def _extract_vehicle_info(text, history=None):
     history_turns = []
     if history and isinstance(history, list):
         for turn in history:
-            history_turns.append((turn.get('text', '') or '').lower())
+            if isinstance(turn, dict):
+                role = str(turn.get('role', '')).lower()
+                if role in ('bot', 'assistant', 'system'):
+                    continue
+                history_turns.append((turn.get('text', '') or '').lower())
+            elif isinstance(turn, str):
+                history_turns.append(turn.lower())
     history_corpus = " ".join(history_turns)
     corpus = (current_text + " " + history_corpus).strip()
 
@@ -711,18 +717,28 @@ def _extract_vehicle_info(text, history=None):
     return info
 
 
-def _jarvis_gemini_general(message, user, history=None):
+def _jarvis_gemini_general(message, user, history=None, language=None):
     """Broad motorcycle-assistant call for maintenance/how-to/info questions."""
     client = _get_gemini_client()
     if client is None:
         return None
 
     sir = _jarvis_address(user)
+    # Detect/normalise language
+    if not language or language not in ('english', 'tagalog', 'hiligaynon'):
+        language = _detect_language(message, history)
+    _LANG_LABELS = {
+        'english': 'English',
+        'tagalog': 'Filipino / Tagalog',
+        'hiligaynon': 'Hiligaynon / Ilonggo',
+    }
+    lang_label = _LANG_LABELS.get(language, 'English')
+
 
     convo_history_str = ""
     if history and isinstance(history, list):
         formatted_turns = []
-        for turn in history[-8:]:
+        for turn in history[-16:]:
             r = "User" if turn.get('role') == 'user' else "J.A.R.V.I.S."
             txt = turn.get('text', '').strip()
             txt = re.sub(r'\[chips:.*?\]', '', txt).strip()
@@ -736,6 +752,10 @@ def _jarvis_gemini_general(message, user, history=None):
             )
 
     full_prompt = f"""You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), a master motorcycle mechanic, maintenance coach, and riding advisor. You speak like Tony Stark's assistant: professional, courteous, precise, witty, and safety-first. Address the user respectfully as '{sir}'.
+## MANDATORY LANGUAGE INSTRUCTION
+DETECTED LANGUAGE: {lang_label} ({language})
+YOU MUST RESPOND ENTIRELY IN {lang_label.upper()}. This is non-negotiable. Keep technical part names (e.g. brake caliper, CVT, spark plug, ECU) in their original English form and explain them simply in the response language.
+
 
 The user is asking a GENERAL motorcycle question — maintenance, how-to, service intervals, pre-ride/pre-repair checks, tools, parts, riding technique, buying advice, comparisons between models, riding gear/safety equipment, or general information about a motorcycle model. They are not necessarily reporting a breakdown.
 
@@ -830,12 +850,12 @@ Your response as J.A.R.V.I.S.:"""
         return None
 
 
-def _jarvis_gemini(message, user, history=None, mode='diagnostic'):
+def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None):
     """
     Calls Gemini AI with full multi-turn conversational vehicle diagnostic mechanic system.
     """
     if mode == 'general':
-        return _jarvis_gemini_general(message, user, history=history)
+        return _jarvis_gemini_general(message, user, history=history, language=language)
 
     client = _get_gemini_client()
     if client is None:
@@ -877,7 +897,7 @@ def _jarvis_gemini(message, user, history=None, mode='diagnostic'):
     convo_history_str = ""
     if history and isinstance(history, list):
         formatted_turns = []
-        for turn in history[-8:]:
+        for turn in history[-16:]:
             r = "User" if turn.get('role') == 'user' else "J.A.R.V.I.S."
             txt = turn.get('text', '').strip()
             txt = re.sub(r'\[chips:.*?\]', '', txt).strip()
@@ -885,12 +905,26 @@ def _jarvis_gemini(message, user, history=None, mode='diagnostic'):
                 formatted_turns.append(f"{r}: {txt}")
         if formatted_turns:
             convo_history_str = (
-                "\n## PREVIOUS CONVERSATION TURNS (Analyze what vehicle details & symptoms the user has ALREADY provided — DO NOT re-ask answered questions):\n"
+                "\n## PREVIOUS CONVERSATION TURNS (Analyze this entire session holistically — maintain continuity and DO NOT re-ask answered questions):\n"
                 + "\n".join(formatted_turns)
                 + "\n"
             )
 
+    # Detect/normalise language for diagnostic prompt
+    if not language or language not in ('english', 'tagalog', 'hiligaynon'):
+        language = _detect_language(message, history)
+    _DLANG_LABELS = {
+        'english': 'English',
+        'tagalog': 'Filipino / Tagalog',
+        'hiligaynon': 'Hiligaynon / Ilonggo',
+    }
+    dlang_label = _DLANG_LABELS.get(language, 'English')
+
     full_prompt = f"""You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), the master vehicle diagnostic mechanic and repair assistant for an automotive and motorcycle workshop. You diagnose motorcycles, scooters, underbones, tricycles, cars, SUVs, and light trucks. You speak like Tony Stark's assistant: professional, courteous, precise, witty, and prioritizing safety above all else. Address the user respectfully as '{sir}'.
+
+## MANDATORY LANGUAGE INSTRUCTION
+DETECTED LANGUAGE: {dlang_label} ({language})
+YOU MUST RESPOND ENTIRELY IN {dlang_label.upper()}. This is non-negotiable. Keep technical part names (caliper, CVT, spark plug, ECU) in their original English form.
 
 You have access to the workshop diagnostic database:
 
@@ -949,6 +983,23 @@ You have access to the workshop diagnostic database:
   * Explain how to verify the repair safely.
   * Advise when professional shop service is necessary.
 - Step 7: Continue the conversation after checks/repairs — ask the user what they found.
+
+## 4a. MANDATORY HOLISTIC SESSION ANALYSIS & CONTINUITY (CRITICAL)
+- TREAT CONVERSATION AS A CONTINUOUS SESSION: Always analyze the entire conversation history before deciding what to say.
+- PERSIST ON ACTIVE PROBLEM: If an issue or fault was discussed in earlier turns and the user has NOT explicitly confirmed it is fixed (e.g. 'it worked', 'fixed', 'ok na', 'naayos na') and has not asked to reset or start over, DO NOT abandon it! DO NOT ask a new question about what to fix now. Maintain focus on resolving that active issue.
+- IF PREVIOUS STEP OR TEST FAILED: If the user indicates that a previous check or repair did not work ('didn\'t work', 'still not fixed', 'hindi gumana', 'ayaw pa rin'), acknowledge it directly and provide the next diagnostic test or secondary cause. DO NOT ask what vehicle problem they have!
+
+## 4b. STEP-BY-STEP PROCEDURE EXECUTION MANDATE (CRITICAL)
+- When you ask or offer to commence the step-by-step procedure (e.g. "commence the step-by-step procedure", "troubleshoot step-by-step"), OR when a procedure checklist (`- [ ]`) has been offered:
+  * If the user responds with agreement or confirmation (e.g. "yes", "proceed", "start", "commence", "begin", "continue", "next step", "step 1", "ok", "ready", "sige", "umpisahan"):
+    1. DO NOT stop, halt, or ask a brand-new symptom question!
+    2. IMMEDIATELY deliver **Step 1** (or the next uncompleted step) with full details:
+       - Clear, actionable instructions for that specific step.
+       - Required tools/supplies for this step.
+       - What exact reading, sound, or visual sign to look for (expected benchmark).
+       - What to do if the result is abnormal.
+       - A direct question asking what the user observed from performing this step.
+       - Clickable action chips: `[chips: Step 1 passed (normal) | Step 1 failed (abnormal) | Need help with Step 1 | Show next step | It worked]`.
 
 ## 5. MULTILINGUAL SUPPORT (TAGALOG & HILIGAYNON)
 - Fluently understand and respond in English, Tagalog / Filipino / Taglish, and Hiligaynon (Ilonggo).
@@ -1648,9 +1699,25 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
 
     reply = None
 
+    def _safe_call_gemini(fn, message, user, history=None, mode=None, language=None):
+        try:
+            kwargs = {}
+            if mode is not None:
+                kwargs['mode'] = mode
+            if language is not None:
+                kwargs['language'] = language
+            return fn(message, user, history=history, **kwargs)
+        except TypeError:
+            try:
+                if mode is not None:
+                    return fn(message, user, history=history, mode=mode)
+                return fn(message, user, history=history)
+            except TypeError:
+                return fn(message, user)
+
     if is_general_query:
         # Maintenance/how-to/service question: answer directly, no intake form.
-        reply = _jarvis_gemini(message, user, history=history, mode='general')
+        reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, mode='general', language=language or _detect_language(message, history))
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:
@@ -1659,7 +1726,7 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
             )
     elif is_visual_query:
         # Visual reference or "what is" query
-        reply = _jarvis_gemini(message, user, history=history)
+        reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, language=language or _detect_language(message, history))
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:
@@ -1669,13 +1736,14 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
         try:
             from .diagnostic_engine import orchestrate_diagnostic_response
             reply = orchestrate_diagnostic_response(
-                message, user, history=history, language=language, experience_level=experience_level
+                message, user, history=history, language=language, experience_level=experience_level,
+                guided_state=guided_state
             )
         except Exception as e:
             reply = None
 
         if not reply:
-            reply = _jarvis_gemini(message, user, history=history)
+            reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, language=language or _detect_language(message, history))
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:

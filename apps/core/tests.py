@@ -297,6 +297,69 @@ class MotorAssistantIntelligentAITests(TestCase):
         self.assertIn('Mga Kinahanglan nga Gamit kag Materyales', tutor_hil)
 
 
+    def test_procedure_step_progression_in_guided_flow(self):
+        user = get_user_model().objects.create_user(
+            username='biker',
+            password='secret1234',
+            first_name='Tony',
+        )
+        self.client.force_login(user)
+
+        from unittest.mock import patch
+        with patch('apps.core.views._get_gemini_client', return_value=None):
+            # 1. Identify bike
+            r1 = self.client.post(reverse('jarvis_chat'), data=json.dumps({'message': 'Click 125i 2022'}), content_type='application/json')
+            self.assertEqual(r1.status_code, 200)
+
+            # 2. Select symptom area: Brakes
+            r2 = self.client.post(reverse('jarvis_chat'), data=json.dumps({'message': 'Brakes weak or spongy'}), content_type='application/json')
+            self.assertEqual(r2.status_code, 200)
+            self.assertIn('Where to look first', r2.json()['reply'])
+
+            # 3. Confirm to start Step 1
+            r3 = self.client.post(reverse('jarvis_chat'), data=json.dumps({'message': 'Yes, ready to start Step 1'}), content_type='application/json')
+            self.assertEqual(r3.status_code, 200)
+            reply3 = r3.json()['reply']
+            self.assertIn('Step 1:', reply3)
+
+            # 4. Ask for Step 2 ("what is step 2?") - Must NOT drop out or start new session!
+            r4 = self.client.post(reverse('jarvis_chat'), data=json.dumps({'message': 'what is step 2?'}), content_type='application/json')
+            self.assertEqual(r4.status_code, 200)
+            reply4 = r4.json()['reply']
+            self.assertIn('Step 2:', reply4)
+            self.assertNotIn('Ano po ang partikular na sintomas', reply4)
+            self.assertNotIn('What specific symptom', reply4)
+
+            # 5. Report step didn't work ("did not work") - Must advance to Step 3 / next check without losing symptom
+            r5 = self.client.post(reverse('jarvis_chat'), data=json.dumps({'message': "didn't work"}), content_type='application/json')
+            self.assertEqual(r5.status_code, 200)
+            reply5 = r5.json()['reply']
+            self.assertTrue('Step 3:' in reply5 or 'deeper causes' in reply5 or 'brakes' in reply5.lower())
+            self.assertNotIn('What specific symptom', reply5)
+
+    def test_holistic_session_continuity_with_unsuccessful_check(self):
+        from unittest.mock import patch
+        from apps.core.diagnostic_engine import orchestrate_diagnostic_response
+
+        history = [
+            {'role': 'user', 'text': 'My 2022 Honda Click 125i has soft spongy brakes.'},
+            {'role': 'assistant', 'text': 'Step 1: Check master cylinder fluid level and inspect caliper for leaks.'}
+        ]
+
+        # User reports previous check was unsuccessful
+        with patch('apps.core.diagnostic_engine.call_configured_ai', side_effect=RuntimeError("AI offline")):
+            reply = orchestrate_diagnostic_response(
+                "I checked that, it didn't work and brakes are still spongy. What is step 2?",
+                self.user,
+                history=history
+            )
+
+        self.assertIsNotNone(reply)
+        # Must retain the brake symptom and provide step 2, not ask what symptom to fix
+        self.assertNotIn('What specific symptom, mechanical issue, or maintenance procedure', reply)
+        self.assertIn('Step 2', reply)
+
+
 class RegistrationTests(TestCase):
     def test_register_get_renders_form(self):
         response = self.client.get(reverse('register'))
