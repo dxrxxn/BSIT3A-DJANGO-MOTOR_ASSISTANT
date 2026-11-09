@@ -1263,7 +1263,7 @@
 
   function loadHistory() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('jarvis_shared_chat_' + USER_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -1276,7 +1276,9 @@
 
   function saveHistory(history) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-80)));
+      const jsonStr = JSON.stringify(history.slice(-80));
+      localStorage.setItem(STORAGE_KEY, jsonStr);
+      localStorage.setItem('jarvis_shared_chat_' + USER_KEY, jsonStr);
     } catch (e) {}
     updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
   }
@@ -1506,29 +1508,56 @@
       break;
     }
 
-    // Check make
+    // Check latest mentioned make from newest to oldest message
     const makes = ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota', 'Mitsubishi', 'Nissan', 'Ford', 'Hyundai', 'Isuzu', 'Mazda', 'Kymco', 'Rusi', 'Bajaj', 'TVS', 'Vespa'];
-    for (const m of makes) {
-      if (new RegExp('\\b' + m.toLowerCase() + '\\b').test(corpus)) {
-        info.make = m;
-        break;
+    for (let i = history.length - 1; i >= 0; i--) {
+      const msgText = (history[i].text || '').toLowerCase();
+      for (const m of makes) {
+        if (new RegExp('\\b' + m.toLowerCase() + '\\b').test(msgText)) {
+          info.make = m;
+          break;
+        }
       }
+      if (info.make) break;
     }
 
-    // Check common models
-    const models = [
-      'Click 125i', 'Click 150i', 'Click 160', 'Click',
+    // Common models by brand to prevent cross-brand contamination
+    const brandModels = {
+      'Yamaha': ['MT-09 SP', 'MT-09', 'MT 09', 'MT09', 'NMAX 155', 'NMAX', 'Aerox 155', 'Aerox', 'Mio Sporty', 'Mio i 125', 'Mio Gear', 'Mio Soul', 'Mio', 'Sniper 155', 'Sniper', 'Fazzio', 'Gravis', 'R15', 'R3', 'R1'],
+      'Honda': ['Click 125i', 'Click 150i', 'Click 160', 'Click', 'Beat', 'PCX 160', 'PCX', 'ADV 160', 'ADV', 'Wave 125', 'Wave 110', 'Wave', 'XRM 125', 'XRM', 'TMX 125', 'CBR 150R', 'CBR'],
+      'Suzuki': ['Raider 150', 'Raider', 'Burgman Street', 'Burgman', 'Smash 115', 'Smash', 'Gixxer'],
+      'Kawasaki': ['Barako 175', 'Barako', 'Ninja 400', 'Ninja']
+    };
+
+    const targetList = brandModels[info.make] || [
+      'MT-09 SP', 'MT-09', 'MT09', 'Click 125i', 'Click 150i', 'Click 160', 'Click',
       'Aerox 155', 'Aerox', 'NMAX 155', 'NMAX',
       'Raider 150', 'Raider', 'Mio Sporty', 'Mio i 125', 'Mio Gear', 'Mio Soul', 'Mio',
       'Fazzio', 'Gravis', 'Burgman', 'Beat', 'PCX 160', 'PCX', 'ADV 160', 'ADV',
-      'Sniper 155', 'Sniper', 'Wave 110', 'Wave 125', 'Wave', 'XRM 125', 'XRM', 'Smash 115', 'Smash',
-      'Vios', 'Mirage G4', 'Mirage', 'Wigo', 'Innova', 'Fortuner', 'Hilux', 'Civic', 'City'
+      'Sniper 155', 'Sniper', 'Wave 110', 'Wave 125', 'Wave', 'XRM 125', 'XRM', 'Smash 115', 'Smash'
     ];
-    for (const mdl of models) {
-      if (corpus.includes(mdl.toLowerCase())) {
-        info.model = mdl;
-        break;
+
+    // Search model prioritizing newest messages first
+    for (let i = history.length - 1; i >= 0; i--) {
+      const msgText = (history[i].text || '').toLowerCase();
+      for (const mdl of targetList) {
+        if (msgText.includes(mdl.toLowerCase())) {
+          info.model = mdl.startsWith('MT') ? 'MT-09 SP' : mdl;
+          break;
+        }
       }
+      if (info.model) break;
+    }
+
+    // Specific model enrichment
+    if (info.model && info.model.includes('MT-09')) {
+      info.make = 'Yamaha';
+      info.type = 'Big Bike / Naked';
+      info.displacement = '890cc';
+    } else if (info.model && info.model.includes('Click')) {
+      info.make = 'Honda';
+      info.type = 'Scooter';
+      if (!info.displacement) info.displacement = '125cc';
     }
 
     // Check year
@@ -2743,6 +2772,18 @@
       if (known.make) parts.push(known.make);
       if (known.model) parts.push(known.model);
       titleEl.textContent = parts.join(' ');
+
+      // Dynamically point Explore in 3D to the matching GLB model
+      const exploreBtn = document.querySelector('.jarvis-explore-btn');
+      if (exploreBtn) {
+        if (known.make === 'Yamaha' || (known.model && known.model.toLowerCase().includes('mt'))) {
+          exploreBtn.href = '/motor/viewer/?bike=yamaha_mt09';
+        } else if (known.make === 'Honda' || (known.model && known.model.toLowerCase().includes('click'))) {
+          exploreBtn.href = '/motor/viewer/?bike=honda_click';
+        } else {
+          exploreBtn.href = '/motor/viewer/';
+        }
+      }
 
       const specParts = [];
       if (known.year) specParts.push(known.year);

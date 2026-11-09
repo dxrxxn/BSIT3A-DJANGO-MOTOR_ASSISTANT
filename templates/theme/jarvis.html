@@ -949,9 +949,12 @@
       }
     } catch {}
   }
-  // Shared localStorage key across the entire application
-  const STORAGE_KEY = 'jarvis_shared_chat_{{ request.user.pk }}';
-  const OPEN_KEY    = 'jarvis_open_{{ request.user.pk }}';
+  // Shared localStorage key across the entire application (synced with dashboard copilot)
+  const USER_KEY    = '{{ request.user.pk|default:"default" }}';
+  const UI_STORAGE_KEY = 'jarvis_ui_history_' + USER_KEY;
+  const SHARED_STORAGE_KEY = 'jarvis_shared_chat_' + USER_KEY;
+  const STORAGE_KEY = UI_STORAGE_KEY;
+  const OPEN_KEY    = 'jarvis_open_' + USER_KEY;
   const MAX_STORED  = 80;   // max messages kept in storage
 
   let isOpen    = false;
@@ -962,12 +965,23 @@
   // ─────────────────────────────────────────────────────
   function loadHistory() {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (data) return JSON.parse(data);
+      // 1. Try reading the active UI chat history (from dashboard or prior sessions)
+      const uiData = localStorage.getItem(UI_STORAGE_KEY);
+      if (uiData) {
+        const parsedUi = JSON.parse(uiData);
+        if (Array.isArray(parsedUi) && parsedUi.length > 0) return parsedUi;
+      }
+
+      // 2. Fall back to shared chat storage
+      const data = localStorage.getItem(SHARED_STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
 
       // Auto-migrate from any older keys if present
-      const oldConsole = localStorage.getItem('jarvis_console_{{ request.user.pk }}');
-      const oldHistory = localStorage.getItem('jarvis_history_{{ request.user.pk }}');
+      const oldConsole = localStorage.getItem('jarvis_console_' + USER_KEY);
+      const oldHistory = localStorage.getItem('jarvis_history_' + USER_KEY);
       const raw = oldConsole || oldHistory;
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -993,7 +1007,11 @@
 
   function saveHistory(history) {
     const trimmed = history.slice(-MAX_STORED);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed)); } catch {}
+    const jsonStr = JSON.stringify(trimmed);
+    try {
+      localStorage.setItem(UI_STORAGE_KEY, jsonStr);
+      localStorage.setItem(SHARED_STORAGE_KEY, jsonStr);
+    } catch {}
     updateWidgetHistoryUI(widgetHistorySearch ? widgetHistorySearch.value : '');
   }
 
@@ -1218,6 +1236,16 @@
 
       const chipText = chipBtn.dataset.chip;
       if (chipText && !isLoading) {
+        if (chipText.includes('Focus 3D Camera') && window.MV) {
+          const lowerChip = chipText.toLowerCase();
+          for (const key of Object.keys(window.MV.PART_DEFS || {})) {
+            const def = window.MV.PART_DEFS[key];
+            if (lowerChip.includes(key) || (def.title && lowerChip.includes(def.title.toLowerCase()))) {
+              window.MV.selectPart(key);
+              break;
+            }
+          }
+        }
         sendMessage(chipText);
       }
       return;
@@ -1604,6 +1632,26 @@
     const text = (customText !== undefined ? customText : input.value).trim();
     if (!text || isLoading) return;
 
+    // Automatic 3D Motorcycle Viewer Synchronization:
+    // If the user mentions or asks about a motorcycle component, swivel the 3D camera to it!
+    try {
+      const lowerText = text.toLowerCase();
+      let matchPart = null;
+      if (lowerText.includes('engine') || lowerText.includes('crankcase') || lowerText.includes('transmission cover')) matchPart = 'engine';
+      else if (lowerText.includes('exhaust') || lowerText.includes('muffler') || lowerText.includes('pipe') || lowerText.includes('silencer')) matchPart = 'exhaust';
+      else if (lowerText.includes('front brake') || lowerText.includes('front disc') || lowerText.includes('rotor') || lowerText.includes('disc brake')) matchPart = 'brakes';
+      else if (lowerText.includes('wheel') || lowerText.includes('tire') || lowerText.includes('tyre') || lowerText.includes('rim') || lowerText.includes('spoke')) matchPart = 'wheels';
+      else if (lowerText.includes('fairing') || lowerText.includes('bodywork') || lowerText.includes('panel') || lowerText.includes('fender') || lowerText.includes('body trim')) matchPart = 'bodywork';
+      else if (lowerText.includes('control') || lowerText.includes('handlebar') || lowerText.includes('fork') || lowerText.includes('shock') || lowerText.includes('light') || lowerText.includes('mirror')) matchPart = 'controls';
+      else if (lowerText.includes('sprocket') || lowerText.includes('chain') || lowerText.includes('final drive')) matchPart = 'sprocket';
+      else if (lowerText.includes('battery') || lowerText.includes('fuse') || lowerText.includes('terminal') || lowerText.includes('electrical')) matchPart = 'battery';
+      else if (lowerText.includes('overview') || lowerText.includes('exterior') || lowerText.includes('whole bike')) matchPart = 'overview';
+
+      if (matchPart && window.MV && typeof window.MV.selectPart === 'function') {
+        window.MV.selectPart(matchPart);
+      }
+    } catch(e) {}
+
     // Reset voice flag when user sends a typed message (not from mic)
     if (customText === undefined) {
       lastInputWasVoice = false;
@@ -1845,6 +1893,54 @@
       }
     });
   }
+
+  // ─────────────────────────────────────────────────────
+  // Public Window API for 3D Viewer & Repair Guide Integration
+  // ─────────────────────────────────────────────────────
+  window.JarvisWidget = {
+    open: function() { openPanel(); },
+    close: function() { closePanel(); },
+    isOpen: function() { return isOpen; },
+    openWithQuery: function(text) {
+      openPanel();
+      if (input) {
+        input.value = text || '';
+        input.focus();
+      }
+    },
+    sendPrompt: function(text) {
+      openPanel();
+      sendMessage(text);
+    },
+    pinpointPart: function(partDef) {
+      if (!partDef) return;
+      openPanel();
+
+      const title = partDef.title || 'Component';
+      const loc = partDef.location || 'See vehicle overview.';
+      const desc = partDef.desc || '';
+      const check = partDef.checklist || '';
+      const limit = partDef.limitation || '';
+      const key = partDef.key || 'overview';
+
+      // Swivel 3D camera to component
+      if (window.MV && typeof window.MV.selectPart === 'function') {
+        window.MV.selectPart(key);
+      }
+
+      const text = `📍 **JARVIS PINPOINT: ${title.toUpperCase()}**\n\n` +
+        `**Where to find it on your motorcycle:**\n${loc}\n\n` +
+        `**What this part does:**\n${desc}\n\n` +
+        (check ? `**How to access & inspect:**\n${check}\n\n` : '') +
+        (limit ? `⚠️ *Note:* ${limit}\n\n` : '') +
+        `[chips: 🎯 Focus 3D Camera on ${title} | How often should I check this? | What tools do I need?]`;
+
+      appendBotMessage(text);
+      if ('speechSynthesis' in window && lastInputWasVoice) {
+        speakBotWidget(`I have pinpointed the ${title}. ${loc.split('\n')[0]}`);
+      }
+    }
+  };
 
   // Boot — restore history & panel state
   // ─────────────────────────────────────────────────────

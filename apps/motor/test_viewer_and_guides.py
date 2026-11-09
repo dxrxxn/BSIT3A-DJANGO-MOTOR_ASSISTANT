@@ -57,3 +57,15 @@ class ViewerCoverageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-part="engine"')
         self.assertContains(response, 'data-part="overview"')
+
+    def test_viewer_includes_jarvis_widget_and_hud_pinpoint(self):
+        response = self.client.get(reverse('motor:viewer'))
+        self.assertEqual(response.status_code, 200)
+        # Jarvis widget is integrated
+        self.assertContains(response, 'id="jarvis-toggle"')
+        self.assertContains(response, 'id="jarvis-panel"')
+        # Enhanced HUD sections for location, description, and checklist
+        self.assertContains(response, 'id="mv-hud-location"')
+        self.assertContains(response, 'id="mv-hud-checklist"')
+        self.assertContains(response, 'id="mv-hud-pinpoint"')
+        self.assertContains(response, 'id="mv-hud-ask-jarvis"')

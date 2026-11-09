@@ -12,7 +12,24 @@
       <div class="mv-pretitle">Motor Assistant</div>
       <h2 class="mv-title"><i class="fas fa-motorcycle me-2"></i>3D Motorcycle Viewer</h2>
     </div>
-    <div class="mv-status" id="mv-status"><span class="mv-status-dot"></span>Preparing viewer…</div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="mv-model-selector-wrap">
+        <label for="mv-model-select" class="visually-hidden">Choose Motorcycle Model</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-dark border-secondary text-primary">
+            <i class="fa-solid fa-cube"></i>
+          </span>
+          <select id="mv-model-select" class="form-select form-select-sm bg-dark text-light border-secondary">
+            {% for key, item in models_registry.items %}
+              <option value="{{ key }}" data-url="{% static item.static_path %}?v={% now 'U' %}" {% if key == active_key %}selected{% endif %}>
+                {{ item.title }} ({{ item.badge }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mv-status" id="mv-status"><span class="mv-status-dot"></span>Preparing viewer…</div>
+    </div>
   </div>
 
   <div class="mv-viewport" id="mv-viewport">
@@ -112,12 +129,39 @@
         </button>
       </div>
       <h3 class="mv-part-hud-title" id="mv-hud-title">Engine Core</h3>
-      <p class="mv-part-hud-desc" id="mv-hud-desc">Power unit inspection.</p>
+
+      <!-- Location Block (Where is it located) -->
+      <div class="mv-hud-section mv-hud-location-box" id="mv-hud-location-box">
+        <div class="mv-hud-section-title">
+          <i class="fa-solid fa-location-dot me-1 text-info"></i>Where to find it on motorcycle:
+        </div>
+        <p class="mv-hud-section-text" id="mv-hud-location"></p>
+      </div>
+
+      <!-- Description Block (What is this part) -->
+      <div class="mv-hud-section mv-hud-desc-box" id="mv-hud-desc-box">
+        <div class="mv-hud-section-title">
+          <i class="fa-solid fa-circle-info me-1 text-primary"></i>What is this part:
+        </div>
+        <p class="mv-part-hud-desc" id="mv-hud-desc">Power unit inspection.</p>
+      </div>
+
+      <!-- Inspection Checklist Block -->
+      <div class="mv-hud-section mv-hud-checklist-box" id="mv-hud-checklist-box">
+        <div class="mv-hud-section-title">
+          <i class="fa-solid fa-list-check me-1 text-warning"></i>Inspection & troubleshooting:
+        </div>
+        <p class="mv-hud-section-text" id="mv-hud-checklist"></p>
+      </div>
+
       <p class="mv-part-hud-limit d-none" id="mv-hud-limit"></p>
       <div class="mv-part-hud-actions">
-        <a href="{% url 'dashboard' %}" class="mv-hud-btn" id="mv-hud-diagnose" title="Consult Jarvis AI about this part">
+        <button type="button" class="mv-hud-btn" id="mv-hud-pinpoint" title="Have Jarvis pinpoint this part and guide you">
+          <i class="fa-solid fa-crosshairs me-1"></i>Jarvis Pinpoint
+        </button>
+        <button type="button" class="mv-hud-btn mv-hud-btn-outline" id="mv-hud-ask-jarvis" title="Chat with Jarvis about this part">
           <i class="fa-solid fa-robot me-1"></i>Ask Jarvis
-        </a>
+        </button>
         <button type="button" class="mv-hud-btn mv-hud-btn-outline" id="mv-hud-outside" title="Return to exterior view">
           <i class="fa-solid fa-arrow-left me-1"></i>Back Outside
         </button>
@@ -142,6 +186,9 @@
   </p>
 </div>
 
+<!-- J.A.R.V.I.S. Interactive Copilot Widget for 3D Repair Guides -->
+{% include 'theme/jarvis.html' %}
+
 <script type="importmap">
 {
   "imports": {
@@ -152,7 +199,19 @@
 </script>
 <script>
 window.MOTOR_VIEWER = {
-  modelUrl: "{% static 'motor/models/motorcycle.glb' %}",
+  activeKey: "{{ active_key }}",
+  modelUrl: "{% static active_model.static_path %}?v={% now 'U' %}",
+  fallbackUrl: "{% static 'motor/models/motorcycle.glb' %}",
+  title: "{{ active_model.title }}",
+  models: {
+    {% for key, item in models_registry.items %}
+      "{{ key }}": {
+        key: "{{ key }}",
+        title: "{{ item.title }}",
+        url: "{% static item.static_path %}?v={% now 'U' %}"
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  }
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
@@ -161,5 +220,5 @@ if (window.anime && 'suspendWhenDocumentHidden' in window.anime) {
   window.anime.suspendWhenDocumentHidden = false;
 }
 </script>
-<script type="module" src="{% static 'motor/viewer.js' %}"></script>
+<script type="module" src="{% static 'motor/viewer.js' %}?v={% now 'U' %}"></script>
 {% endblock %}
