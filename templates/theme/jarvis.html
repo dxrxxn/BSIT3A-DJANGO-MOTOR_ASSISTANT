@@ -1205,9 +1205,19 @@
   // ─────────────────────────────────────────────────────
   clearBtn.addEventListener('click', () => {
     messages.innerHTML = '';
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    try {
+      localStorage.removeItem(UI_STORAGE_KEY);
+      localStorage.removeItem(SHARED_STORAGE_KEY);
+    } catch {}
+    // Clear Django session context too
+    fetch(CHAT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ reset: true })
+    }).catch(() => {});
     const clearMsg = 'Logs cleared, sir. J.A.R.V.I.S. remains online and at your service.';
     appendBotMessage(clearMsg);
+    updateWidgetHistoryUI('');
   });
 
   // Click handlers for inline delete buttons and interactive diagnostic chips
@@ -1694,6 +1704,31 @@
       const replyText = data.reply || 'I appear to have lost that thought, sir. One more time, if you would.';
       const botMsgId = appendBotMessage(replyText);
       scrollToTurnResponse(userMsgId, botMsgId, 50);
+
+      // ── Auto-pinpoint 3D viewer based on Jarvis reply content ──
+      try {
+        if (window.MV && typeof window.MV.selectPart === 'function') {
+          const lower = replyText.toLowerCase();
+          const PART_MAP = [
+            { keys: ['engine case','crankcase','transmission cover','engine block','cylinder head'], part: 'engine' },
+            { keys: ['exhaust pipe','muffler','silencer','header pipe','exhaust system'], part: 'exhaust' },
+            { keys: ['front brake','brake disc','brake rotor','brake caliper','disc brake'], part: 'brakes' },
+            { keys: ['front wheel','rear wheel','tire','tyre','rim','spoke','wheel bearing'], part: 'wheels' },
+            { keys: ['fairing','body panel','bodywork','front fender','rear mudguard','floorboard'], part: 'bodywork' },
+            { keys: ['handlebar','throttle','brake lever','clutch lever','front fork','rear shock','headlight'], part: 'controls' },
+            { keys: ['sprocket','drive chain','countershaft','final drive chain'], part: 'sprocket' },
+            { keys: ['battery','12v','fuse box','fuse','electrical terminal','ecu','ecm','stator','rectifier'], part: 'battery' },
+          ];
+          let matched = null;
+          for (const entry of PART_MAP) {
+            if (entry.keys.some(k => lower.includes(k))) { matched = entry.part; break; }
+          }
+          if (matched) {
+            setTimeout(() => window.MV.selectPart(matched), 450);
+          }
+        }
+      } catch(e) {}
+
       if (lastInputWasVoice && 'speechSynthesis' in window) {
         speakBotWidget(replyText);
       }

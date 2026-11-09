@@ -380,3 +380,38 @@ class RegistrationTests(TestCase):
         self.assertTrue(get_user_model().objects.filter(username='newrider').exists())
 
 
+
+
+class MotorcycleCardAndOptionsTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='rider1', password='secret1234')
+        self.client.force_login(self.user)
+
+    def test_home_renders_motorcycle_card_and_menu(self):
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'YOUR MOTORCYCLE')
+        self.assertContains(response, 'jarvis-moto-menu-btn')
+        self.assertContains(response, 'jarvis-moto-dropdown')
+        self.assertContains(response, 'Yamaha MT-09 SP')
+        self.assertContains(response, 'Honda Click 125i')
+
+    def test_extract_vehicle_info_mt09(self):
+        from apps.core.views import _extract_vehicle_info
+        info = _extract_vehicle_info('what about mt-09')
+        self.assertEqual(info['make'], 'Yamaha')
+        self.assertEqual(info['model'], 'MT-09 SP')
+        self.assertEqual(info['displacement'], '890cc')
+        self.assertIn('Big Bike', info['type'])
+
+    def test_jarvis_chat_returns_vehicle_info(self):
+        response = self.client.post(
+            reverse('jarvis_chat'),
+            data=json.dumps({'message': 'I have a yamaha mt-09, how often should I change oil?'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('vehicle', data)
+        self.assertEqual(data['vehicle']['make'], 'Yamaha')
+        self.assertEqual(data['vehicle']['model'], 'MT-09 SP')

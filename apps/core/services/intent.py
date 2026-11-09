@@ -191,7 +191,7 @@ MOTORCYCLE_VOCABULARY = [
     'raider', 'tmx', 'barako', 'ct 100', 'ct100', 'ct 125', 'ct125',
     'ct 150', 'ct150', 'rouser', 'wave', 'xrm', 'smash', 'burgman',
     'fazzio', 'gravis', 'sporty', 'soul', 'vega', 'ytx', 'dominar',
-    'duke', 'gixxer', 'gsx', 'mt-15', 'mt15', 'r15', 'cbr', 'crf',
+    'duke', 'gixxer', 'gsx', 'mt-09', 'mt09', 'mt 09', 'mt-09 sp', 'mt-07', 'mt-03', 'mt-15', 'mt15', 'cp3', 'r15', 'cbr', 'crf',
     'wr155', 'klx', 'w175', 'ninja', 'fz', 'sight', 'sz', 'boxer',
     'discover', 'pulsar', 'dink', 'like 125', 'like 150',
     # Parts & Systems
@@ -272,6 +272,7 @@ def is_motorcycle_related(norm: str, history=None, vehicle_profile=None) -> bool
             has_mc = any(kw in norm for kw in [
                 'motorcycle', 'motorbike', 'scooter', 'underbone', 'moped',
                 'click', 'nmax', 'aerox', 'beat', 'raider', 'tmx', 'barako',
+                'mt-09', 'mt09', 'mt 09', 'mt',
             ])
             if not has_mc or domain in ('geography', 'sports', 'home_appliance', 'cooking', 'academics', 'science', 'pets', 'creative', 'celebrities', 'tech', 'weather'):
                 return False
@@ -393,6 +394,7 @@ def classify_intent(message: str, history=None, vehicle_profile=None) -> IntentR
             has_motorcycle = any(kw in norm for kw in [
                 'motorcycle', 'motorbike', 'scooter', 'underbone', 'moped',
                 'click', 'nmax', 'aerox', 'beat', 'raider', 'tmx', 'barako',
+                'mt-09', 'mt09', 'mt 09', 'mt',
             ])
             if not has_motorcycle or domain in ('geography', 'sports', 'home_appliance', 'cooking', 'academics', 'science', 'pets', 'creative', 'celebrities', 'tech', 'weather'):
                 return _make_intent('off_topic', sub_intent=domain, entity=None, is_off_topic=True, details={'domain': domain})

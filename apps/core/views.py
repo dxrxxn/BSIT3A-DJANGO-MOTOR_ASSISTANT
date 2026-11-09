@@ -629,6 +629,8 @@ def _extract_vehicle_info(text, history=None):
                     break
 
     models_list = [
+        'mt-09 sp', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'r15', 'r3', 'r1', 'r6',
+        'cbr 150r', 'cbr',
         'click 125i', 'click 150i', 'click 160', 'click',
         'aerox 155', 'aerox', 'nmax 155', 'nmax',
         'raider 150', 'raider', 'mio sporty', 'mio i 125', 'mio gear', 'mio soul', 'mio',
@@ -656,6 +658,9 @@ def _extract_vehicle_info(text, history=None):
                 if 'ct' in label.lower():
                     label = re.sub(r'\bCt\b', 'CT', label)
                     label = re.sub(r'\bCt(\d+)', r'CT \1', label)
+                if 'mt' in label.lower():
+                    label = re.sub(r'\bMt\b', 'MT', label, flags=re.I)
+                    label = re.sub(r'\bMt-?0?9\b', 'MT-09 SP', label, flags=re.I)
                 info['model'] = label
                 model_switched = True
                 # If make wasn't explicitly stated, infer make from brand-specific model
@@ -664,7 +669,7 @@ def _extract_vehicle_info(text, history=None):
                         info['make'] = 'Bajaj'
                     elif any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'xrm', 'tmx']):
                         info['make'] = 'Honda'
-                    elif any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper']):
+                    elif any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'r15', 'r3', 'r1', 'r6']):
                         info['make'] = 'Yamaha'
                     elif any(k in mdl for k in ['raider', 'smash', 'burgman']):
                         info['make'] = 'Suzuki'
@@ -672,20 +677,38 @@ def _extract_vehicle_info(text, history=None):
                         info['make'] = 'Kawasaki'
                 break
 
-        if not info['model'] and history_turns:
+        if not info['model'] and history_turns and not make_switched:
             for turn_txt in reversed(history_turns):
                 for mdl in models_list:
                     mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', turn_txt)
                     if mdl_match:
+                        # Guard: If make is known, ensure historical model is compatible with that make
+                        honda_only = any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm', 'cbr'])
+                        yamaha_only = any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt', 'r15', 'r3', 'r1', 'r6'])
+                        if info['make'] == 'Yamaha' and honda_only:
+                            continue
+                        if info['make'] == 'Honda' and yamaha_only:
+                            continue
                         label = mdl_match.group(0).title()
                         label = re.sub(r'(\d+)I\b', r'\1i', label)
                         if 'ct' in label.lower():
                             label = re.sub(r'\bCt\b', 'CT', label)
                             label = re.sub(r'\bCt(\d+)', r'CT \1', label)
+                        if 'mt' in label.lower():
+                            label = re.sub(r'\bMt\b', 'MT', label, flags=re.I)
+                            label = re.sub(r'\bMt-?0?9\b', 'MT-09 SP', label, flags=re.I)
                         info['model'] = label
                         break
                 if info['model']:
                     break
+
+    # Brand compatibility guard: If make is Yamaha, never allow a Honda model like Click, and vice-versa
+    if info['make'] == 'Yamaha' and info['model']:
+        if any(h in info['model'].lower() for h in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm']):
+            info['model'] = None
+    elif info['make'] == 'Honda' and info['model']:
+        if any(y in info['model'].lower() for y in ['aerox', 'nmax', 'mio', 'fazzio', 'sniper', 'mt']):
+            info['model'] = None
 
     if info['make'] and info['model'] and info['model'].lower().startswith(info['make'].lower()):
         info['model'] = info['model'][len(info['make']):].strip()
@@ -739,6 +762,15 @@ def _extract_vehicle_info(text, history=None):
         info['displacement'] = '100CC'
         info['type'] = info['type'] or 'motorcycle'
         info['engine_fuel'] = info['engine_fuel'] or 'Carburetor'
+
+    if info['model'] and 'mt-09' in info['model'].lower():
+        info['displacement'] = info['displacement'] or '890cc'
+        info['type'] = info['type'] or 'Big Bike / Naked'
+        info['engine_fuel'] = info['engine_fuel'] or 'FI'
+    elif info['model'] and 'click' in info['model'].lower():
+        info['displacement'] = info['displacement'] or '125cc'
+        info['type'] = info['type'] or 'Scooter'
+        info['engine_fuel'] = info['engine_fuel'] or 'FI'
 
     return info
 
@@ -2921,10 +2953,12 @@ def jarvis_chat(request):
 
     from apps.core.models import GeminiUsageTracker
     quota = GeminiUsageTracker.get_current_quota()
+    veh = _extract_vehicle_info(message, history=data.get('history', []))
 
     return JsonResponse({
         'reply': reply,
         'quota': quota,
+        'vehicle': veh,
     })
 
 

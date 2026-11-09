@@ -27,6 +27,36 @@ import re
 # avoids invented torque values or clearances — the owner's manual is the source
 # of truth for exact numbers.
 BIKE_LIBRARY = {
+        'mt-09': {
+        'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'dual front disc / rear disc',
+        'focus': [
+            'CP3 890cc inline-triple; check battery voltage and quickshifter calibration if having shifting issues.',
+            'Brembo radial master cylinder and dual front brake discs; verify fluid level and pad wear.',
+            'Drive chain slack (target 25-35mm) and sprocket teeth wear.',
+        ],
+    },
+    'mt09': {
+        'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'dual front disc / rear disc',
+        'focus': [
+            'CP3 890cc inline-triple; check battery voltage and quickshifter calibration if having shifting issues.',
+            'Brembo radial master cylinder and dual front brake discs; verify fluid level and pad wear.',
+            'Drive chain slack (target 25-35mm) and sprocket teeth wear.',
+        ],
+    },
+    'mt 09': {
+        'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'dual front disc / rear disc',
+        'focus': [
+            'CP3 890cc inline-triple; check battery voltage and quickshifter calibration if having shifting issues.',
+            'Brembo radial master cylinder and dual front brake discs; verify fluid level and pad wear.',
+            'Drive chain slack (target 25-35mm) and sprocket teeth wear.',
+        ],
+    },
     'click 125i': {
         'make': 'Honda', 'model': 'Click 125i', 'type': 'scooter',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
@@ -1616,10 +1646,15 @@ def resolve_profile(vehicle_info, message='', history=None):
     # Prefer a model named in the CURRENT message; only then look at history,
     # so an old bike in the chat log can never override a new one.
     profile = None
+    req_make = (vehicle_info or {}).get('make')
     for source in (corpus, corpus + " " + history_corpus):
         for key in sorted(BIKE_LIBRARY, key=len, reverse=True):
             if re.search(r'\b' + re.escape(key) + r'\b', source):
-                profile = dict(BIKE_LIBRARY[key])
+                cand = BIKE_LIBRARY[key]
+                # Cross-brand guard: never match a different make's model from history
+                if req_make and cand.get('make') and req_make.lower() != cand.get('make').lower():
+                    continue
+                profile = dict(cand)
                 profile['key'] = key
                 break
         if profile:
@@ -3131,12 +3166,29 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
         prev_bike = state.get('bike') or {}
         prev_name = f"{prev_bike.get('make', '')} {prev_bike.get('model', '')}".strip().lower()
         new_name = f"{cur_prof.get('make', '')} {cur_prof.get('model', '')}".strip().lower()
-        if prev_name and new_name and prev_name != new_name:
+        if (prev_name and new_name and prev_name != new_name) or (cur_prof.get('make') and not cur_prof.get('model')):
             prev_area = state.get('area')
             state.clear()
             state.update(start_state())
             state['bike'] = cur_prof
             state['fresh'] = False
+            
+            # If user specified make only without a model (e.g. 'Yamaha'), ask for the model!
+            if cur_prof.get('make') and not cur_prof.get('model'):
+                make_name = cur_prof['make']
+                state['stage'] = 'bike'
+                if make_name.lower() == 'yamaha':
+                    chips = "MT-09 SP | NMAX 155 | Aerox 155 | Mio | Sniper 155 | Not sure"
+                elif make_name.lower() == 'honda':
+                    chips = "Click 125i | Beat | PCX 160 | ADV 160 | Wave 125 | Not sure"
+                else:
+                    chips = _tr(lang, 'identify_chips')
+                return (
+                    f"Understood, {sir}. You are working on a **{make_name}**.\n\n"
+                    f"Which specific **{make_name}** model do you have? (e.g. *MT-09, NMAX, Aerox, Mio*)\n\n"
+                    f"[chips: {chips}]"
+                )
+
             new_area = detect_area(message) or prev_area
             if new_area:
                 state['area'] = new_area

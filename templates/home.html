@@ -799,6 +799,178 @@
 }
 
 
+/* ── YOUR MOTORCYCLE 3-Dot Options Dropdown & Switcher ── */
+.jarvis-card-dots-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #8da2bb;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.jarvis-card-dots-btn:hover,
+.jarvis-card-dots-btn.active {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
+}
+.jarvis-moto-dropdown {
+  position: absolute;
+  top: 48px;
+  right: 14px;
+  z-index: 1000;
+  width: 275px;
+  background: rgba(13, 20, 32, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: jarvis-moto-menu-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes jarvis-moto-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.jarvis-moto-dropdown-header {
+  padding: 5px 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 6px;
+}
+.jarvis-moto-dropdown-header span:first-child {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #7dd3fc;
+  text-transform: uppercase;
+}
+.jarvis-moto-dropdown-sub {
+  font-size: 9.5px;
+  color: #64748b;
+  margin-top: 2px;
+  display: block;
+}
+.jarvis-moto-dropdown-section-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  padding: 5px 8px 3px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+}
+.jarvis-moto-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #cbd5e1;
+}
+.jarvis-moto-dropdown-item:hover {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+}
+.jarvis-moto-dropdown-item.is-selected {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.4);
+  color: #ffffff;
+}
+.jarvis-moto-item-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #818cf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.jarvis-moto-dropdown-item.is-selected .jarvis-moto-item-icon {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+}
+.jarvis-moto-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.jarvis-moto-item-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.jarvis-moto-badge-3d {
+  background: rgba(34, 211, 238, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  color: #22d3ee;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.jarvis-moto-item-sub {
+  font-size: 9.5px;
+  color: #64748b;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jarvis-moto-dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 5px 0;
+}
+.jarvis-moto-dropdown-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+.jarvis-moto-dropdown-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.jarvis-moto-dropdown-action.text-danger {
+  color: #fca5a5 !important;
+}
+.jarvis-moto-dropdown-action.text-danger:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+}
+
 </style>
 {% endblock %}
 
@@ -1100,13 +1272,89 @@
     <div class="jarvis-right-column">
 
       <!-- Card 1: YOUR MOTORCYCLE -->
-      <div class="jarvis-card-box jarvis-moto-card">
+      <div class="jarvis-card-box jarvis-moto-card" style="position: relative;">
         <div class="jarvis-card-box-header">
           <span class="jarvis-card-eyebrow">YOUR MOTORCYCLE</span>
-          <button type="button" class="jarvis-card-dots-btn" title="Options" aria-label="Options">
+          <button type="button" class="jarvis-card-dots-btn" id="jarvis-moto-menu-btn" title="Motorcycle Options & 3D Switcher" aria-label="Motorcycle options" aria-expanded="false">
             <i class="fa-solid fa-ellipsis"></i>
           </button>
         </div>
+
+        <!-- 3-Dot Options Dropdown Menu -->
+        <div class="jarvis-moto-dropdown" id="jarvis-moto-dropdown" style="display: none;">
+          <div class="jarvis-moto-dropdown-header">
+            <span>SWITCH MOTORCYCLE</span>
+            <span class="jarvis-moto-dropdown-sub">Select or explore in 3D viewer</span>
+          </div>
+
+          <div class="jarvis-moto-dropdown-section-title">
+            <i class="fa-solid fa-cube text-info me-1"></i> Available in 3D Viewer
+          </div>
+
+          <button type="button" class="jarvis-moto-dropdown-item" data-make="Yamaha" data-model="MT-09 SP" data-year="2025" data-disp="890cc" data-type="Big Bike / Naked" data-bike-key="yamaha_mt09">
+            <div class="jarvis-moto-item-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div class="jarvis-moto-item-info">
+              <div class="jarvis-moto-item-name">Yamaha MT-09 SP <span class="jarvis-moto-badge-3d">3D</span></div>
+              <div class="jarvis-moto-item-sub">2025 · 890cc · Big Bike</div>
+            </div>
+          </button>
+
+          <button type="button" class="jarvis-moto-dropdown-item" data-make="Honda" data-model="Click 125i" data-year="2022" data-disp="125cc" data-type="Scooter" data-bike-key="honda_click">
+            <div class="jarvis-moto-item-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div class="jarvis-moto-item-info">
+              <div class="jarvis-moto-item-name">Honda Click 125i <span class="jarvis-moto-badge-3d">3D</span></div>
+              <div class="jarvis-moto-item-sub">2022 · 125cc · Scooter</div>
+            </div>
+          </button>
+
+          <div class="jarvis-moto-dropdown-divider"></div>
+
+          <div class="jarvis-moto-dropdown-section-title">
+            <i class="fa-solid fa-gauge-high text-muted me-1"></i> Other Popular Models
+          </div>
+
+          <button type="button" class="jarvis-moto-dropdown-item" data-make="Yamaha" data-model="NMAX 155" data-year="2023" data-disp="155cc" data-type="Scooter">
+            <div class="jarvis-moto-item-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div class="jarvis-moto-item-info">
+              <div class="jarvis-moto-item-name">Yamaha NMAX 155</div>
+              <div class="jarvis-moto-item-sub">2023 · 155cc · Scooter</div>
+            </div>
+          </button>
+
+          <button type="button" class="jarvis-moto-dropdown-item" data-make="Honda" data-model="Beat" data-year="2023" data-disp="110cc" data-type="Scooter">
+            <div class="jarvis-moto-item-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div class="jarvis-moto-item-info">
+              <div class="jarvis-moto-item-name">Honda Beat</div>
+              <div class="jarvis-moto-item-sub">2023 · 110cc · Scooter</div>
+            </div>
+          </button>
+
+          <button type="button" class="jarvis-moto-dropdown-item" data-make="Suzuki" data-model="Raider 150" data-year="2022" data-disp="150cc" data-type="Underbone">
+            <div class="jarvis-moto-item-icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div class="jarvis-moto-item-info">
+              <div class="jarvis-moto-item-name">Suzuki Raider 150</div>
+              <div class="jarvis-moto-item-sub">2022 · 150cc · Underbone</div>
+            </div>
+          </button>
+
+          <div class="jarvis-moto-dropdown-divider"></div>
+
+          <button type="button" class="jarvis-moto-dropdown-action" id="jarvis-moto-custom-btn">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Set Custom Motorcycle...</span>
+          </button>
+
+          <button type="button" class="jarvis-moto-dropdown-action" id="jarvis-moto-open-3d-btn">
+            <i class="fa-solid fa-cube"></i>
+            <span>Explore Current in 3D</span>
+          </button>
+
+          <button type="button" class="jarvis-moto-dropdown-action text-danger" id="jarvis-moto-reset-btn">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Reset Motorcycle</span>
+          </button>
+        </div>
+
         <div class="jarvis-moto-details">
           <h3 class="jarvis-moto-title" id="display-vehicle-title"
               data-default-title="Your motorcycle">Your motorcycle</h3>
@@ -1114,7 +1362,7 @@
              data-default-specs="No motorcycle specified yet">No motorcycle specified yet</p>
 
           <!-- Explore in 3D Button -->
-          <a href="{% url 'motor:viewer' %}" class="jarvis-explore-btn">
+          <a href="{% url 'motor:viewer' %}" class="jarvis-explore-btn" id="jarvis-moto-explore-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/>
               <polyline points="2 17 12 22 22 17"/>
@@ -1473,118 +1721,223 @@
 
   // ── Vehicle Information Auto-Extraction from History ───────────────────────
   function extractKnownVehicleInfo() {
+    // 1. Check if user explicitly set a vehicle via 3-dots menu
+    let activeSaved = null;
+    try {
+      const s = localStorage.getItem('jarvis_active_vehicle');
+      if (s) activeSaved = JSON.parse(s);
+    } catch (e) {}
+
     const history = loadHistory();
-    const corpus = history.map(h => h.text || '').join(' ').toLowerCase();
+    // Exclude bot welcome greeting ('init-1', 'welcome-1') so example text "Click 125i 2022" doesn't contaminate detection
+    const turns = history.filter(h => h && h.id !== 'init-1' && h.id !== 'welcome-1');
 
-    const info = {
-      make: '',
-      model: '',
-      year: '',
-      type: 'Motorcycle',
-      displacement: '',
-      fuel: 'Not sure'
-    };
-
-    // Prefer the authoritative profile saved with the latest structured turn.
-    for (let i = history.length - 1; i >= 0; i--) {
-      const profile = history[i] && history[i].structured && history[i].structured.vehicle_profile;
-      if (!profile) continue;
-      if (profile.make) info.make = profile.make;
-      if (profile.model) info.model = profile.model;
-      if (profile.year) info.year = profile.year;
-      if (profile.engine_displacement) info.displacement = profile.engine_displacement;
-      if (profile.fuel_system) {
-        info.fuel = profile.fuel_system === 'fi'
-          ? 'Fuel-injected (FI)'
-          : (profile.fuel_system === 'carburetor' ? 'Carburetor' : 'Not sure');
+    // Authoritative model registry with intrinsic brand, displacement, and 3D viewer mappings
+    const KNOWN_MODELS = [
+      {
+        patterns: [/\bmt-?0?9\s*sp\b/i, /\bmt-?0?9\b/i, /\bmt\s*09\b/i, /\bmt09\b/i],
+        make: 'Yamaha',
+        model: 'MT-09 SP',
+        displayName: 'Yamaha MT-09 SP',
+        defaultYear: '2025',
+        displacement: '890cc',
+        type: 'Big Bike / Naked',
+        bikeKey: 'yamaha_mt09'
+      },
+      {
+        patterns: [/\bclick\s*160\b/i, /\bclick\s*150i?\b/i, /\bclick\s*125i?\b/i, /\bclick\b/i],
+        make: 'Honda',
+        model: 'Click 125i',
+        displayName: 'Honda Click 125i',
+        defaultYear: '2022',
+        displacement: '125cc',
+        type: 'Scooter',
+        bikeKey: 'honda_click'
+      },
+      {
+        patterns: [/\bnmax\s*155\b/i, /\bnmax\b/i],
+        make: 'Yamaha',
+        model: 'NMAX 155',
+        displayName: 'Yamaha NMAX 155',
+        defaultYear: '2023',
+        displacement: '155cc',
+        type: 'Scooter'
+      },
+      {
+        patterns: [/\baerox\s*155\b/i, /\baerox\b/i],
+        make: 'Yamaha',
+        model: 'Aerox 155',
+        displayName: 'Yamaha Aerox 155',
+        defaultYear: '2023',
+        displacement: '155cc',
+        type: 'Scooter'
+      },
+      {
+        patterns: [/\bbeat\s*110\b/i, /\bbeat\b/i],
+        make: 'Honda',
+        model: 'Beat',
+        displayName: 'Honda Beat',
+        defaultYear: '2023',
+        displacement: '110cc',
+        type: 'Scooter'
+      },
+      {
+        patterns: [/\bpcx\s*160\b/i, /\bpcx\s*150\b/i, /\bpcx\b/i],
+        make: 'Honda',
+        model: 'PCX 160',
+        displayName: 'Honda PCX 160',
+        defaultYear: '2023',
+        displacement: '160cc',
+        type: 'Scooter'
+      },
+      {
+        patterns: [/\braider\s*150\b/i, /\braider\b/i],
+        make: 'Suzuki',
+        model: 'Raider 150',
+        displayName: 'Suzuki Raider 150',
+        defaultYear: '2022',
+        displacement: '150cc',
+        type: 'Underbone'
+      },
+      {
+        patterns: [/\bbarako\s*175\b/i, /\bbarako\b/i],
+        make: 'Kawasaki',
+        model: 'Barako 175',
+        displayName: 'Kawasaki Barako 175',
+        defaultYear: '2022',
+        displacement: '175cc',
+        type: 'Standard'
+      },
+      {
+        patterns: [/\bmio\s*(?:sporty|i\s*125|gear|soul)?\b/i],
+        make: 'Yamaha',
+        model: 'Mio',
+        displayName: 'Yamaha Mio',
+        defaultYear: '2022',
+        displacement: '125cc',
+        type: 'Scooter'
+      },
+      {
+        patterns: [/\bsniper\s*155\b/i, /\bsniper\b/i],
+        make: 'Yamaha',
+        model: 'Sniper 155',
+        displayName: 'Yamaha Sniper 155',
+        defaultYear: '2023',
+        displacement: '155cc',
+        type: 'Underbone'
+      },
+      {
+        patterns: [/\bwave\s*(?:125|110)?\b/i],
+        make: 'Honda',
+        model: 'Wave 125',
+        displayName: 'Honda Wave 125',
+        defaultYear: '2021',
+        displacement: '125cc',
+        type: 'Underbone'
+      },
+      {
+        patterns: [/\bxrm\s*125\b/i, /\bxrm\b/i],
+        make: 'Honda',
+        model: 'XRM 125',
+        displayName: 'Honda XRM 125',
+        defaultYear: '2021',
+        displacement: '125cc',
+        type: 'Dual-Sport'
+      },
+      {
+        patterns: [/\bct\s*100\b/i, /\bct100\b/i],
+        make: 'Bajaj',
+        model: 'CT 100',
+        displayName: 'Bajaj CT 100',
+        defaultYear: '2020',
+        displacement: '100cc',
+        type: 'Standard'
+      },
+      {
+        patterns: [/\brouser\s*(?:200|160)?\b/i],
+        make: 'Bajaj',
+        model: 'Rouser 200',
+        displayName: 'Bajaj Rouser 200',
+        defaultYear: '2022',
+        displacement: '200cc',
+        type: 'Standard'
+      },
+      {
+        patterns: [/\bninja\s*(?:400|300|250)?\b/i],
+        make: 'Kawasaki',
+        model: 'Ninja 400',
+        displayName: 'Kawasaki Ninja 400',
+        defaultYear: '2023',
+        displacement: '400cc',
+        type: 'Sport'
       }
-      if (profile.vehicle_type) {
-        const vt = String(profile.vehicle_type).toLowerCase();
-        if (vt === 'motorcycle' || vt === 'scooter') info.type = 'Scooter';
-        else if (vt === 'car') info.type = 'Car';
-        else if (vt === 'tricycle') info.type = 'Other';
-        else info.type = 'Motorcycle';
-      }
-      break;
-    }
-
-    // Check latest mentioned make from newest to oldest message
-    const makes = ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota', 'Mitsubishi', 'Nissan', 'Ford', 'Hyundai', 'Isuzu', 'Mazda', 'Kymco', 'Rusi', 'Bajaj', 'TVS', 'Vespa'];
-    for (let i = history.length - 1; i >= 0; i--) {
-      const msgText = (history[i].text || '').toLowerCase();
-      for (const m of makes) {
-        if (new RegExp('\\b' + m.toLowerCase() + '\\b').test(msgText)) {
-          info.make = m;
-          break;
-        }
-      }
-      if (info.make) break;
-    }
-
-    // Common models by brand to prevent cross-brand contamination
-    const brandModels = {
-      'Yamaha': ['MT-09 SP', 'MT-09', 'MT 09', 'MT09', 'NMAX 155', 'NMAX', 'Aerox 155', 'Aerox', 'Mio Sporty', 'Mio i 125', 'Mio Gear', 'Mio Soul', 'Mio', 'Sniper 155', 'Sniper', 'Fazzio', 'Gravis', 'R15', 'R3', 'R1'],
-      'Honda': ['Click 125i', 'Click 150i', 'Click 160', 'Click', 'Beat', 'PCX 160', 'PCX', 'ADV 160', 'ADV', 'Wave 125', 'Wave 110', 'Wave', 'XRM 125', 'XRM', 'TMX 125', 'CBR 150R', 'CBR'],
-      'Suzuki': ['Raider 150', 'Raider', 'Burgman Street', 'Burgman', 'Smash 115', 'Smash', 'Gixxer'],
-      'Kawasaki': ['Barako 175', 'Barako', 'Ninja 400', 'Ninja']
-    };
-
-    const targetList = brandModels[info.make] || [
-      'MT-09 SP', 'MT-09', 'MT09', 'Click 125i', 'Click 150i', 'Click 160', 'Click',
-      'Aerox 155', 'Aerox', 'NMAX 155', 'NMAX',
-      'Raider 150', 'Raider', 'Mio Sporty', 'Mio i 125', 'Mio Gear', 'Mio Soul', 'Mio',
-      'Fazzio', 'Gravis', 'Burgman', 'Beat', 'PCX 160', 'PCX', 'ADV 160', 'ADV',
-      'Sniper 155', 'Sniper', 'Wave 110', 'Wave 125', 'Wave', 'XRM 125', 'XRM', 'Smash 115', 'Smash'
     ];
 
-    // Search model prioritizing newest messages first
-    for (let i = history.length - 1; i >= 0; i--) {
-      const msgText = (history[i].text || '').toLowerCase();
-      for (const mdl of targetList) {
-        if (msgText.includes(mdl.toLowerCase())) {
-          info.model = mdl.startsWith('MT') ? 'MT-09 SP' : mdl;
+    // Scan turns from newest to oldest for mentioned motorcycle
+    let detected = null;
+    for (let i = turns.length - 1; i >= 0; i--) {
+      const turn = turns[i];
+      const text = (turn.text || '').toLowerCase();
+
+      // Check if structured profile was provided
+      if (turn.structured && turn.structured.vehicle_profile) {
+        const p = turn.structured.vehicle_profile;
+        if (p.make || p.model) {
+          const matchedKM = KNOWN_MODELS.find(k => (p.model && k.patterns.some(pat => pat.test(p.model))) || (p.make && k.make.toLowerCase() === p.make.toLowerCase() && p.model && k.model.toLowerCase().includes(p.model.toLowerCase())));
+          detected = {
+            make: p.make || (matchedKM ? matchedKM.make : ''),
+            model: p.model || (matchedKM ? matchedKM.model : ''),
+            displayName: (p.make ? p.make + ' ' : '') + (p.model || ''),
+            year: p.year || (matchedKM ? matchedKM.defaultYear : ''),
+            displacement: p.engine_displacement || (matchedKM ? matchedKM.displacement : ''),
+            type: p.vehicle_type || (matchedKM ? matchedKM.type : 'Motorcycle'),
+            bikeKey: matchedKM ? matchedKM.bikeKey : ''
+          };
           break;
         }
       }
-      if (info.model) break;
+
+      // Check known models in turn text
+      for (const km of KNOWN_MODELS) {
+        const matched = km.patterns.some(p => p.test(text));
+        if (matched) {
+          const yMatch = text.match(/\b(19[9]\d|20[012]\d)\b/);
+          const dMatch = text.match(/\b(\d{2,4}\s?cc)\b/i);
+
+          detected = {
+            make: km.make,
+            model: km.model,
+            displayName: km.displayName,
+            year: yMatch ? yMatch[1] : km.defaultYear,
+            displacement: dMatch ? dMatch[1].toUpperCase() : km.displacement,
+            type: km.type,
+            bikeKey: km.bikeKey || ''
+          };
+          break;
+        }
+      }
+      if (detected) break;
     }
 
-    // Specific model enrichment
-    if (info.model && info.model.includes('MT-09')) {
-      info.make = 'Yamaha';
-      info.type = 'Big Bike / Naked';
-      info.displacement = '890cc';
-    } else if (info.model && info.model.includes('Click')) {
-      info.make = 'Honda';
-      info.type = 'Scooter';
-      if (!info.displacement) info.displacement = '125cc';
+    if (detected) {
+      try { localStorage.setItem('jarvis_active_vehicle', JSON.stringify(detected)); } catch (e) {}
+      return detected;
     }
 
-    // Check year
-    const yMatch = corpus.match(/\b(19[9]\d|20[012]\d)\b/);
-    if (yMatch) info.year = yMatch[1];
-
-    // Check type
-    if (corpus.includes('scooter') || corpus.includes('click') || corpus.includes('nmax') || corpus.includes('aerox') || corpus.includes('mio') || corpus.includes('beat') || corpus.includes('pcx') || corpus.includes('fazzio')) {
-      info.type = 'Scooter';
-    } else if (corpus.includes('car') || corpus.includes('sedan') || corpus.includes('suv') || corpus.includes('vios') || corpus.includes('wigo')) {
-      info.type = 'Car';
-    } else if (corpus.includes('trike') || corpus.includes('tricycle')) {
-      info.type = 'Other';
+    if (activeSaved && (activeSaved.make || activeSaved.model)) {
+      return activeSaved;
     }
 
-    // Check displacement
-    const dMatch = corpus.match(/\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b/i);
-    if (dMatch) info.displacement = dMatch[1].toUpperCase();
-
-    // Check fuel
-    if (corpus.includes('fi') || corpus.includes('fuel inject') || corpus.includes('injected')) {
-      info.fuel = 'Fuel-injected (FI)';
-    } else if (corpus.includes('carb') || corpus.includes('carburetor')) {
-      info.fuel = 'Carburetor';
-    }
-
-    return info;
+    // Default vehicle state: Honda Click 125i (available 3D model)
+    return {
+      make: 'Honda',
+      model: 'Click 125i',
+      displayName: 'Honda Click 125i',
+      year: '2022',
+      displacement: '125cc',
+      type: 'Scooter',
+      bikeKey: 'honda_click'
+    };
   }
 
   // ── Smart Parser for Bot Messages ─────────────────────────────────────────
@@ -2765,34 +3118,157 @@
     const known = extractKnownVehicleInfo();
     const titleEl = document.getElementById('display-vehicle-title');
     const specsEl = document.getElementById('display-vehicle-specs');
+    const exploreBtn = document.getElementById('jarvis-moto-explore-btn') || document.querySelector('.jarvis-explore-btn');
     if (!titleEl || !specsEl) return;
 
-    if (known.make || known.model) {
-      const parts = [];
-      if (known.make) parts.push(known.make);
-      if (known.model) parts.push(known.model);
-      titleEl.textContent = parts.join(' ');
-
-      // Dynamically point Explore in 3D to the matching GLB model
-      const exploreBtn = document.querySelector('.jarvis-explore-btn');
-      if (exploreBtn) {
-        if (known.make === 'Yamaha' || (known.model && known.model.toLowerCase().includes('mt'))) {
-          exploreBtn.href = '/motor/viewer/?bike=yamaha_mt09';
-        } else if (known.make === 'Honda' || (known.model && known.model.toLowerCase().includes('click'))) {
-          exploreBtn.href = '/motor/viewer/?bike=honda_click';
-        } else {
-          exploreBtn.href = '/motor/viewer/';
-        }
+    if (known && (known.make || known.model)) {
+      let title = known.displayName || known.model || 'Your motorcycle';
+      if (known.make && !title.toLowerCase().includes(known.make.toLowerCase())) {
+        title = known.make + ' ' + title;
       }
+      titleEl.textContent = title;
 
       const specParts = [];
       if (known.year) specParts.push(known.year);
       if (known.displacement) specParts.push(known.displacement);
       if (known.type) specParts.push(known.type);
       specsEl.textContent = specParts.length > 0 ? specParts.join(' · ') : 'Diagnostic Session Vehicle';
+
+      if (exploreBtn) {
+        if (known.bikeKey === 'yamaha_mt09' || (title && /mt-?0?9/i.test(title)) || (known.make === 'Yamaha' && /mt/i.test(title))) {
+          exploreBtn.href = '/motor/viewer/?bike=yamaha_mt09';
+          exploreBtn.setAttribute('title', 'Explore Yamaha MT-09 SP in 3D');
+        } else if (known.bikeKey === 'honda_click' || (title && /click/i.test(title)) || (known.make === 'Honda' && /click/i.test(title))) {
+          exploreBtn.href = '/motor/viewer/?bike=honda_click';
+          exploreBtn.setAttribute('title', 'Explore Honda Click 125i in 3D');
+        } else {
+          exploreBtn.href = '/motor/viewer/';
+          exploreBtn.setAttribute('title', 'Explore in 3D Viewer');
+        }
+      }
+
+      // Highlight active item in 3-dot dropdown if open
+      document.querySelectorAll('.jarvis-moto-dropdown-item').forEach(btn => {
+        const bKey = btn.dataset.bikeKey;
+        const bModel = btn.dataset.model;
+        if (bKey && known.bikeKey && bKey === known.bikeKey) {
+          btn.classList.add('is-selected');
+        } else if (bModel && title.toLowerCase().includes(bModel.toLowerCase())) {
+          btn.classList.add('is-selected');
+        } else {
+          btn.classList.remove('is-selected');
+        }
+      });
     } else {
-      titleEl.textContent = titleEl.dataset.defaultTitle || 'No vehicle selected';
-      specsEl.textContent = specsEl.dataset.defaultSpecs || 'Tell the assistant your motorcycle in chat.';
+      titleEl.textContent = titleEl.dataset.defaultTitle || 'Your motorcycle';
+      specsEl.textContent = specsEl.dataset.defaultSpecs || 'No motorcycle specified yet';
+      if (exploreBtn) {
+        exploreBtn.href = '/motor/viewer/';
+      }
+    }
+  }
+
+  // ── Motorcycle 3-Dot Options Menu Setup ──
+  function setupMotorcycleMenu() {
+    const dotsBtn = document.getElementById('jarvis-moto-menu-btn') || document.querySelector('.jarvis-card-dots-btn');
+    const menuEl = document.getElementById('jarvis-moto-dropdown');
+    if (!dotsBtn || !menuEl) return;
+
+    // Toggle menu
+    dotsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = menuEl.style.display === 'block';
+      menuEl.style.display = isVisible ? 'none' : 'block';
+      dotsBtn.classList.toggle('active', !isVisible);
+      dotsBtn.setAttribute('aria-expanded', String(!isVisible));
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!menuEl.contains(e.target) && !dotsBtn.contains(e.target)) {
+        menuEl.style.display = 'none';
+        dotsBtn.classList.remove('active');
+        dotsBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Item selection from dropdown
+    menuEl.querySelectorAll('.jarvis-moto-dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const make = item.dataset.make || '';
+        const model = item.dataset.model || '';
+        const year = item.dataset.year || '';
+        const displacement = item.dataset.disp || '';
+        const type = item.dataset.type || '';
+        const bikeKey = item.dataset.bikeKey || '';
+
+        const vehObj = {
+          make: make,
+          model: model,
+          displayName: make + ' ' + model,
+          year: year,
+          displacement: displacement,
+          type: type,
+          bikeKey: bikeKey
+        };
+
+        try {
+          localStorage.setItem('jarvis_active_vehicle', JSON.stringify(vehObj));
+        } catch (e) {}
+
+        updateVehicleDisplayUI();
+        menuEl.style.display = 'none';
+        dotsBtn.classList.remove('active');
+        dotsBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Custom Motorcycle prompt
+    const customBtn = document.getElementById('jarvis-moto-custom-btn');
+    if (customBtn) {
+      customBtn.addEventListener('click', () => {
+        menuEl.style.display = 'none';
+        dotsBtn.classList.remove('active');
+        dotsBtn.setAttribute('aria-expanded', 'false');
+        const userBike = prompt('Enter motorcycle brand and model (e.g. Yamaha MT-09 SP 2025):');
+        if (userBike && userBike.trim()) {
+          const val = userBike.trim();
+          if (inputEl) {
+            inputEl.value = 'My motorcycle is ' + val;
+            sendMessage();
+          }
+        }
+      });
+    }
+
+    // Open Current in 3D
+    const open3dBtn = document.getElementById('jarvis-moto-open-3d-btn');
+    if (open3dBtn) {
+      open3dBtn.addEventListener('click', () => {
+        menuEl.style.display = 'none';
+        dotsBtn.classList.remove('active');
+        dotsBtn.setAttribute('aria-expanded', 'false');
+        const exploreBtn = document.getElementById('jarvis-moto-explore-btn') || document.querySelector('.jarvis-explore-btn');
+        if (exploreBtn && exploreBtn.href) {
+          window.location.href = exploreBtn.href;
+        } else {
+          window.location.href = '/motor/viewer/';
+        }
+      });
+    }
+
+    // Reset Motorcycle
+    const resetBtn = document.getElementById('jarvis-moto-reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        menuEl.style.display = 'none';
+        dotsBtn.classList.remove('active');
+        dotsBtn.setAttribute('aria-expanded', 'false');
+        try {
+          localStorage.removeItem('jarvis_active_vehicle');
+        } catch (e) {}
+        updateVehicleDisplayUI();
+      });
     }
   }
 
@@ -3215,6 +3691,7 @@
         time: botTime
       });
       saveHistory(history);
+      updateVehicleDisplayUI();
       setDiagnosticStep(calculateDiagnosticStep(history, structured));
 
       if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
@@ -3292,6 +3769,7 @@
     const history = loadHistory();
     history.push({ id: userId, role: 'user', text, time: userTime });
     saveHistory(history);
+    updateVehicleDisplayUI();
     updateHeroVisibility(history);
 
     // 2. Set loading & typing state
@@ -3354,6 +3832,7 @@
       };
       history.push(botEntry);
       saveHistory(history);
+      updateVehicleDisplayUI();
       setDiagnosticStep(calculateDiagnosticStep(history));
 
       if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
@@ -4483,6 +4962,7 @@
 
     // Initial boot
   initAssistantControls();
+  setupMotorcycleMenu();
   const initialHistory = loadHistory();
   renderAll(initialHistory);
   fetchQuotaStatus();
