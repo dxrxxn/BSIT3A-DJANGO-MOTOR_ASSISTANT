@@ -490,6 +490,16 @@ def _jarvis_general_fallback(message, user, history=None, language=None):
     """Offline answer for maintenance/how-to/info questions (no intake form)."""
     sir = _jarvis_address(user)
     lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+
+    # Try the richer offline_answers module first
+    try:
+        from .services.offline_answers import get_offline_answer
+        offline_ans = get_offline_answer(message, language=lang)
+        if offline_ans:
+            return offline_ans
+    except Exception:
+        pass
+
     if re.search(r'\b(?:where|saan|asa|diin)\b', message or '', re.IGNORECASE):
         if (
             location_hint(message)
@@ -527,28 +537,33 @@ def _detect_language(text, history=None):
     """Detects whether the dialogue is primarily English, Tagalog, or Hiligaynon."""
     corpus = (text or '').lower()
     if history and isinstance(history, list):
-        for turn in history[-4:]:
-            corpus += " " + (turn.get('text', '') or '').lower()
+        for turn in history[-6:]:
+            if isinstance(turn, dict):
+                corpus += " " + (turn.get('text', '') or '').lower()
 
     hiligaynon_words = [
         'maayong', 'adlaw', 'hapon', 'aga', 'gab-i', 'ngaa', 'bala', 'indi', 'mag-andar',
         'guba', 'preno', 'tambutso', 'makina', 'piti-piti', 'nagapiti-piti', 'nagasiga',
         'nagatulo', 'wala', 'akon', 'imo', 'subong', 'tani', 'sini', 'sining', 'kay-uhon',
-        'humok', 'nagadul-ong', 'matig-a', 'manubela', 'baskog', 'buhin'
+        'humok', 'nagadul-ong', 'matig-a', 'manubela', 'baskog', 'buhin', 'sang', 'kag',
+        'ukon', 'gid', 'napatay', 'nagsugod', 'tuluka', 'sukta', 'lagatik', 'nga'
     ]
     tagalog_words = [
         'kamusta', 'kumusta', 'bakit', 'ayaw', 'hindi', 'mag-start', 'umaandar',
         'preno', 'tambutso', 'makina', 'malambot', 'lumulubog', 'matigas', 'maingay',
         'umuusok', 'usok', 'paano', 'salamat', 'kasi', 'sasakyan', 'kotse', 'kumatok',
-        'baterya', 'langis', 'gulong', 'mekaniko', 'talyer', 'gagawin', 'susunod'
+        'baterya', 'langis', 'gulong', 'mekaniko', 'talyer', 'gagawin', 'susunod',
+        'ano', 'tamang', 'kailangan', 'palitan', 'nag-ooverheat', 'uminit', 'nag-iinit',
+        'tagas', 'tumutulo', 'kabig', 'kumakabig', 'dapat', 'tingnan', 'subukan',
+        'namatay', 'patay', 'sira', 'anong'
     ]
 
     h_score = sum(1 for w in hiligaynon_words if re.search(r'\b' + re.escape(w) + r'\b', corpus))
     t_score = sum(1 for w in tagalog_words if re.search(r'\b' + re.escape(w) + r'\b', corpus))
 
-    if h_score >= 2 or (h_score > 0 and h_score >= t_score and any(w in corpus for w in ['maayong', 'ngaa', 'indi', 'guba', 'subong'])):
+    if h_score >= 2 or (h_score > 0 and h_score >= t_score and any(w in corpus for w in ['maayong', 'ngaa', 'indi', 'guba', 'subong', 'sang', 'lagatik'])):
         return 'hiligaynon'
-    if t_score >= 1 or any(w in corpus for w in ['kamusta', 'bakit', 'ayaw', 'hindi', 'paano']):
+    if t_score >= 1 or any(w in corpus for w in ['kamusta', 'bakit', 'ayaw', 'hindi', 'paano', 'ano', 'nag-ooverheat']):
         return 'tagalog'
     return 'english'
 
@@ -682,7 +697,18 @@ def _extract_vehicle_info(text, history=None):
     if not info['year']:
         year_match = re.search(r'\b(19[89]\d|20[012]\d)\b', active_attr_text)
         if year_match:
-            info['year'] = year_match.group(1)
+            # Guard: do NOT set vehicle year from clearly off-topic queries
+            # (e.g. "2022 World Cup", "2024 Olympics")
+            year_candidate = year_match.group(1)
+            off_topic_ctx = re.search(
+                r'\b(?:world\s+cup|olympic|nba|fifa|championship|election|war|series|season|episode|album|movie|film|game)\b',
+                active_attr_text, re.IGNORECASE
+            )
+            motorcycle_ctx = bool(info['make'] or info['model'] or
+                re.search(r'\b(?:motor(?:cycle|bike)?|scooter|bike|cc|engine|honda|yamaha|suzuki|kawasaki)\b',
+                          active_attr_text, re.IGNORECASE))
+            if motorcycle_ctx or not off_topic_ctx:
+                info['year'] = year_candidate
 
     # Type detection
     if any(k in active_attr_text for k in ['scooter', 'click', 'aerox', 'nmax', 'mio', 'beat', 'pcx', 'adv', 'fazzio', 'burgman']):
@@ -778,7 +804,7 @@ The user is asking a GENERAL motorcycle question — maintenance, how-to, servic
 6. Use any vehicle details already present in the conversation. If none are known, keep the advice general — do not demand them.
 7. Match the user's language: English, Tagalog/Taglish, or Hiligaynon. Keep technical terms natural (oil, chain, brake pads, CVT, coolant).
 8. End with 3–5 clickable chips in the exact format `[chips: Option 1 | Option 2 | Option 3]`.
-9. Do not emit `[part-image: ...]` unless the user explicitly asks for a picture.
+9. When reviewing findings or diagnosing a faulty part, provide its visual reference picture using `[part-image: URL | Part Name]`.
 10. Be conversational and context-aware. Acknowledge the user's previous message when it matters, build on it, and never repeat a previous answer verbatim.
 11. If the user asks a follow-up, answer that follow-up first. Do not restart the conversation or re-ask for details already in the history.
 12. For "where is X located?" questions, give the typical location first, then note that it varies by model and tell the user to confirm in the owner's manual. Do not ask for make/model/year before giving the typical location.
@@ -920,7 +946,7 @@ def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None
     }
     dlang_label = _DLANG_LABELS.get(language, 'English')
 
-    full_prompt = f"""You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), the master vehicle diagnostic mechanic and repair assistant for an automotive and motorcycle workshop. You diagnose motorcycles, scooters, underbones, tricycles, cars, SUVs, and light trucks. You speak like Tony Stark's assistant: professional, courteous, precise, witty, and prioritizing safety above all else. Address the user respectfully as '{sir}'.
+    full_prompt = f"""You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), the master motorcycle diagnostic mechanic and repair assistant for MotorAssistant. You specialize strictly in motorcycles, scooters, underbones, and mopeds (e.g. Honda Click/Beat/ADV/PCX, Yamaha NMAX/Aerox/Mio/Sniper, Suzuki Raider, Kawasaki Barako, and manual motorcycles). Focus strictly on motorcycles, not cars, SUVs, or trucks. You speak like Tony Stark's assistant: professional, courteous, precise, witty, and prioritizing safety above all else. Address the user respectfully as '{sir}'.
 
 ## MANDATORY LANGUAGE INSTRUCTION
 DETECTED LANGUAGE: {dlang_label} ({language})
@@ -969,37 +995,40 @@ You have access to the workshop diagnostic database:
 - OTHER SYSTEMS:
   * Electrical, charging, battery, tires, suspension, steering, oil/fluid leaks, smoke color (blue=oil, black=rich fuel, white=coolant/head gasket).
 
-## 4. CONVERSATIONAL DIAGNOSTIC WORKFLOW (7 STEPS)
-- Step 1: Understand the complaint.
-- Step 2: Check available information from the current message and previous conversation history.
-- Step 3: Ask targeted questions (2–5 at a time) formatted clearly with numbers (1, 2, 3...) and multiple choice letters (- A., - B., - C....).
-- Step 4 & 5: Analyze answers and narrow down fault. When multiple causes exist, explain leading possibilities and suggest safe inspections to differentiate.
-- Step 6: Provide repair instructions once enough information is gathered:
-  * State the Most Likely Cause and Confidence Level (High, Medium, Tentative).
-  * Explain why the symptoms indicate this cause.
-  * List Tools and Parts needed.
-  * Emphasize Safety precautions.
-  * Provide step-by-step repair/inspection instructions formatted as an interactive checklist: `- [ ] 1. Step description`.
-  * Explain how to verify the repair safely.
-  * Advise when professional shop service is necessary.
-- Step 7: Continue the conversation after checks/repairs — ask the user what they found.
+## 4. STRICT 4-STAGE MOTORCYCLE DIAGNOSTIC WORKFLOW (MANDATORY)
+The diagnostic UI displays 4 steps: (01 Describe issue -> 02 Run safe checks -> 03 Review findings -> 04 Repair plan). You MUST strictly follow these stages and output a stage marker `[stage: X]` at the very end of your response:
+
+- Stage 1: Describe issue (Initial intake).
+- Stage 2: Run safe checks (Inspection & testing).
+  * MANDATORY: Focus strictly on safe visual checks and preliminary tests to narrow down the problem (e.g. Confirm engine stop switch is RUN, side stand sensor raised, battery voltage, brake lever switch held, spark check).
+  * STRICT PROHIBITION AGAINST PREMATURE REPAIR PLANS: NEVER ASSUME, NEVER VOLUNTARILY DRAFT, AND NEVER JUMP TO A REPAIR PLAN IN STAGE 2!
+  * If the user says they 'haven't checked yet', 'not yet', 'where is that', or doesn't know how to test: DO NOT give a repair checklist or repair instructions! Instead, patiently guide them on how to inspect or check that specific item safely and ask what they observe.
+  * Tag at end: `[stage: 2]`
+
+- Stage 3: Review findings (Diagnosis & visual picture).
+  * Triggered once the user reports what they observed from the safe checks (e.g. 'it clicks', 'no sound', 'weak crank', 'spark is weak', 'battery is 10.5V', 'pads are worn', etc.).
+  * Review the findings: explain what the symptoms mean and pinpoint the root cause (e.g. starter relay chatter, drained battery, fouled spark plug, clogged carb jet).
+  * MANDATORY VISUAL: ALWAYS PROVIDE A PICTURE of the affected component using the tag: `[part-image: URL | Part Name]`.
+  * Ask if the user wants you to proceed with the repair plan.
+  * Tag at end: `[stage: 3]`
+
+- Stage 4: Repair plan (Actionable checklist).
+  * Triggered ONLY when the user asks for the repair plan, agrees to proceed with the repair, or after findings have been established.
+  * Provide the step-by-step repair instructions formatted as an interactive checklist: `- [ ] 1. Step description`.
+  * List required tools and replacement parts.
+  * Tag at end: `[stage: 4]`
 
 ## 4a. MANDATORY HOLISTIC SESSION ANALYSIS & CONTINUITY (CRITICAL)
 - TREAT CONVERSATION AS A CONTINUOUS SESSION: Always analyze the entire conversation history before deciding what to say.
 - PERSIST ON ACTIVE PROBLEM: If an issue or fault was discussed in earlier turns and the user has NOT explicitly confirmed it is fixed (e.g. 'it worked', 'fixed', 'ok na', 'naayos na') and has not asked to reset or start over, DO NOT abandon it! DO NOT ask a new question about what to fix now. Maintain focus on resolving that active issue.
 - IF PREVIOUS STEP OR TEST FAILED: If the user indicates that a previous check or repair did not work ('didn\'t work', 'still not fixed', 'hindi gumana', 'ayaw pa rin'), acknowledge it directly and provide the next diagnostic test or secondary cause. DO NOT ask what vehicle problem they have!
 
-## 4b. STEP-BY-STEP PROCEDURE EXECUTION MANDATE (CRITICAL)
-- When you ask or offer to commence the step-by-step procedure (e.g. "commence the step-by-step procedure", "troubleshoot step-by-step"), OR when a procedure checklist (`- [ ]`) has been offered:
-  * If the user responds with agreement or confirmation (e.g. "yes", "proceed", "start", "commence", "begin", "continue", "next step", "step 1", "ok", "ready", "sige", "umpisahan"):
-    1. DO NOT stop, halt, or ask a brand-new symptom question!
-    2. IMMEDIATELY deliver **Step 1** (or the next uncompleted step) with full details:
-       - Clear, actionable instructions for that specific step.
-       - Required tools/supplies for this step.
-       - What exact reading, sound, or visual sign to look for (expected benchmark).
-       - What to do if the result is abnormal.
-       - A direct question asking what the user observed from performing this step.
-       - Clickable action chips: `[chips: Step 1 passed (normal) | Step 1 failed (abnormal) | Need help with Step 1 | Show next step | It worked]`.
+## 4b. REPAIR PLAN PROCEDURE EXECUTION MANDATE
+- Once in Stage 4 (or when user agrees to start the repair procedure checklist):
+  * Deliver clear actionable instructions for each step.
+  * Required tools/supplies for this step.
+  * Interactive checklist format: `- [ ] 1. Step description`.
+  * Clickable action chips: `[chips: Step completed | Need help with this step | It worked | Next step]`.
 
 ## 5. MULTILINGUAL SUPPORT (TAGALOG & HILIGAYNON)
 - Fluently understand and respond in English, Tagalog / Filipino / Taglish, and Hiligaynon (Ilonggo).
@@ -1545,9 +1574,12 @@ def _last_diagnostic_topic(history):
     return None
 
 
-def _save_offline_knowledge(query, reply_text):
+def _save_offline_knowledge(query, reply_text, *, intent=None, make=None,
+                             model=None, year=None, task=None, language='english',
+                             source='gemini'):
     """
     Saves or updates Gemini AI answers into the local JarvisKnowledge table.
+    Scoped by intent, make, model, year, task, and language.
     """
     if not query or not reply_text:
         return
@@ -1562,47 +1594,86 @@ def _save_offline_knowledge(query, reply_text):
 
     try:
         from apps.core.models import JarvisKnowledge
+        from django.utils import timezone
+        from datetime import timedelta
 
         keywords_str = ' '.join(sorted(set(tokens)))
+        now = timezone.now()
+        expires = now + timedelta(days=30)
+
         entry = JarvisKnowledge.objects.filter(clean_query=clean_query).first()
         if entry:
             entry.ai_response = reply_text
             entry.hit_count += 1
-            entry.save(update_fields=['ai_response', 'hit_count', 'updated_at'])
+            if intent:
+                entry.intent = intent
+            if make:
+                entry.make = make
+            if model:
+                entry.model = model
+            if year:
+                entry.year = year
+            if task:
+                entry.task = task
+            entry.verified_at = now
+            entry.expires_at = expires
+            entry.save(update_fields=['ai_response', 'hit_count', 'intent', 'make', 'model', 'year', 'task', 'updated_at', 'verified_at', 'expires_at'])
         else:
             JarvisKnowledge.objects.create(
                 user_query=query_str[:500],
                 clean_query=clean_query[:500],
                 keywords=keywords_str,
                 ai_response=reply_text,
-                source='gemini'
+                source=source,
+                intent=intent or 'general',
+                make=make or '',
+                model=model or '',
+                year=year or '',
+                task=task or '',
+                language=language,
+                verified_at=now,
+                expires_at=expires,
             )
     except Exception:
         pass
 
 
-def _find_offline_knowledge(query, user):
+def _find_offline_knowledge(query, user, *, intent=None, make=None,
+                             model=None, year=None, task=None):
     """
     Looks up previously saved Gemini knowledge from the local database when offline.
+    Uses intent + entity matching; rejects cross-motorcycle, task-mismatched, and expired entries.
     """
     query_str = query.strip()
-    query_tokens = set(_normalize_tokens(query_str))
+    tokens = _normalize_tokens(query_str)
+    query_tokens = set(tokens)
     if not query_tokens:
         return None
 
     try:
         from apps.core.models import JarvisKnowledge
+        from django.utils import timezone
 
-        clean_query = ' '.join(_normalize_tokens(query_str))
+        now = timezone.now()
+        clean_query = ' '.join(tokens)
+
         # 1. Exact match on clean query
-        exact = JarvisKnowledge.objects.filter(clean_query=clean_query).first()
-        if exact:
+        exact_matches = JarvisKnowledge.objects.filter(clean_query=clean_query)
+        for exact in exact_matches:
+            if exact.expires_at and exact.expires_at < now:
+                continue
+            # Rejection on vehicle mismatch
+            if make and exact.make and exact.make.lower() != make.lower():
+                continue
+            if model and exact.model and exact.model.lower() != model.lower():
+                continue
+            if task and exact.task and exact.task.lower() != task.lower():
+                continue
             exact.hit_count += 1
             exact.save(update_fields=['hit_count', 'updated_at'])
             return exact.ai_response
 
-        # 2. Keyword search across the whole cache: let the DB pre-filter rows
-        # sharing any keyword substring, then score them in Python.
+        # 2. Keyword search across candidates
         keyword_q = Q()
         for t in query_tokens:
             keyword_q |= Q(keywords__contains=t)
@@ -1611,6 +1682,18 @@ def _find_offline_knowledge(query, user):
         best_score = 0.0
 
         for item in candidates:
+            if item.expires_at and item.expires_at < now:
+                continue
+            if make and item.make and item.make.lower() != make.lower():
+                continue
+            if model and item.model and item.model.lower() != model.lower():
+                continue
+            if task and item.task and item.task.lower() != task.lower():
+                continue
+            if intent and item.intent and intent in ('spec', 'maintenance_howto', 'diagnostic'):
+                if item.intent not in (intent, '', 'general'):
+                    continue
+
             item_tokens = {_stem_token(t) for t in item.keywords.split()}
             if not item_tokens:
                 continue
@@ -1622,8 +1705,6 @@ def _find_offline_knowledge(query, user):
                 best_score = score
                 best_match = item
 
-        # Require BOTH a strong query coverage and 2+ shared keywords so weak,
-        # barely-related entries are not served as answers.
         if best_match:
             overlap_count = len(query_tokens.intersection({_stem_token(t) for t in best_match.keywords.split()}))
             if best_score >= 0.5 and overlap_count >= 2:
@@ -1680,12 +1761,9 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
     session). Internal/direct callers pass None and keep the previous behaviour.
     """
     from .guided_diagnostic import is_general_motorcycle_query
+    from .services.intent import classify_intent
 
     msg = message.lower().strip()
-    is_general_query = is_general_motorcycle_query(message, history)
-    # A maintenance/how-to question must not be mistaken for a request to see a
-    # part picture, even if it starts with "what is ...".
-    is_visual_query = _has_visual_intent(message) and not is_general_query
 
     # Guided narrowing flow (identify the bike first, then narrow the fault).
     if guided_state is not None:
@@ -1696,6 +1774,82 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
             return handle_guided_turn(
                 message, user, history, guided_state, lang=lang, sir=sir
             )
+
+    # ── Off-topic / prompt injection gate ──────────────────────────────────
+    c_intent = classify_intent(message, history=history)
+    if c_intent == 'off_topic':
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        sir = _jarvis_address(user)
+        sub = getattr(c_intent, 'sub_intent', '')
+        fictional = (c_intent.details or {}).get('fictional_part') if hasattr(c_intent, 'details') else None
+
+        if sub == 'fictional_part' and fictional:
+            return (
+                f"{sir}, **{fictional.title()}** does not exist on a motorcycle — it is a well-known automotive joke.\n\n"
+                "MotorAssistant is here to help you diagnose and fix genuine motorcycle problems. "
+                "What issue are you experiencing with your motorcycle?\n\n"
+                "[chips: Engine won't start | Front brake check | Oil change | Strange engine noise]"
+            )
+        elif sub == 'prompt_injection':
+            return (
+                f"{sir}, this is MotorAssistant. I cannot alter my core diagnostic instructions or safety guidelines. "
+                "I am here exclusively to help you diagnose and repair motorcycles.\n\n"
+                "[chips: Help with my motorcycle | Engine won't start | Brake check | Oil change]"
+            )
+        else:
+            off_topic_replies = {
+                'english': (
+                    f"Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle, scooter, or underbone.\n\n"
+                    "Is this inquiry regarding a motorcycle?\n\n"
+                    "If you have a motorcycle problem or question, please let me know your motorcycle's make, model, and what issue you need help fixing, and I will be glad to assist you.\n\n"
+                    "[chips: Help with my motorcycle | Engine won't start | Front brake check | Oil change | Strange engine noise]"
+                ),
+                'tagalog': (
+                    f"Sir, ito po ang MotorAssistant, nakalaan para tulungan kayong mag-diagnose, mag-maintain, at mag-ayos ng mga problema sa inyong motorsiklo, scooter, o underbone.\n\n"
+                    "Tungkol po ba ito sa isang motorsiklo?\n\n"
+                    "Kung may problema po kayo sa inyong motor, pakisabi po ang brand, modelo, at ang partikular na isyu o sira para matulungan ko kayong ayusin ito.\n\n"
+                    "[chips: Tulong sa aking motor | Ayaw mag-start | Suriin ang preno | Palit langis | Kakaibang ingay sa makina]"
+                ),
+                'hiligaynon': (
+                    f"Sir, ini ang MotorAssistant, gintuyo gid agud magbulig diagnose, maintain, kag magkay-o sang mga problema sa imo motorsiklo, scooter, ukon underbone.\n\n"
+                    "Parte bala ini sa isa ka motorsiklo?\n\n"
+                    "Kon may problema ka sa imo motor, palihog sugiri ako sang brand, modelo, kag ang problema sang imo salakyan agud mabuligan ko ikaw kay-o sini.\n\n"
+                    "[chips: Bulig sa aking motor | Indi mag-start | Tuluka ang preno | Ilis langis | Gahod sa makina]"
+                ),
+            }
+            return off_topic_replies.get(lang, off_topic_replies['english'])
+
+    # ── Resolution detection ("thanks, that worked") ───────────────────────
+    if c_intent == 'resolution':
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        sir = _jarvis_address(user)
+        resolution_replies = {
+            'english': (
+                f"Great news, {sir}! Glad to hear it's working now. "
+                "Safe riding — and don't hesitate to ask if something else comes up.\n\n"
+                "[chips: Oil change | Tire check | Chain care | Brake check]"
+            ),
+            'tagalog': (
+                f"Napakagandang balita, {sir}! Masaya akong naayos na ito. "
+                "Ligtas na pagmamaneho — at huwag mag-atubiling magtanong kung may lumabas pang problema.\n\n"
+                "[chips: Palitan ng langis | Suriin ang gulong | Chain care | Suriin ang preno]"
+            ),
+            'hiligaynon': (
+                f"Maayo gid, {sir}! Nalipay ako nga naayo na ini. "
+                "Luwas mag-byahe — kag indi mag-urog pamangkot kon may lain pa nga problema.\n\n"
+                "[chips: Ilis langis | Tuluka gulong | Chain care | Tuluka preno]"
+            ),
+        }
+        return resolution_replies.get(lang, resolution_replies['english'])
+
+    is_general_query = is_general_motorcycle_query(message, history)
+    # Route spec/model_info/comparison/buying/gear/rain to general fallback
+    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location'):
+        is_general_query = True
+
+    # A maintenance/how-to question must not be mistaken for a request to see a
+    # part picture, even if it starts with "what is ...".
+    is_visual_query = _has_visual_intent(message) and not is_general_query
 
     reply = None
 
@@ -2359,8 +2513,8 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
         else:
             return (
                 f"At your service, {sir}. J.A.R.V.I.S. online. Systems nominal. "
-                "I am your master vehicle diagnostic mechanic. I can isolate vehicle faults, walk you through repair protocols, look up parts, and guide your repairs.\n\n"
-                "What vehicle issue are you experiencing today?\n\n"
+                "I am your master motorcycle diagnostic mechanic. I can isolate motorcycle faults, walk you through repair protocols, look up parts, and guide your repairs.\n\n"
+                "How may I help you with your motorcycle today?\n\n"
                 "[chips: Engine won't start | Front brake not working | Engine overheating | Motorcycle won't accelerate properly]"
             )
 
@@ -2369,19 +2523,19 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
         if lang == 'hiligaynon':
             return (
                 f"Ako si J.A.R.V.I.S. (Just A Rather Very Intelligent System), {sir}. "
-                "Ang imo mekaniko kag diagnostic assistant para sa motorsiklo kag mga salakyan.\n\n"
+                "Ang imo mekaniko kag diagnostic assistant para sa motorsiklo kag scooter.\n\n"
                 "[chips: Bulig kag serbisyo | Indi mag-andar ang makina | Listahan sang mga pyesa]"
             )
         elif lang == 'tagalog':
             return (
                 f"Ako si J.A.R.V.I.S. (Just A Rather Very Intelligent System), {sir}. "
-                "Ang iyong digital master mechanic at diagnostic assistant para sa mga motor at sasakyan.\n\n"
+                "Ang iyong digital master mechanic at diagnostic assistant para sa mga motor at scooter.\n\n"
                 "[chips: Tulong at kakayahan | Ayaw mag-start ng makina | Listahan ng mga pyesa]"
             )
         else:
             return (
                 f"I am J.A.R.V.I.S., Just A Rather Very Intelligent System. "
-                f"I was built to keep this workshop operating at peak performance, {sir}: diagnose faults, "
+                f"I was built to keep this motorcycle workshop operating at peak performance, {sir}: diagnose motorcycle faults, "
                 "pull repair protocols, inspect parts inventories, and offer a mechanic's second opinion before picking up a wrench.\n\n"
                 "[chips: Help & capabilities | Engine won't start | List all parts]"
             )
@@ -2571,7 +2725,7 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
             "- [ ] 5. Refill with recommended JASO-MA2 motorcycle 4T oil (do not use passenger car oil with friction modifiers).\n\n"
             "[chips: Smoke near engine casing & sprocket | How many parts | Starting failure scan]"
         ),
-        ('battery', 'car battery', 'dead battery', 'battery diagnostic', 'baterya'): (
+        ('battery', 'motorcycle battery', 'dead battery', 'battery diagnostic', 'baterya'): (
             f"Power-cell diagnostics, {sir}:\n\n"
             "• Healthy battery reads **12.6V+** at rest\n"
             "• At **12.0V or below**, battery is 75% discharged\n"
@@ -2621,12 +2775,14 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
         return localized
     return (
         f"I'm not sure I caught that one, {sir}. "
-        "Here is what I can help you with:\n\n"
+        "This is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle, scooter, or underbone.\n\n"
+        "Is this inquiry regarding a motorcycle?\n\n"
+        "Here is what I can help you with on your motorcycle:\n"
         "• **Diagnostics** — Engine won't start, brake problems, overheating, acceleration issues\n"
         "• **Part explanations** — Ask me *\"What is a caliper?\"* or *\"What is a sprocket?\"* and I'll show you a photo\n"
         "• **Repair protocols** — Step-by-step interactive checklists for common fixes\n"
         "• **Parts inventory** — Costs, part numbers, and repair guides from the workshop database\n\n"
-        "Try one of the options below, or describe your vehicle symptom in detail:\n\n"
+        "Please describe your motorcycle make, model, and what symptom you need help fixing:\n\n"
         "[chips: Engine won't start | Front brake not working | What is a caliper? | What is a sprocket? | Oil change | Battery dead]"
     )
 

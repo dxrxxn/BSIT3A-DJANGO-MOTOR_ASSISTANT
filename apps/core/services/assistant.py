@@ -60,8 +60,8 @@ LANGUAGE_LABELS = {
     'hiligaynon': 'Hiligaynon / Ilonggo',
 }
 
-SYSTEM_INSTRUCTION = """You are J.A.R.V.I.S., a cautious motorcycle and car diagnostic assistant.
-Your job is to help a rider or driver understand a symptom and decide on safe next checks.
+SYSTEM_INSTRUCTION = """You are J.A.R.V.I.S., a cautious motorcycle diagnostic assistant for MotorAssistant.
+Your job is to help a rider understand a motorcycle symptom and decide on safe next checks. Focus strictly on motorcycles, scooters, underbones, and mopeds.
 
 Non-negotiable rules:
 1. SAFETY FIRST. If the supplied safety assessment contains a warning, put the
@@ -90,6 +90,8 @@ Non-negotiable rules:
     Markdown headings and bullet points; do not wrap the whole answer in a
     code fence.
 11. NO VOLUNTARY SYMPTOMS: Never assume, invent, or voluntarily draft troubleshooting for an unstated symptom (such as assuming "No-Start") when the user has not described a fault. If the user mentions or switches vehicles without stating a problem, acknowledge the vehicle and ask what symptom or question they have.
+13. MOTORCYCLE-EXCLUSIVE SCOPE: MotorAssistant is strictly and exclusively dedicated to motorcycles, scooters, underbones, and mopeds. If the user query is unrelated to motorcycles (home appliances, cars, general trivia, math homework, cooking, programming, pets, etc.), politely decline and ask: 'Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle. Is this inquiry regarding a motorcycle?' and prompt them to describe their motorcycle problem.
+12. STRICT 4-STAGE DISCIPLINE: During Stage 2 (safe checks), focus strictly on guiding safe tests to narrow down the problem. NEVER jump prematurely to a repair plan if the user hasn't checked yet or is still observing. In Stage 3 (review findings), explain the cause and include a component picture using [part-image: URL | Part Name]. In Stage 4 (repair plan), deliver actionable repair steps.
 """
 
 
@@ -116,6 +118,7 @@ Rules:
 4b. For "tell me about [bike]" or model info questions:
    - Brief overview: type, displacement, fuel system, key features, target user,
      notable pros/cons, and common maintenance points.
+5. MOTORCYCLE-EXCLUSIVE SCOPE: Answer only motorcycle-related questions. If an inquiry is not about motorcycles, scooters, or underbones, decline and clarify: 'Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle. Is this inquiry regarding a motorcycle?'.
 4c. For BUYING / RECOMMENDATION questions ("best motorcycle for beginners"):
    - Give 2–3 concrete recommendations with a brief reason each and key factors
      (budget, skill level, use case, parts availability).
@@ -548,10 +551,20 @@ def _is_general_structured_question(message, history=None):
         _norm,
         is_general_motorcycle_query,
     )
+    from apps.core.services.intent import classify_intent
+
+    msg = _norm(message)
+    # Off-topic, resolution, follow_up are handled upstream; don't funnel them here
+    c_intent = classify_intent(message, history=history)
+    if c_intent == 'off_topic':
+        return False  # let caller handle
+
+    # Spec / model_info / comparison / buying / gear / rain / location always go to general
+    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location'):
+        return True
 
     if not is_general_motorcycle_query(message, history):
         return False
-    msg = _norm(message)
     if _looks_like_part_location_query(msg, history):
         return True
     if '?' in message or GENERAL_QUESTION_START_RE.search(msg):
@@ -563,6 +576,15 @@ def _is_general_structured_question(message, history=None):
 
 def _general_offline_reply(message, language='english', history_text=''):
     """Local fallback for general questions when Gemini is unavailable."""
+    # Try the richer offline_answers module first
+    try:
+        from apps.core.services.offline_answers import get_offline_answer
+        offline_ans = get_offline_answer(message, language=language)
+        if offline_ans:
+            return offline_ans
+    except Exception:
+        pass
+
     msg = (message or '').lower()
 
     if re.search(r'\b(?:where|saan|asa|diin)\b', msg):
@@ -751,6 +773,65 @@ def respond(user, message, *, conversation_id=None, language=None,
     )
     language = _language(language, message, conversation)
     extracted = extract_vehicle_profile(message, conversation=conversation)
+
+    # Off-topic / prompt-injection gate
+    if message and image is None:
+        from apps.core.services.intent import classify_intent as _ci
+        hist = [{'role': t.role, 'text': t.content} for t in conversation.turns.all()]
+        _pre_intent = _ci(message, history=hist, vehicle_profile=conversation.vehicle_profile)
+        if _pre_intent == 'off_topic':
+            lang = language
+            sub = getattr(_pre_intent, 'sub_intent', '')
+            fictional = (_pre_intent.details or {}).get('fictional_part') if hasattr(_pre_intent, 'details') else None
+
+            if sub == 'fictional_part' and fictional:
+                reply = (
+                    f"Sir, **{fictional.title()}** does not exist on a motorcycle — it is a well-known automotive joke.\n\n"
+                    "MotorAssistant is here to help you diagnose and fix genuine motorcycle problems. "
+                    "What issue are you experiencing with your motorcycle?\n\n"
+                    "[chips: Engine won't start | Front brake check | Oil change | Strange engine noise]"
+                )
+            elif sub == 'prompt_injection':
+                reply = (
+                    "Sir, this is MotorAssistant. I cannot alter my core diagnostic instructions or safety guidelines. "
+                    "I am here exclusively to help you diagnose and repair motorcycles.\n\n"
+                    "[chips: Help with my motorcycle | Engine won't start | Brake check | Oil change]"
+                )
+            else:
+                off_topic_text = {
+                    'english': (
+                        "Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle, scooter, or underbone.\n\n"
+                        "Is this inquiry regarding a motorcycle?\n\n"
+                        "If you have a motorcycle problem or question, please let me know your motorcycle's make, model, and what issue you need help fixing, and I will be glad to assist you.\n\n"
+                        "[chips: Help with my motorcycle | Engine won't start | Front brake check | Oil change | Strange engine noise]"
+                    ),
+                    'tagalog': (
+                        "Sir, ito po ang MotorAssistant, nakalaan para tulungan kayong mag-diagnose, mag-maintain, at mag-ayos ng mga problema sa inyong motorsiklo, scooter, o underbone.\n\n"
+                        "Tungkol po ba ito sa isang motorsiklo?\n\n"
+                        "Kung may problema po kayo sa inyong motor, pakisabi po ang brand, modelo, at ang partikular na isyu o sira para matulungan ko kayong ayusin ito.\n\n"
+                        "[chips: Tulong sa aking motor | Ayaw mag-start | Suriin ang preno | Palit langis | Kakaibang ingay sa makina]"
+                    ),
+                    'hiligaynon': (
+                        "Sir, ini ang MotorAssistant, gintuyo gid agud magbulig diagnose, maintain, kag magkay-o sang mga problema sa imo motorsiklo, scooter, ukon underbone.\n\n"
+                        "Parte bala ini sa isa ka motorsiklo?\n\n"
+                        "Kon may problema ka sa imo motor, palihog sugiri ako sang brand, modelo, kag ang problema sang imo salakyan agud mabuligan ko ikaw kay-o sini.\n\n"
+                        "[chips: Bulig sa aking motor | Indi mag-start | Tuluka ang preno | Ilis langis | Gahod sa makina]"
+                    ),
+                }
+                reply = off_topic_text.get(lang, off_topic_text['english'])
+
+            structured = empty_structured(lang)
+            structured['reply_text'] = reply
+            structured['diagnostic_stage'] = 'general'
+            structured['intent'] = 'off_topic'
+            add_turns(conversation, message, reply, structured=structured, language=lang, mode='offline')
+            return {
+                'reply': reply, 'structured': structured,
+                'conversation_id': conversation.pk, 'language': lang,
+                'mode': 'offline', 'offline': True, 'safety': {},
+                'chips': ['Help with my motorcycle', "Engine won't start", 'Front brake check', 'Oil change'],
+                'image_id': None, 'model': '',
+            }
     profile = _profile_for_conversation(conversation, message, extracted)
     safety = assess_safety(
         message,

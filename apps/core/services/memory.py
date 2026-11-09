@@ -32,6 +32,10 @@ def get_or_create_conversation(user, conversation_id=None, *, create=True, langu
         )
     if conversation is None and create:
         conversation = Conversation.objects.create(user=user, language=language or 'auto')
+    elif conversation and language and language != 'auto':
+        if language in {'tagalog', 'hiligaynon'} or conversation.language in {'auto', ''}:
+            conversation.language = language
+            conversation.save(update_fields=['language'])
     return conversation
 
 
@@ -158,8 +162,12 @@ def update_conversation_from_structured(conversation, structured, user_message='
             symptom_set.append(text)
             lowered.add(text.lower())
     if user_message and not is_general and len(user_message) <= 600:
-        if not symptom_set:
-            symptom_set.append(user_message.strip())
+        from apps.core.services.intent import classify_intent
+        c_intent = classify_intent(user_message)
+        non_symptom_intents = {'follow_up', 'resolution', 'off_topic', 'general_info', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'spec', 'greeting', 'identity', 'help'}
+        if c_intent not in non_symptom_intents:
+            if not symptom_set:
+                symptom_set.append(user_message.strip())
     conversation.symptoms = '; '.join(symptom_set[-12:])
 
     missing = [item.get('question', '') for item in structured.get('missing_questions', [])]

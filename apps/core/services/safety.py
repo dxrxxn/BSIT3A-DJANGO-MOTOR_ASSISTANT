@@ -33,9 +33,9 @@ RULES = [
             r'malambot (?:ang )?preno', r'humok (?:ang )?preno',
         ],
         'en': (
-            'CRITICAL SAFETY HAZARD: Brake performance may be compromised. Do not ride or drive '
-            'the vehicle. Park it on level ground and arrange inspection by a qualified brake '
-            'technician. Do not test a suspected brake fault in traffic.'
+            'CRITICAL SAFETY HAZARD: DO NOT RIDE OR DRIVE. Brake performance may be compromised. '
+            'Do not ride or drive the vehicle. Operating a vehicle with soft, spongy, or failing '
+            'brakes can cause a fatal crash. Park the vehicle immediately on level ground.'
         ),
         'tl': (
             'KRITIKAL NA BABALA SA KALIGTASAN: Maaaring humina o mawala ang preno. Huwag munang '
@@ -103,26 +103,29 @@ RULES = [
         'severity': 'critical',
         'stop_use': True,
         'patterns': [
+            r'\boverheat(?:ing|s|ed)?\b',
+            r'\btemp(?:erature)?\s*(?:light|gauge|indicator|warning|icon)\b',
+            r'\bsteam\b',
+            r'\b(?:boiling|nagabukal|kumukulo)\b',
             r'overheat.*(?:steam|smoke|boiling|red|max|hot)', r'(?:steam|boiling).*(?:radiator|engine|overheat)',
-            r'radiator.*(?:boiling|erupt)', r'temperature.*(?:red|max|hot)', r'nagabukal', r'kumukulo',
+            r'radiator.*(?:boiling|erupt|cap|hot|singaw)', r'temperature.*(?:red|max|hot|high)',
             r'singaw.*(?:radiator|makina)', r'nagasingaw.*(?:radiator|makina)',
+            r'nag-?ooverheat', r'nag-?iinit.*makina',
         ],
         'en': (
-            'SEVERE OVERHEATING / SCALD HAZARD: Stop the engine and do not open the radiator cap or '
-            'coolant reservoir while hot. Pressurised boiling coolant can erupt and cause severe burns. '
-            'Let the engine cool completely and have the cooling system checked before riding or driving.'
+            'SEVERE SCALD HAZARD: NEVER OPEN A HOT RADIATOR CAP. Pressurized boiling coolant will violently '
+            'erupt causing catastrophic burns. Stop the engine, allow it to cool completely (at least 45 minutes), '
+            'and do not open the radiator cap or coolant reservoir while hot.'
         ),
         'tl': (
-            'MATINDING INIT / PANGANIB SA PASO: Patayin ang makina at huwag buksan ang radiator cap o '
-            'coolant reservoir habang mainit. Maaaring sumabog ang kumukulong coolant at magdulot ng '
-            'malubhang paso. Pahintulutang lumamig ang makina at ipasuri ang cooling system bago '
-            'ipagpatuloy ang pagmamaneho.'
+            'BABALA SA INIT AT PASO: HUWAG NA HUWAG BUBUKSAN ANG RADIATOR CAP HABANG MAINIT ANG MAKINA. '
+            'Sasabog ang kumukulong coolant at magdudulot ng malubhang paso. Patayin ang makina, maghintay '
+            'nang hindi bababa sa 45 minuto upang lumamig ito bago suriin ang cooling system.'
         ),
         'hil': (
-            'GRABE NGA INIT / KATALAGMAN SA PASO: Patya ang makina kag indi pagbukas sang radiator cap '
-            'ukon coolant reservoir samtang mainit. Mahimo magsabwag ang nagabukal nga coolant kag '
-            'magtuga sang grabe nga paso. Pabugnawa sing bug-os ang makina kag ipasusi ang cooling '
-            'system antes magpadayon sa pagmaneho.'
+            'PAHILIG-AN SA PASO: INDII GID PAGBUKSI ANG RADIATOR CAP SAMTANG MAINIT ANG MAKINA. '
+            'Magasabwag ang nagabukal nga coolant kag magatuga sing grabe nga paso. Patya ang makina kag '
+            'palipasa anay ang 45 minutos tubtob magbugnaw antes usisaon ang cooling system.'
         ),
     },
     {

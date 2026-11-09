@@ -32,11 +32,11 @@ SAFETY_TRIPWIRES = {
         'hil': 'MAHUGOD NGA PAHILIG-AN SA KALIGTASAN: INDII GID PAGPADALAGNA ANG SALAKYAN. Makatalagam ang humok ukon wala sing preno. Ipundo kag iparking gilayon ang salakyan sa hilway nga lugar.',
     },
     'overheating_scald': {
-        'triggers': ['overheat', 'boiling', 'radiator', 'steam', 'singaw', 'kumukulo', 'nagabukal', 'temp light', 'high temperature'],
+        'triggers': ['overheat', 'overheating', 'boiling', 'radiator', 'steam', 'singaw', 'kumukulo', 'nagabukal', 'temp light', 'temperature light', 'high temperature', 'nag-ooverheat', 'nagooverheat'],
         'urgency': 'critical_stop',
-        'en': 'SEVERE SCALD HAZARD: NEVER OPEN A HOT RADIATOR CAP. Boiling pressurized coolant will violently erupt causing catastrophic third-degree burns. Allow engine to cool for at least 45 minutes.',
-        'tl': 'BABALA SA INIT AT PASO: HUWAG NA HUWAG BUBUKSAN ANG RADIATOR CAP HABANG MAINIT ANG MAKINA. Sasabog ang kumukulong coolant at magdudulot ng malubhang paso. Maghintay nang hindi bababa sa 45 minuto.',
-        'hil': 'PAHILIG-AN SA PASO: INDII GID PAGBUKSI ANG RADIATOR CAP SAMTANG MAINIT ANG MAKINA. Magasabwag ang nagabukal nga coolant kag magatuga sing grabe nga paso. Palipasa anay ang 45 minutos tubtob magbugnaw.',
+        'en': 'SEVERE SCALD HAZARD: NEVER OPEN A HOT RADIATOR CAP. Pressurized boiling coolant will violently erupt causing catastrophic burns. Stop the engine, allow it to cool completely (at least 45 minutes), and do not open the radiator cap or coolant reservoir while hot.',
+        'tl': 'BABALA SA INIT AT PASO: HUWAG NA HUWAG BUBUKSAN ANG RADIATOR CAP HABANG MAINIT ANG MAKINA. Sasabog ang kumukulong coolant at magdudulot ng malubhang paso. Patayin ang makina, maghintay nang hindi bababa sa 45 minuto upang lumamig ito bago suriin ang cooling system.',
+        'hil': 'PAHILIG-AN SA PASO: INDII GID PAGBUKSI ANG RADIATOR CAP SAMTANG MAINIT ANG MAKINA. Magasabwag ang nagabukal nga coolant kag magatuga sing grabe nga paso. Patya ang makina kag palipasa anay ang 45 minutos tubtob magbugnaw antes usisaon ang cooling system.',
     },
     'fuel_leak': {
         'triggers': ['fuel leak', 'gas leak', 'amoy gasolina', 'tumutulo gasolina', 'nagasulod gas', 'dripping fuel', 'raw gas'],
@@ -712,20 +712,20 @@ Strict Rules:
         lang = session.language
         if lang == 'tagalog':
             return (
-                f"{safety_header}Naiintindihan ko, {sir}. Nakatutok na ang ating pagsusuri sa **{veh_name}**.\n\n"
-                f"Ano po ang partikular na sintomas o problema na nararanasan ninyo sa inyong sasakyan?\n\n"
+                f"{safety_header}Walang sapat na approved local repair record para sa partikular na problema sa **{veh_name}**.\n\n"
+                f"Upang masuri ito nang maayos, kailan po nangyayari ang problema, at may napansin ba kayong kakaibang tunog, tagas, o ilaw sa dashboard?\n\n"
                 f"[chips: Ayaw mag-start | Malambot ang preno | Nag-iinit / Overheat | Maingay na makina | Regular na maintenance]"
             )
         elif lang == 'hiligaynon':
             return (
-                f"{safety_header}Naintindihan ko, {sir}. Nakatutok na ang aton sistema sa **{veh_name}**.\n\n"
-                f"Ano bala ang partikular nga diperensya ukon sintomas sang imo salakyan?\n\n"
+                f"{safety_header}Wala sang husto nga approved local repair record para sa sina nga diperensya sang **{veh_name}**.\n\n"
+                f"Para matulukan ini sing maayo, san-o ini nagakatabo, kag may nakita bala kamo nga katingalahan nga gahod, tulo, ukon suga?\n\n"
                 f"[chips: Indi mag-start | Humok ang preno | Nagabukal / Overheat | Gahod sa makina | Regular nga maintenance]"
             )
         else:
             return (
-                f"{safety_header}Understood, {sir}. Active diagnostic focus has been updated to the **{veh_name}**.\n\n"
-                f"What specific symptom, mechanical issue, or maintenance procedure would you like assistance with on this vehicle?\n\n"
+                f"{safety_header}No approved local repair record matched this specific symptom on your **{veh_name}**.\n\n"
+                f"To help narrow it down safely, when does the problem occur, and do you notice any warning lights, leaks, or unusual sounds?\n\n"
                 f"[chips: Engine will not start | Brakes weak or spongy | Overheating | Strange noise | Routine maintenance]"
             )
 

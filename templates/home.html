@@ -808,38 +808,32 @@
   <!-- Top Dashboard Header Bar -->
   <header class="jarvis-dashboard-header">
     <div class="jarvis-header-left">
-      <div class="jarvis-header-icon-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-          <path d="M2 10v4"/>
-          <path d="M6 6v12"/>
-          <path d="M10 3v18"/>
-          <path d="M14 8v8"/>
-          <path d="M18 5v14"/>
-          <path d="M22 10v4"/>
-        </svg>
-      </div>
       <div class="jarvis-header-info">
-        <h1 class="jarvis-header-title">J.A.R.V.I.S.</h1>
-        <div class="jarvis-header-status">
-          <span class="jarvis-status-dot"></span>
-          <span>Online · At your service, sir</span>
+        <h1 class="jarvis-header-title">Diagnostic workspace</h1>
+        <div class="jarvis-header-breadcrumb">
+          <span>Starting system</span>
+          <span class="ma-breadcrumb-slash">/</span>
+          <span class="ma-breadcrumb-sub">Motorcycle not specified</span>
         </div>
       </div>
     </div>
 
     <div class="jarvis-header-actions">
-      <span class="jarvis-private-badge">PRIVATE SESSION</span>
+      <div class="ma-private-saved-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Private session · Saved</span>
+      </div>
 
       <!-- History Button -->
       <button type="button" class="jarvis-header-action-btn" id="btn-chat-history" title="View chat history" aria-label="Open chat history">
         <i class="fa-regular fa-clock"></i>
-        <span>History</span>
       </button>
 
       <!-- Clear logs Button -->
       <button type="button" class="jarvis-header-action-btn" id="btn-clear-logs" title="Clear chat history" aria-label="Clear chat logs">
         <i class="fa-regular fa-trash-can"></i>
-        <span>Clear logs</span>
       </button>
 
       <!-- Settings / Config Button -->
@@ -852,16 +846,38 @@
     </div>
   </header>
 
-  <!-- Main 2-Column Floating Card Workspace -->
+  <!-- Step Wizard Horizontal Bar -->
+  <div class="ma-step-indicator-bar" id="ma-step-indicator" role="navigation" aria-label="Diagnostic Progression">
+    <div class="ma-step-item active" data-step="1" title="Step 1: Describe issue">
+      <span class="ma-step-num active">01</span>
+      <span class="ma-step-text active">Describe issue</span>
+    </div>
+    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
+    <div class="ma-step-item" data-step="2" title="Step 2: Run safe checks">
+      <span class="ma-step-num">02</span>
+      <span class="ma-step-text">Run safe checks</span>
+    </div>
+    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
+    <div class="ma-step-item" data-step="3" title="Step 3: Review findings">
+      <span class="ma-step-num">03</span>
+      <span class="ma-step-text">Review findings</span>
+    </div>
+    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
+    <div class="ma-step-item" data-step="4" title="Step 4: Repair plan">
+      <span class="ma-step-num">04</span>
+      <span class="ma-step-text">Repair plan</span>
+    </div>
+  </div>
+
+  <!-- Main 2-Column Grid Workspace -->
   <div class="jarvis-dashboard-grid">
 
-    <!-- Left / Center: Large Diagnostic Copilot Card -->
+    <!-- Left / Center: Large Diagnostic Workspace & Chat Column -->
     <div class="jarvis-copilot-card">
       <div class="jarvis-copilot-scroll" id="jarvis-copilot-scroll">
 
-        <!-- Card Header: Eyebrow + Mode + Language + New Conversation -->
+        <!-- Controls: Assistant Mode + Language + New Conversation (Subtle) -->
         <div class="jarvis-copilot-card-top">
-          <span class="jarvis-copilot-eyebrow">YOUR DIAGNOSTIC COPILOT</span>
           <div class="jarvis-copilot-controls">
             <div class="jarvis-mode-toggle" role="group" aria-label="Assistant mode">
               <button type="button" class="jarvis-mode-btn" data-assistant-mode="guided" title="Original step-by-step guided flow">
@@ -881,108 +897,113 @@
               </select>
             </label>
             <button type="button" class="jarvis-pill-btn" id="btn-hero-new-conversation">
-              New conversation
+              <i class="fa-solid fa-rotate-left"></i> New diagnosis
             </button>
-            <button type="button" class="jarvis-handsfree-btn" id="btn-toggle-handsfree" title="Hands-Free Voice Mode — Ask questions without touching your screen or keyboard">
+            <button type="button" class="jarvis-handsfree-btn" id="btn-toggle-handsfree" title="Hands-Free Voice Mode">
               <i class="fa-solid fa-headset"></i> <span id="btn-handsfree-label">Hands-Free</span>
             </button>
           </div>
-        </div>
-        <div class="jarvis-mode-hint" id="jarvis-mode-hint" style="font-size:10.5px;color:#556c84;line-height:1.4;margin-top:-4px;">
-          Guided mode walks you through the original step-by-step checks. Smart mode adds safety-first structured answers, local evidence and photo support.
+          <div class="jarvis-mode-hint" id="jarvis-mode-hint" style="display:none;"></div>
         </div>
 
-        <!-- Hero Section: Headline, Greeting & Shortcuts (Shown when starting fresh) -->
+        <!-- Initial Motorcycle Diagnostics Hero State -->
         <div class="jarvis-copilot-hero" id="jarvis-copilot-hero">
-          <!-- Big Headline -->
-          <h2 class="jarvis-hero-headline">
-            A clearer diagnosis.<br>
-            A more confident ride.
-          </h2>
-          <p class="jarvis-hero-subtext">
-            Tell me what's happening. We'll work through it, one check at a time.
-          </p>
-
-          <!-- Jarvis Initial Greeting Box (Nested Card) -->
-          <div class="jarvis-greeting-box">
-            <div class="jarvis-greeting-box-header">
-              <div class="jarvis-greeting-brand">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                  <path d="M2 10v4"/>
-                  <path d="M6 6v12"/>
-                  <path d="M10 3v18"/>
-                  <path d="M14 8v8"/>
-                  <path d="M18 5v14"/>
-                  <path d="M22 10v4"/>
-                </svg>
-                <span>J.A.R.V.I.S.</span>
-              </div>
-              <span class="jarvis-greeting-time">JUST NOW</span>
+          <!-- Main Greeting Headline & Subtitle -->
+          <div class="ma-workspace-headline-group">
+            <div class="ma-hero-eyebrow">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              <span>Motorcycle Diagnostic Co-Pilot</span>
             </div>
-            <p class="jarvis-greeting-text">
-              At your service, {{ user.username|default:"Glenn"|title }}. Ask me anything about your motorcycle — oil-change intervals, tire checks, chain care, maintenance schedules, or a fault you want to diagnose. I answer general questions directly, and I can narrow down a problem step by step. For model-specific specs, include your make/model/year (for example, <em>Click 125i 2022</em>).
+            <h2 class="ma-workspace-headline">How may I help you?</h2>
+            <p class="ma-workspace-subtext">Select a common motorcycle problem below to start your step-by-step diagnostic guide, or describe what you hear or see in the chat.</p>
+          </div>
+
+          <!-- Common Motorcycle Problems Section (Suggested fixes & topics) -->
+          <div class="ma-common-problems-section">
+            <div class="ma-common-problems-header">
+              <div class="ma-common-problems-title">
+                <i class="fa-solid fa-wrench me-2" style="color: #52e3b6;"></i> Common Motorcycle Problems
+              </div>
+              <span class="ma-common-problems-tag">Click any issue to start Step 2 safe checks</span>
+            </div>
+
+            <div class="ma-common-problems-grid">
+              <!-- Problem 1: No Start / Click -->
+              <button type="button" class="ma-problem-card jarvis-shortcut-card" data-shortcut="My motorcycle won't start. The starter clicks or makes no sound.">
+                <div class="ma-problem-card-top">
+                  <span class="ma-problem-icon"><i class="fa-solid fa-bolt"></i></span>
+                  <span class="ma-problem-badge">Starter</span>
+                </div>
+                <div class="ma-problem-title">Engine won't start</div>
+                <div class="ma-problem-desc">Clicks or silence. Battery, starter relay, or kill switch.</div>
+                <div class="ma-problem-action">
+                  <span>Diagnose</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </button>
+
+              <!-- Problem 2: Cranks no fire -->
+              <button type="button" class="ma-problem-card jarvis-shortcut-card" data-shortcut="My motorcycle engine cranks normally but won't start or fire up.">
+                <div class="ma-problem-card-top">
+                  <span class="ma-problem-icon"><i class="fa-solid fa-arrows-rotate"></i></span>
+                  <span class="ma-problem-badge">Fuel & Spark</span>
+                </div>
+                <div class="ma-problem-title">Cranks but won't start</div>
+                <div class="ma-problem-desc">Turns freely but won't run. Spark plug or fuel flow.</div>
+                <div class="ma-problem-action">
+                  <span>Diagnose</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </button>
+
+              <!-- Problem 3: Idle / Stalling -->
+              <button type="button" class="ma-problem-card jarvis-shortcut-card" data-shortcut="My motorcycle starts but dies immediately or stalls at idle and stoplights.">
+                <div class="ma-problem-card-top">
+                  <span class="ma-problem-icon"><i class="fa-solid fa-circle-stop"></i></span>
+                  <span class="ma-problem-badge">Idle Speed</span>
+                </div>
+                <div class="ma-problem-title">Stalls or dies at idle</div>
+                <div class="ma-problem-desc">Cuts out at stops or when releasing throttle.</div>
+                <div class="ma-problem-action">
+                  <span>Diagnose</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </button>
+
+              <!-- Problem 4: Battery draining -->
+              <button type="button" class="ma-problem-card jarvis-shortcut-card" data-shortcut="My motorcycle battery keeps draining or is not charging while running.">
+                <div class="ma-problem-card-top">
+                  <span class="ma-problem-icon"><i class="fa-solid fa-car-battery"></i></span>
+                  <span class="ma-problem-badge">Charging</span>
+                </div>
+                <div class="ma-problem-title">Battery keeps draining</div>
+                <div class="ma-problem-desc">Dead battery overnight or not charging while riding.</div>
+                <div class="ma-problem-action">
+                  <span>Diagnose</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Safe Visual Check Tip Card -->
+          <div class="ma-safe-guidance-card">
+            <div class="ma-safe-guidance-header">
+              <i class="fa-solid fa-shield-halved text-success"></i>
+              <span>Safe Visual Pre-Check Protocol</span>
+            </div>
+            <p class="ma-safe-guidance-p">
+              Before testing, park on level ground (center stand recommended), switch off the engine to cool, and keep clear of hot exhaust and moving drive belts or chains.
             </p>
+            <div class="ma-safe-tips-row">
+              <div class="ma-safe-tip-pill"><span class="ma-safe-tip-num">1</span> Check engine stop switch is set to RUN</div>
+              <div class="ma-safe-tip-pill"><span class="ma-safe-tip-num">2</span> Retract side stand (safety interlock switch)</div>
+              <div class="ma-safe-tip-pill"><span class="ma-safe-tip-num">3</span> Hold brake lever firmly while pressing start</div>
+            </div>
           </div>
 
-          <!-- Shortcut Section Subtitle -->
-          <div class="jarvis-shortcuts-intro">
-            Not sure where to start? Ask a question or try a shortcut.
-          </div>
-
-          <!-- 2x2 Diagnostic Shortcuts Grid -->
-          <div class="jarvis-shortcuts-grid">
-            <button type="button" class="jarvis-shortcut-card" data-shortcut="Engine won't start">
-              <div class="jarvis-shortcut-card-top">
-                <div class="jarvis-shortcut-title-group">
-                  <i class="fa-solid fa-key jarvis-shortcut-icon"></i>
-                  <span class="jarvis-shortcut-title">Engine won't start</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
-              </div>
-              <span class="jarvis-shortcut-sub">Battery, ignition &amp; fuel checks</span>
-            </button>
-
-            <button type="button" class="jarvis-shortcut-card" data-shortcut="Front brake not working">
-              <div class="jarvis-shortcut-card-top">
-                <div class="jarvis-shortcut-title-group">
-                  <i class="fa-regular fa-circle-dot jarvis-shortcut-icon"></i>
-                  <span class="jarvis-shortcut-title">Front brake not working</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
-              </div>
-              <span class="jarvis-shortcut-sub">Pressure, pads &amp; fluid checks</span>
-            </button>
-
-            <button type="button" class="jarvis-shortcut-card" data-shortcut="Engine overheating">
-              <div class="jarvis-shortcut-card-top">
-                <div class="jarvis-shortcut-title-group">
-                  <i class="fa-solid fa-temperature-half jarvis-shortcut-icon"></i>
-                  <span class="jarvis-shortcut-title">Engine overheating</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
-              </div>
-              <span class="jarvis-shortcut-sub">Cooling system &amp; temperature</span>
-            </button>
-
-            <button type="button" class="jarvis-shortcut-card" data-shortcut="Motorcycle won't accelerate properly">
-              <div class="jarvis-shortcut-card-top">
-                <div class="jarvis-shortcut-title-group">
-                  <i class="fa-solid fa-gauge-high jarvis-shortcut-icon"></i>
-                  <span class="jarvis-shortcut-title">Poor acceleration</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square jarvis-shortcut-arrow"></i>
-              </div>
-              <span class="jarvis-shortcut-sub">Motorcycle won't accelerate properly</span>
-            </button>
-          </div>
-
-          <!-- Privacy footnote -->
-          <div class="jarvis-privacy-footnote">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <span>Your conversations and vehicle data stay private.</span>
-          </div>
         </div>
 
         <!-- Chat Messages Container (Live Conversation / Turn-by-Turn History) -->
@@ -991,9 +1012,91 @@
         </div>
 
       </div>
+
+      <!-- Bottom Floating Input Bar Dock (Nested inside Chat Column!) -->
+      <div class="jarvis-bottom-dock">
+        <div class="jarvis-photo-dock d-none" id="jarvis-photo-dock" aria-live="polite">
+          <img class="jarvis-photo-thumb" id="jarvis-photo-thumb" alt="Selected diagnostic photo preview">
+          <div class="jarvis-photo-info">
+            <span class="jarvis-photo-name" id="jarvis-photo-name">photo.jpg</span>
+            <span class="jarvis-photo-status" id="jarvis-photo-status">Ready to attach</span>
+          </div>
+          <button type="button" class="jarvis-photo-remove" id="jarvis-photo-remove" title="Remove photo" aria-label="Remove photo">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Hands-Free Voice HUD -->
+        <div class="jarvis-voice-hud d-none" id="jarvis-voice-hud" aria-live="polite">
+          <div class="jarvis-voice-hud-main">
+            <div class="jarvis-voice-waves" id="jarvis-voice-waves" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <div class="jarvis-voice-hud-text">
+              <span class="jarvis-voice-hud-status" id="jarvis-voice-status">Hands-Free Active</span>
+              <span class="jarvis-voice-hud-preview" id="jarvis-voice-preview">Speak your motorcycle question hands-free...</span>
+            </div>
+          </div>
+          <div class="jarvis-voice-hud-actions">
+            <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-test-btn" title="Hear Jarvis voice test" aria-label="Test Jarvis voice">
+              <i class="fa-solid fa-volume-high text-cyan"></i> <span class="d-none d-sm-inline">Test Voice</span>
+            </button>
+            <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-stop-btn" title="Stop speaking" aria-label="Stop speaking">
+              <i class="fa-solid fa-stop"></i> <span class="d-none d-sm-inline">Stop</span>
+            </button>
+            <button type="button" class="jarvis-voice-action-btn jarvis-voice-exit-btn" id="jarvis-voice-exit-btn" title="Exit hands-free mode" aria-label="Exit hands-free">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <input type="file" id="jarvis-image-input" accept="image/jpeg,image/png,image/webp" hidden>
+        <form id="jarvis-chat-form" class="jarvis-bottom-form" onsubmit="return false;">
+          <div class="ma-input-container">
+            <textarea
+              id="jarvis-user-input"
+              class="ma-input-textarea"
+              rows="1"
+              maxlength="1000"
+              placeholder="Describe what you hear or see..."
+              aria-label="Describe what you hear or see"
+              autofocus
+            ></textarea>
+            
+            <div class="ma-input-bottom-row">
+              <button type="button" class="ma-attach-link-btn" id="jarvis-attach-btn" title="Attach a diagnostic photo" aria-label="Attach diagnostic photo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+                <span>Attach a photo</span>
+              </button>
+
+              <div class="ma-input-actions-right">
+                <button type="button" class="jarvis-bar-icon" id="jarvis-speaker-btn" title="Voice Replies (Read answers aloud)" aria-label="Toggle voice replies">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button type="button" class="jarvis-bar-icon" id="jarvis-mic-btn" title="Voice input (Hands-free)" aria-label="Voice input">
+                  <i class="fa-solid fa-microphone"></i>
+                </button>
+                <button type="submit" id="jarvis-btn-send" class="ma-send-btn" aria-label="Send message">
+                  <span>Send</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+        <div class="ma-disclaimer-text">
+          Guidance, not a confirmed diagnosis. Stop if a check feels unsafe.
+        </div>
+      </div>
+
     </div>
 
-    <!-- Right Side Column (2 Stacked Floating Cards) -->
+    <!-- Right Side Column (3 Stacked Floating Cards) -->
     <div class="jarvis-right-column">
 
       <!-- Card 1: YOUR MOTORCYCLE -->
@@ -1006,20 +1109,25 @@
         </div>
         <div class="jarvis-moto-details">
           <h3 class="jarvis-moto-title" id="display-vehicle-title"
-              data-default-title="No vehicle selected">No vehicle selected</h3>
+              data-default-title="Your motorcycle">Your motorcycle</h3>
           <p class="jarvis-moto-specs" id="display-vehicle-specs"
-             data-default-specs="Tell the assistant your motorcycle in chat.">Tell the assistant your motorcycle in chat.</p>
+             data-default-specs="No motorcycle specified yet">No motorcycle specified yet</p>
 
           <!-- Explore in 3D Button -->
           <a href="{% url 'motor:viewer' %}" class="jarvis-explore-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/>
               <polyline points="2 17 12 22 22 17"/>
               <polyline points="2 12 12 17 22 12"/>
             </svg>
             <span>Explore in 3D</span>
-            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="margin-left:auto;">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
           </a>
+          <div class="jarvis-moto-hint">Share your brand or model in chat.</div>
         </div>
       </div>
 
@@ -1027,87 +1135,40 @@
       <div class="jarvis-card-box jarvis-safety-card">
         <div class="jarvis-safety-card-header">
           <div class="jarvis-safety-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
             </svg>
           </div>
           <span class="jarvis-safety-title">Safety comes first</span>
         </div>
         <p class="jarvis-safety-text">
-          Keep your motorcycle parked while diagnosing. For critical faults, consult a qualified technician.
+          Stop if you notice fuel leaks, smoke, damaged wiring or a burning smell. Get help from a qualified mechanic.
         </p>
       </div>
 
-    </div>
-
-  </div>
-
-  <!-- Bottom Floating Input Bar Dock -->
-  <div class="jarvis-bottom-dock">
-    <div class="jarvis-photo-dock d-none" id="jarvis-photo-dock" aria-live="polite">
-      <img class="jarvis-photo-thumb" id="jarvis-photo-thumb" alt="Selected diagnostic photo preview">
-      <div class="jarvis-photo-info">
-        <span class="jarvis-photo-name" id="jarvis-photo-name">photo.jpg</span>
-        <span class="jarvis-photo-status" id="jarvis-photo-status">Ready to attach</span>
-      </div>
-      <button type="button" class="jarvis-photo-remove" id="jarvis-photo-remove" title="Remove photo" aria-label="Remove photo">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    <!-- Hands-Free Voice HUD -->
-    <div class="jarvis-voice-hud d-none" id="jarvis-voice-hud" aria-live="polite">
-      <div class="jarvis-voice-hud-main">
-        <div class="jarvis-voice-waves" id="jarvis-voice-waves" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
+      <!-- Card 3: What we know -->
+      <div class="jarvis-card-box ma-known-card">
+        <div class="ma-known-card-header">
+          <span class="ma-known-title">What we know</span>
         </div>
-        <div class="jarvis-voice-hud-text">
-          <span class="jarvis-voice-hud-status" id="jarvis-voice-status">Hands-Free Active</span>
-          <span class="jarvis-voice-hud-preview" id="jarvis-voice-preview">Speak your motorcycle question hands-free...</span>
+        <div class="ma-known-rows">
+          <div class="ma-known-item">
+            <span class="ma-known-label">Issue</span>
+            <span class="ma-known-value" id="ma-known-issue">Awaiting issue</span>
+          </div>
+          <div class="ma-known-item">
+            <span class="ma-known-label">Observed</span>
+            <span class="ma-known-value" id="ma-known-observed">No checks run yet</span>
+          </div>
+          <div class="ma-known-item">
+            <span class="ma-known-label">Next check</span>
+            <span class="ma-known-value" id="ma-known-next">Select problem or describe</span>
+          </div>
         </div>
       </div>
-      <div class="jarvis-voice-hud-actions">
-        <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-test-btn" title="Hear Jarvis voice test" aria-label="Test Jarvis voice">
-          <i class="fa-solid fa-volume-high text-cyan"></i> <span class="d-none d-sm-inline">Test Voice</span>
-        </button>
-        <button type="button" class="jarvis-voice-action-btn" id="jarvis-voice-stop-btn" title="Stop speaking" aria-label="Stop speaking">
-          <i class="fa-solid fa-stop"></i> <span class="d-none d-sm-inline">Stop</span>
-        </button>
-        <button type="button" class="jarvis-voice-action-btn jarvis-voice-exit-btn" id="jarvis-voice-exit-btn" title="Exit hands-free mode" aria-label="Exit hands-free">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+
     </div>
-    <input type="file" id="jarvis-image-input" accept="image/jpeg,image/png,image/webp" hidden>
-    <form id="jarvis-chat-form" class="jarvis-bottom-form" onsubmit="return false;">
-      <div class="jarvis-floating-bar">
-        <button type="button" class="jarvis-bar-icon" id="jarvis-attach-btn" title="Attach a diagnostic photo (Smart mode)" aria-label="Attach diagnostic photo">
-          <i class="fa-solid fa-paperclip"></i>
-        </button>
-        <textarea
-          id="jarvis-user-input"
-          class="jarvis-bar-textarea"
-          rows="1"
-          maxlength="1000"
-          placeholder="Describe a symptom or ask J.A.R.V.I.S. a question..."
-          aria-label="Message Jarvis"
-          autofocus
-        ></textarea>
-        <button type="button" class="jarvis-bar-icon" id="jarvis-speaker-btn" title="Jarvis Voice Replies (Read answers aloud)" aria-label="Toggle voice replies">
-          <i class="fa-solid fa-volume-high"></i>
-        </button>
-        <button type="button" class="jarvis-bar-icon" id="jarvis-mic-btn" title="Voice input (Hands-free)" aria-label="Voice input">
-          <i class="fa-solid fa-microphone"></i>
-        </button>
-        <button type="submit" id="jarvis-btn-send" class="jarvis-bar-send-btn" aria-label="Send message">
-          <i class="fa-solid fa-arrow-up"></i>
-        </button>
-      </div>
-    </form>
-    <div class="jarvis-bottom-hints">
-      <span class="jarvis-hint-left">AI-assisted guidance. Always verify before making repairs.</span>
-      <span class="jarvis-hint-right"><kbd>↵</kbd> Send &nbsp;&nbsp; <kbd>⇧</kbd> <kbd>↵</kbd> New line</span>
-    </div>
+
   </div>
 
   <!-- Chat History Slide-out Drawer -->
@@ -1115,7 +1176,7 @@
     <div class="jarvis-history-header">
       <div class="jarvis-history-title">
         <i class="fa-solid fa-clock-rotate-left"></i>
-        <span>Chat History</span>
+        <span>Diagnostic History</span>
       </div>
       <button type="button" class="jarvis-header-icon-btn" id="btn-close-history" title="Close history" aria-label="Close history">
         <i class="fa-solid fa-xmark"></i>
@@ -1518,6 +1579,14 @@
       cleanText = cleanText.replace(formMatch[0], '').trim();
     }
 
+    // Extract [stage: ...] tag before stripping
+    let stageData = null;
+    const stageMatch = cleanText.match(/\[stage:\s*([1-4])\]/i);
+    if (stageMatch) {
+      stageData = Number(stageMatch[1]);
+    }
+    cleanText = cleanText.replace(/\[stage:\s*[1-4]\]/gi, '').trim();
+
     // Extract [part-image: ...] BEFORE stripping — so image data survives into the parsed object
     let partImageData = null;
     const partImgTagMatch = cleanText.match(/\[part-image:\s*([^|\]]+?)\s*\|\s*([^\]]+?)\s*\]/i);
@@ -1602,7 +1671,8 @@
       activeChip: activeChipName || null,
       followupChips: followupChips || [],
       partImage: partImageData,
-      safetyAlert: safetyAlert
+      safetyAlert: safetyAlert,
+      stage: stageData
     };
   }
 
@@ -1959,6 +2029,30 @@
     messagesContainer.appendChild(block);
   }
 
+  // ── Helper to compile the complete speech text from a parsed message ──────
+  function getFullSpeechFromParsed(p) {
+    if (!p) return '';
+    const parts = [];
+    if (p.safetyAlert && p.safetyAlert.content) {
+      parts.push(p.safetyAlert.content);
+    }
+    if (p.title) {
+      const t = p.title.trim();
+      parts.push(/[.?!:]$/.test(t) ? t : t + '.');
+    }
+    if (p.intro) {
+      parts.push(p.intro);
+    }
+    if (p.checklist && p.checklist.length > 0) {
+      const listSpeech = p.checklist.map((item, idx) => `Step ${idx + 1}: ${item}`).join('. ');
+      parts.push(listSpeech);
+    }
+    if (p.outro) {
+      parts.push(p.outro);
+    }
+    return parts.join(' ');
+  }
+
   // ── DOM Renderer for Bot Message Card ─────────────────────────────────────
   function renderBotMessage(parsed, id) {
     const block = document.createElement('div');
@@ -1989,7 +2083,7 @@
         e.stopPropagation();
         if (window.jarvisVoiceAssistant) {
           window.jarvisVoiceAssistant.playJarvisSound('activate');
-          const rawSpeech = (parsed.title ? parsed.title + '. ' : '') + (parsed.intro || '');
+          const rawSpeech = getFullSpeechFromParsed(parsed);
           window.jarvisVoiceAssistant.speakText(rawSpeech, { force: true });
         }
       });
@@ -2661,6 +2755,135 @@
     }
   }
 
+  // ── 4-Step Diagnostic Progression Management ──────────────────────────────
+  let currentDiagnosticStep = 1;
+
+  function setDiagnosticStep(targetStep) {
+    currentDiagnosticStep = Math.max(1, Math.min(4, Number(targetStep) || 1));
+    const stepItems = document.querySelectorAll('#ma-step-indicator .ma-step-item');
+    stepItems.forEach(item => {
+      const s = Number(item.dataset.step);
+      item.classList.remove('active', 'completed');
+      const numEl = item.querySelector('.ma-step-num');
+      const textEl = item.querySelector('.ma-step-text');
+      if (numEl) numEl.classList.remove('active');
+      if (textEl) textEl.classList.remove('active');
+
+      if (s < currentDiagnosticStep) {
+        item.classList.add('completed');
+        if (numEl) numEl.innerHTML = '<i class="fa-solid fa-check" style="font-size:10px;"></i>';
+      } else if (s === currentDiagnosticStep) {
+        item.classList.add('active');
+        if (numEl) {
+          numEl.classList.add('active');
+          numEl.textContent = '0' + s;
+        }
+        if (textEl) textEl.classList.add('active');
+      } else {
+        if (numEl) numEl.textContent = '0' + s;
+      }
+    });
+    updateWhatWeKnowCard(currentDiagnosticStep);
+  }
+
+  function calculateDiagnosticStep(history, latestStructured) {
+    const userTurns = (history || []).filter(item => item.role === 'user');
+    if (userTurns.length === 0) return 1;
+
+    if (latestStructured) {
+      const stage = latestStructured.diagnostic_stage;
+      const hasRepair = (latestStructured.repair_steps && latestStructured.repair_steps.length > 0) ||
+                        ['repair', 'verification', 'closed'].includes(stage);
+      if (hasRepair) return 4;
+
+      const hasDiagnosis = stage === 'diagnosis' || (latestStructured.possible_causes && latestStructured.possible_causes.length > 0);
+      if (hasDiagnosis) return 3;
+
+      return 2;
+    }
+
+    const botTurns = (history || []).filter(item => item.role === 'bot' && !item.id.startsWith('init') && !item.id.startsWith('welcome'));
+    if (botTurns.length === 0) return 2;
+
+    const lastBot = botTurns[botTurns.length - 1];
+    const rawBotText = lastBot.text || '';
+    const text = rawBotText.toLowerCase();
+
+    // Check explicit stage tag in bot output
+    const stageTagMatch = rawBotText.match(/\[stage:\s*([1-4])\]/i);
+    if (stageTagMatch) {
+      return Number(stageTagMatch[1]);
+    }
+
+    // Step 4: Repair plan
+    if (text.includes('- [ ]') || text.includes('repair plan') || text.includes('repair procedure') || text.includes('repair instructions') || text.includes('replacement checklist') || text.includes('step-by-step repair') || text.includes('checklist:')) {
+      return 4;
+    }
+
+    // Step 3: Review findings
+    if (text.includes('review findings') || text.includes('review of findings') || text.includes('findings:') || text.includes('diagnostic scan complete') || text.includes('primary cause') || text.includes('possible cause') || text.includes('root cause') || text.includes('most likely cause') || text.includes('diagnostic confirmation') || text.includes('isolated the problem') || text.includes('diagnostic analysis') || text.includes('[part-image:')) {
+      return 3;
+    }
+
+    // Check if user replied they haven't checked yet
+    const lastUser = userTurns[userTurns.length - 1];
+    const userText = (lastUser.text || '').toLowerCase();
+    const notCheckedYet = userText.includes("haven't checked") || userText.includes("havent check") || userText.includes("not yet") || userText.includes("di ko pa") || userText.includes("di pa");
+    if (notCheckedYet) {
+      return 2;
+    }
+
+    if (userTurns.length >= 2) {
+      return 3;
+    }
+
+    return 2;
+  }
+
+  function updateWhatWeKnowCard(step, history, latestStructured) {
+    const issueEl = document.getElementById('ma-known-issue');
+    const obsEl = document.getElementById('ma-known-observed');
+    const nextEl = document.getElementById('ma-known-next');
+    if (!issueEl || !obsEl || !nextEl) return;
+
+    history = history || loadHistory();
+    const userTurns = history.filter(item => item.role === 'user');
+
+    if (userTurns.length === 0 || step === 1) {
+      issueEl.textContent = 'Awaiting description';
+      obsEl.textContent = 'No checks run yet';
+      nextEl.textContent = 'Select or describe issue';
+      return;
+    }
+
+    if (latestStructured && latestStructured.symptoms && latestStructured.symptoms.length > 0) {
+      issueEl.textContent = latestStructured.symptoms[0];
+    } else if (userTurns.length > 0) {
+      let raw = userTurns[0].text || '';
+      raw = raw.replace(/^(my\s+(?:motorcycle|scooter|bike)\s+(?:engine\s+)?)/i, '');
+      if (raw.length > 26) raw = raw.substring(0, 24) + '...';
+      issueEl.textContent = raw || 'Motorcycle issue';
+    }
+
+    if (userTurns.length > 1) {
+      let obs = userTurns[userTurns.length - 1].text || '';
+      if (obs.length > 26) obs = obs.substring(0, 24) + '...';
+      obsEl.textContent = obs;
+    } else {
+      obsEl.textContent = 'Awaiting test observation';
+    }
+
+    if (step === 2) {
+      nextEl.textContent = 'Run safe checks';
+    } else if (step === 3) {
+      nextEl.textContent = 'Review findings';
+    } else if (step === 4) {
+      nextEl.textContent = 'Repair plan';
+    } else {
+      nextEl.textContent = 'Diagnostics';
+    }
+  }
+
   // ── Hero Visibility Toggle ───────────────────────────────────────────────
   function updateHeroVisibility(history) {
     const heroEl = document.getElementById('jarvis-copilot-hero');
@@ -2687,6 +2910,7 @@
       }
     });
     updateVehicleDisplayUI();
+    setDiagnosticStep(calculateDiagnosticStep(history));
     scrollToBottom();
   }
 
@@ -2950,6 +3174,7 @@
         time: botTime
       });
       saveHistory(history);
+      setDiagnosticStep(calculateDiagnosticStep(history, structured));
 
       if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
         window.jarvisVoiceAssistant.speakStructured(structured);
@@ -3088,6 +3313,7 @@
       };
       history.push(botEntry);
       saveHistory(history);
+      setDiagnosticStep(calculateDiagnosticStep(history));
 
       if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
         window.jarvisVoiceAssistant.speakGuidedOrGeneral(reply);
@@ -3220,6 +3446,7 @@
     ];
     saveHistory(welcomeState);
     renderAll(welcomeState);
+    setDiagnosticStep(1);
     inputEl.focus();
   });
 
@@ -3296,12 +3523,46 @@
     });
   }
 
-  // Diagnostic Shortcut Cards click
-  document.querySelectorAll('.jarvis-shortcut-card').forEach(card => {
-    card.addEventListener('click', () => {
+  // Diagnostic Shortcut Cards click (Delegated to support hero cards and chips)
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.jarvis-shortcut-card');
+    if (card) {
       const shortcut = card.dataset.shortcut;
       if (shortcut) {
         sendMessage(shortcut);
+      }
+    }
+  });
+
+  // Step indicator navigation click handlers
+  document.querySelectorAll('#ma-step-indicator .ma-step-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const s = Number(item.dataset.step);
+      setDiagnosticStep(s);
+      if (s === 1) {
+        const hero = document.getElementById('jarvis-copilot-hero');
+        if (hero && hero.style.display !== 'none') {
+          hero.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          const firstMsg = document.querySelector('.jarvis-msg-block--user');
+          if (firstMsg) firstMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          else scrollToBottom();
+        }
+      } else if (s === 2) {
+        const checkEl = document.querySelector('.jarvis-structured-tests, .ma-numbered-checks-list, .jarvis-msg-block--bot');
+        if (checkEl) checkEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        else scrollToBottom();
+      } else if (s === 3) {
+        const findingsEl = document.querySelector('.jarvis-part-img-card, .jarvis-structured-causes, .jarvis-evidence-list');
+        if (findingsEl) findingsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        else scrollToBottom();
+      } else if (s === 4) {
+        const repairEl = document.querySelector('.jarvis-checklist, .jarvis-structured-repair');
+        if (repairEl) {
+          repairEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          sendMessage('Please provide the step-by-step repair plan and checklist.');
+        }
       }
     });
   });
@@ -3480,8 +3741,12 @@
       voiceReplyEnabled = !voiceReplyEnabled;
       try { localStorage.setItem(VOICE_SPEAKER_KEY, voiceReplyEnabled ? '1' : '0'); } catch (e) {}
       updateSpeakerUI();
-      if (!voiceReplyEnabled && ('speechSynthesis' in window)) {
-        window.speechSynthesis.cancel();
+      if (!voiceReplyEnabled) {
+        if (typeof stopAllSpeech === 'function') {
+          stopAllSpeech();
+        } else if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
       }
     });
   }
@@ -3893,26 +4158,26 @@
     }
   }
 
-  // Robust Chromium/Edge Text-To-Speech Engine
+  // Robust Chromium/Edge Text-To-Speech Engine with Complete Voice Output & Keep-Alive
   window._activeUtterances = window._activeUtterances || [];
+  let currentSpeechQueue = [];
+  let currentSpeechIndex = 0;
+  let currentSpeechOptions = {};
+  let speechKeepAliveTimer = null;
 
-  function safeSpeak(utterance) {
-    window._activeUtterances.push(utterance);
-    utterance.onend = (e) => {
-      window._activeUtterances = window._activeUtterances.filter(u => u !== utterance);
-      if (typeof utterance._customOnEnd === 'function') utterance._customOnEnd(e);
-    };
-    utterance.onerror = (e) => {
-      console.warn("Jarvis TTS event error:", e);
-      window._activeUtterances = window._activeUtterances.filter(u => u !== utterance);
-      if (typeof utterance._customOnError === 'function') utterance._customOnError(e);
-    };
-
-    // Unpause stuck Chromium speech synthesizer
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
+  function stopAllSpeech() {
+    currentSpeechQueue = [];
+    currentSpeechIndex = 0;
+    if (speechKeepAliveTimer) {
+      clearInterval(speechKeepAliveTimer);
+      speechKeepAliveTimer = null;
     }
-    window.speechSynthesis.speak(utterance);
+    window._activeUtterances = [];
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    } catch (e) {}
   }
 
   function cleanTextForSpeech(text) {
@@ -3920,105 +4185,177 @@
     return text
       .replace(/\[chips:.*?\]/gi, '')
       .replace(/\[vehicle-form.*?\]/gi, '')
+      .replace(/\[part-image:.*?\]/gi, '')
       .replace(/<[^>]+>/g, '')
+      .replace(/-\s*\[\s*\]/g, '')
       .replace(/[*_#`~>]/g, '')
       .replace(/https?:\/\/\S+/g, '')
       .replace(/\s+/g, ' ')
       .trim();
   }
 
+  // Splits long text into natural sentence/clause chunks (~160 chars) so browser speech synthesis never times out or truncates
+  function splitTextIntoSpeechChunks(text) {
+    if (!text) return [];
+    const rawSentences = text.match(/[^.!?\n]+(?:[.!?\n]+|$)/g) || [text];
+    const chunks = [];
+    let currentChunk = '';
+
+    for (const raw of rawSentences) {
+      const s = raw.trim();
+      if (!s) continue;
+      if (s.length > 180) {
+        const subParts = s.match(/[^,;:—]+(?:[,;:—]+|$)/g) || [s];
+        for (const sub of subParts) {
+          const subTrimmed = sub.trim();
+          if (!subTrimmed) continue;
+          if (currentChunk && (currentChunk.length + subTrimmed.length > 160)) {
+            chunks.push(currentChunk.trim());
+            currentChunk = subTrimmed;
+          } else {
+            currentChunk = currentChunk ? (currentChunk + ' ' + subTrimmed) : subTrimmed;
+          }
+        }
+      } else {
+        if (currentChunk && (currentChunk.length + s.length > 160)) {
+          chunks.push(currentChunk.trim());
+          currentChunk = s;
+        } else {
+          currentChunk = currentChunk ? (currentChunk + ' ' + s) : s;
+        }
+      }
+    }
+    if (currentChunk && currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+    return chunks.length ? chunks : [text];
+  }
+
+  function playNextSpeechChunk() {
+    if (currentSpeechIndex >= currentSpeechQueue.length) {
+      // Completed all chunks!
+      stopAllSpeech();
+      isSpeaking = false;
+      if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+      if (isHandsFree && !currentSpeechOptions.immediateOnly) {
+        if (isAwaitingConfirmation) {
+          setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin · Say "Wait" to hold on');
+        } else {
+          setVoiceHudState('listening', 'Ready · Ask your next question hands-free...');
+        }
+        setTimeout(() => { if (isHandsFree && !isSpeaking) startListening(); }, 400);
+      } else if (!isHandsFree && !isAwaitingConfirmation) {
+        setVoiceHudState('hidden');
+      }
+      return;
+    }
+
+    const chunkText = currentSpeechQueue[currentSpeechIndex];
+    currentSpeechIndex++;
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      const utter = new SpeechSynthesisUtterance(chunkText);
+      utter.volume = 1.0;
+      utter.rate = 1.02;
+      utter.pitch = 1.0;
+
+      const bestVoice = pickBestJarvisVoice();
+      if (bestVoice) {
+        utter.voice = bestVoice;
+        utter.lang = bestVoice.lang;
+      } else {
+        utter.lang = getRecLanguage();
+      }
+
+      window._activeUtterances.push(utter);
+
+      utter.onend = () => {
+        window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
+        playNextSpeechChunk();
+      };
+
+      utter.onerror = (err) => {
+        console.warn('Jarvis TTS chunk event error:', err);
+        window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
+        playNextSpeechChunk();
+      };
+
+      window.speechSynthesis.speak(utter);
+    } catch (err) {
+      console.error('Jarvis speech chunk failed:', err);
+      playNextSpeechChunk();
+    }
+  }
+
   function speakText(rawText, options = {}) {
     if (!('speechSynthesis' in window)) {
       setVoiceHudState('confirming', 'SpeechSynthesis API not supported in this browser.');
-      console.warn("SpeechSynthesis API not available in this browser.");
+      console.warn('SpeechSynthesis API not available in this browser.');
       return;
     }
     if (!voiceReplyEnabled && !options.force) {
-      console.log("Jarvis voice replies are currently muted.");
+      console.log('Jarvis voice replies are currently muted.');
       return;
     }
 
     const clean = cleanTextForSpeech(rawText);
     if (!clean) return;
 
-    // Pick top 2-3 sentences for natural, concise vocal delivery
-    const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
-    const spokenScript = sentences.slice(0, 3).join(' ');
-
     stopListening(); // Pause mic so Jarvis doesn't hear himself
+    stopAllSpeech();
+
+    currentSpeechQueue = splitTextIntoSpeechChunks(clean);
+    currentSpeechIndex = 0;
+    currentSpeechOptions = options || {};
+
     isSpeaking = true;
     if (speakerBtn) speakerBtn.classList.add('is-speaking');
-    setVoiceHudState('speaking', spokenScript);
+    setVoiceHudState('speaking', clean);
 
-    // Cancel prior audio safely
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    // Keep-alive timer prevents Chromium 15-second speech synthesis timeout bug
+    if (speechKeepAliveTimer) clearInterval(speechKeepAliveTimer);
+    speechKeepAliveTimer = setInterval(() => {
+      try {
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      } catch (e) {}
+    }, 9000);
 
     // 40ms timeout allows Chromium internal audio cancellation to settle before speaking
     setTimeout(() => {
-      try {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-
-        const utter = new SpeechSynthesisUtterance(spokenScript);
-        utter.volume = 1.0; // Ensure 100% volume
-        utter.rate = 1.03;
-        utter.pitch = 1.0;
-
-        const bestVoice = pickBestJarvisVoice();
-        if (bestVoice) {
-          utter.voice = bestVoice;
-          utter.lang = bestVoice.lang;
-        } else {
-          utter.lang = getRecLanguage();
-        }
-
-        utter._customOnEnd = () => {
-          isSpeaking = false;
-          if (speakerBtn) speakerBtn.classList.remove('is-speaking');
-          if (isHandsFree && !options.immediateOnly) {
-            if (isAwaitingConfirmation) {
-              setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin · Say "Wait" to hold on');
-            } else {
-              setVoiceHudState('listening', 'Ready · Ask your next question hands-free...');
-            }
-            setTimeout(() => { if (isHandsFree && !isSpeaking) startListening(); }, 400);
-          } else if (!isHandsFree && !isAwaitingConfirmation) {
-            setVoiceHudState('hidden');
-          }
-        };
-
-        utter._customOnError = (err) => {
-          console.warn("Jarvis Speech synthesis error:", err);
-          isSpeaking = false;
-          if (speakerBtn) speakerBtn.classList.remove('is-speaking');
-          if (isHandsFree && !options.immediateOnly) startListening();
-        };
-
-        safeSpeak(utter);
-      } catch (err) {
-        console.error("Jarvis speakText failed:", err);
-        isSpeaking = false;
-        if (speakerBtn) speakerBtn.classList.remove('is-speaking');
-      }
+      playNextSpeechChunk();
     }, 45);
   }
 
   function speakStructured(structured, options = {}) {
     if (!voiceReplyEnabled || !('speechSynthesis' in window) || !structured) return;
 
-    // If there are repair steps or diagnostic tests, ask for user confirmation before starting!
-    const hasSteps = (structured.repair_steps && structured.repair_steps.length > 0) ||
-                     (structured.diagnostic_tests && structured.diagnostic_tests.length > 0);
+    // Only prompt confirmation if not forced (e.g. user didn't click Listen) and procedure steps exist
+    if (!options.force) {
+      const hasSteps = (structured.repair_steps && structured.repair_steps.length > 0) ||
+                       (structured.diagnostic_tests && structured.diagnostic_tests.length > 0);
 
-    if (hasSteps) {
-      const firstStep = structured.repair_steps && structured.repair_steps[0] ? structured.repair_steps[0].instruction : '';
-      const prompt = `I have diagnosed the primary suspect: ${structured.possible_causes && structured.possible_causes[0] ? structured.possible_causes[0].cause : 'fault condition'}. Before we begin what we have to do, please ensure the motorcycle is turned off and on its stand. Say 'Ready' or 'Yes' to start Step 1, or say 'Wait' if you need a moment.`;
+      if (hasSteps) {
+        const firstStep = structured.repair_steps && structured.repair_steps[0] ? structured.repair_steps[0].instruction : '';
+        const prompt = `I have diagnosed the primary suspect: ${structured.possible_causes && structured.possible_causes[0] ? structured.possible_causes[0].cause : 'fault condition'}. Before we begin what we have to do, please ensure the motorcycle is turned off and on its stand. Say 'Ready' or 'Yes' to start Step 1, or say 'Wait' if you need a moment.`;
 
-      requestProcedureConfirmation({
-        verbalPrompt: prompt,
-        stepText: firstStep
-      });
+        requestProcedureConfirmation({
+          verbalPrompt: prompt,
+          stepText: firstStep
+        });
+        return;
+      }
+    }
+
+    // Deliver complete spoken message from reply_text or full structured data:
+    if (structured.reply_text) {
+      speakText(structured.reply_text, options);
       return;
     }
 
@@ -4028,17 +4365,18 @@
       spokenParts.push(sev + ' ' + (structured.safety.summary || ''));
     }
     if (structured.possible_causes && structured.possible_causes.length > 0) {
-      const top = structured.possible_causes[0];
-      spokenParts.push(`Primary suspect: ${top.cause}.`);
-    } else if (structured.reply_text) {
-      speakText(structured.reply_text, options);
-      return;
+      const causes = structured.possible_causes.map((c, i) => `${i === 0 ? 'Primary suspect' : 'Secondary cause'}: ${c.cause}. ${c.description || ''}`).join(' ');
+      spokenParts.push(causes);
+    }
+    if (structured.diagnostic_tests && structured.diagnostic_tests.length > 0) {
+      spokenParts.push('Recommended diagnostic tests: ' + structured.diagnostic_tests.map((t, i) => `Test ${i + 1}: ${t.test}. ${t.instruction || ''}`).join(' '));
+    }
+    if (structured.repair_steps && structured.repair_steps.length > 0) {
+      spokenParts.push('Repair steps: ' + structured.repair_steps.map((s, i) => `Step ${i + 1}: ${s.step || ''}. ${s.instruction || ''}`).join(' '));
     }
     const combined = spokenParts.join(' ');
     if (combined) {
       speakText(combined, options);
-    } else if (structured.reply_text) {
-      speakText(structured.reply_text);
     }
   }
 
@@ -4092,7 +4430,8 @@
     isHandsFreeActive: () => isHandsFree,
     requestProcedureConfirmation: requestProcedureConfirmation,
     confirmAndStartProcedure: confirmAndStartProcedure,
-    playJarvisSound: playJarvisSound
+    playJarvisSound: playJarvisSound,
+    stopAllSpeech: stopAllSpeech
   };
 
   if (isHandsFree) {

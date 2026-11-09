@@ -1679,29 +1679,101 @@
   let widgetIsListening = false;
 
   window._widgetUtterances = window._widgetUtterances || [];
+  let widgetSpeechQueue = [];
+  let widgetSpeechIndex = 0;
+  let widgetKeepAliveTimer = null;
+
+  function stopWidgetSpeech() {
+    widgetSpeechQueue = [];
+    widgetSpeechIndex = 0;
+    if (widgetKeepAliveTimer) {
+      clearInterval(widgetKeepAliveTimer);
+      widgetKeepAliveTimer = null;
+    }
+    window._widgetUtterances = [];
+    try {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    } catch(e) {}
+  }
+
+  function splitWidgetSpeechChunks(text) {
+    if (!text) return [];
+    const rawSentences = text.match(/[^.!?\n]+(?:[.!?\n]+|$)/g) || [text];
+    const chunks = [];
+    let currentChunk = '';
+    for (const raw of rawSentences) {
+      const s = raw.trim();
+      if (!s) continue;
+      if (currentChunk && (currentChunk.length + s.length > 160)) {
+        chunks.push(currentChunk.trim());
+        currentChunk = s;
+      } else {
+        currentChunk = currentChunk ? (currentChunk + ' ' + s) : s;
+      }
+    }
+    if (currentChunk && currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+    return chunks.length ? chunks : [text];
+  }
+
   function speakBotWidget(raw) {
     if (!('speechSynthesis' in window) || !raw) return;
-    const clean = raw.replace(/\[chips:.*?\]/gi, '').replace(/\[vehicle-form.*?\]/gi, '').replace(/<[^>]+>/g, '').replace(/[*_#`~>]/g, '').trim();
+    const clean = raw
+      .replace(/\[chips:.*?\]/gi, '')
+      .replace(/\[vehicle-form.*?\]/gi, '')
+      .replace(/\[part-image:.*?\]/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/-\s*\[\s*\]/g, '')
+      .replace(/[*_#`~>]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (!clean) return;
-    try { window.speechSynthesis.cancel(); } catch(e) {}
-    setTimeout(() => {
+
+    stopWidgetSpeech();
+    widgetSpeechQueue = splitWidgetSpeechChunks(clean);
+    widgetSpeechIndex = 0;
+
+    if (widgetKeepAliveTimer) clearInterval(widgetKeepAliveTimer);
+    widgetKeepAliveTimer = setInterval(() => {
+      try {
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      } catch(e) {}
+    }, 9000);
+
+    function playNextWidgetChunk() {
+      if (widgetSpeechIndex >= widgetSpeechQueue.length) {
+        stopWidgetSpeech();
+        return;
+      }
+      const chunk = widgetSpeechQueue[widgetSpeechIndex++];
       try {
         if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
-        const spoken = sentences.slice(0, 3).join(' ');
-        const utter = new SpeechSynthesisUtterance(spoken);
+        const utter = new SpeechSynthesisUtterance(chunk);
         utter.volume = 1.0;
-        utter.rate = 1.03;
+        utter.rate = 1.02;
         utter.pitch = 1.0;
         window._widgetUtterances.push(utter);
         utter.onend = () => {
           window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
+          playNextWidgetChunk();
         };
         utter.onerror = () => {
           window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
+          playNextWidgetChunk();
         };
         window.speechSynthesis.speak(utter);
-      } catch(e) {}
+      } catch(e) {
+        playNextWidgetChunk();
+      }
+    }
+
+    setTimeout(() => {
+      playNextWidgetChunk();
     }, 45);
   }
 

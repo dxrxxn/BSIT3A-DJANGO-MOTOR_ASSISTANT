@@ -229,24 +229,24 @@ def missing_vehicle_questions(profile, language='english', asked_questions=None)
 
     if not make and not model:
         text = {
-            'english': 'What is the vehicle make, model, and year? A photo of the badge or registration is enough if you are unsure.',
-            'tagalog': 'Ano ang make, model, at taon ng sasakyan? Sapat na ang litrato ng badge o registration kung hindi ka sigurado.',
-            'hiligaynon': 'Ano ang make, model, kag tuig sang salakyan? Igo na ang litrato sang badge ukon registration kon indi ka sigurado.',
+            'english': 'What is your motorcycle make, model, and year? (e.g. Click 125i, NMAX 155, Barako 175).',
+            'tagalog': 'Ano ang make, model, at taon ng iyong motor? (hal. Click 125i, NMAX 155, o Barako 175).',
+            'hiligaynon': 'Ano ang make, model, kag tuig sang imo motor? (hal. Click 125i, NMAX 155, ukon Barako 175).',
         }[lang]
         questions.append({
             'question': text,
             'why': 'Vehicle-specific service information and safe checks depend on the exact model and year.',
-            'options': ['Motorcycle', 'Car', 'Not sure'],
+            'options': ['Honda Click 125i', 'Yamaha NMAX 155', 'Not sure'],
         })
         return questions
 
     if not vtype or vtype == 'all':
         text = {
-            'english': 'Is this a motorcycle or a car?',
-            'tagalog': 'Ito ba ay motorsiklo o kotse?',
-            'hiligaynon': 'Ini bala motorsiklo ukon kotse?',
+            'english': 'What type of motorcycle transmission is it (Scooter CVT, Underbone, or Manual)?',
+            'tagalog': 'Anong uri ng transmission ng motor ito (Scooter CVT, Underbone, o Manual)?',
+            'hiligaynon': 'Ano nga klase sang transmission ini (Scooter CVT, Underbone, ukon Manual)?',
         }[lang]
-        questions.append({'question': text, 'why': 'The diagnostic checks differ by vehicle type.', 'options': ['Motorcycle', 'Car']})
+        questions.append({'question': text, 'why': 'The diagnostic checks differ by motorcycle type.', 'options': ['Scooter (CVT)', 'Underbone', 'Manual Clutch']})
 
     if not year:
         text = {

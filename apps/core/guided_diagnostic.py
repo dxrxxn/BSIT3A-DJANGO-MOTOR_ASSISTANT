@@ -273,6 +273,7 @@ AREAS = {
                 'text_hil': 'Ano ang nagakatabo kon ginapindot mo ang starter button?',
                 'options': [
                     ('dead', 'Completely dead - no dashboard lights'),
+                    ('silence_lights_on', 'Dash lights turn on, but no sound when pressing start'),
                     ('click', 'Rapid clicking / relay chatter'),
                     ('slow', 'Cranks slowly'),
                     ('crank_no_fire', 'Cranks normally but will not start'),
@@ -705,6 +706,30 @@ VERDICTS = {
                 'Make sure the kill switch is on RUN and the side stand is up.',
             ],
             'parts': ['Battery (only if it will not hold 12.6 V)', 'Main fuse', 'Relay'],
+        },
+        {
+            'when': {'start_behavior': 'silence_lights_on'},
+            'title': 'Starter button / safety interlock circuit open',
+            'confidence': 'High',
+            'why': 'The dashboard lights up normally (battery has power), but the starter button produces no relay click or sound. This is almost always an open safety lockout: engine stop switch set to OFF, side-stand switch open, brake lever switch not engaging, or starter button contacts dirty.',
+            'free': [
+                'Toggle the red kill switch firmly to RUN several times to clear contact dirt.',
+                'Ensure the side stand is fully retracted and squeeze the opposite brake lever while pressing start.',
+                'Check the starter relay trigger wire connection near the battery.',
+            ],
+            'parts': ['Brake switch', 'Side stand switch', 'Starter relay'],
+        },
+        {
+            'when': {'start_behavior': 'crank_no_fire', 'spark_state': 'spark_not_checked'},
+            'title': 'Cranks normally but will not start (Fuel delivery or spark ignition)',
+            'confidence': 'Medium',
+            'why': 'The starter motor turns the engine over normally, confirming battery and starter circuit health, but combustion is not catching. This points to lack of spark (fouled plug, loose plug cap) or lack of fuel (empty tank, clogged carb/injector, petcock off).',
+            'free': [
+                'Confirm the kill switch is set to RUN and check that you have fresh fuel in the tank.',
+                'Listen for the fuel pump hum for 2 seconds when turning the key ON.',
+                'Inspect the spark plug cap to ensure it is firmly snapped onto the spark plug.',
+            ],
+            'parts': ['Spark plug', 'Ignition coil', 'Fuel filter'],
         },
         {
             'when': {'start_behavior': 'click'},
@@ -1339,6 +1364,17 @@ LOCATION_UNKNOWN_PHRASES = [
 ]
 
 # Phrases meaning "yes, continue / resume the session".
+NOT_CHECKED_PHRASES = [
+    "haven't checked", "havent check", "haven't looked", "havent looked",
+    "haven't tried", "havent tried", "not yet", "not checked", "di ko pa",
+    "hindi pa", "wala pa", "wala pa na-check", "di ko alam", "di pa alam",
+    "haven't done", "not yet checked", "haven't inspected", "havent inspected",
+    "di ko pa natitignan", "di pa nacheck", "wala pa macheck", "have not checked",
+    "havent checked yet", "haven't checked yet", "di pa na check", "di pa natsik",
+    "haven't tested", "havent tested", "hindi pa na-check", "wala pa po",
+    "wala pa akong na check", "di ko pa na checheck", "havent tested yet",
+]
+
 CONTINUE_SESSION_PHRASES = [
     'can we continue', 'continue please', 'lets continue', "let's continue",
     'continue the session', 'continue diagnosis', 'resume', 'go on', 'go ahead',
@@ -1361,7 +1397,7 @@ HOWTO_UNKNOWN_PHRASES = [
     'explain how', 'how does it work', 'step by step how', 'guide me how',
     'paano gawin', 'paano ito ayusin', 'paano ayusin', 'paano ko aayusin', 'paano i-check',
     'paano i check', 'turo mo paano', 'tudlui ko', 'diin paagi',
-    'how to do step', 'how to do this step', 'how', 'what do i do',
+    'how to do step', 'how to do this step', 'how to', 'what do i do',
     'what should i do', 'what do we do', 'paano', 'ano gagawin', 'ano gagawin ko',
     'how to perform', 'how do i perform', 'teach how', 'teach me how to fix it',
     'teach step by step', 'how to do',
@@ -1435,6 +1471,43 @@ SYMPTOM_KEYWORDS = {
     'maintenance': [
         'oil change', 'change oil', 'oil', 'maintenance', 'tune up', 'tune-up',
         'langis', 'change oil', 'filter', 'pms', 'regular service',
+    ],
+    'headlight': [
+        'headlight', 'head light', 'headlamp', 'front light', 'ilaw sa harap',
+        'ilaw hindi gumagana', 'headlight not working', 'headlight dead',
+        "headlight won't turn on", 'suga sa unahan', 'wala ilaw sa harap',
+    ],
+    'pulls_to_side': [
+        'pulls to', 'pulling to', 'pulls left', 'pulls right', 'veers',
+        'kumakabig', 'kabig sa kanan', 'kabig sa kaliwa', 'nagakabig',
+        'drift to', 'drifts', 'leans to one side', 'steering pull',
+    ],
+    'speedometer': [
+        'speedometer', 'speedo', 'speed gauge', 'odometer', 'rpm gauge',
+        'speedometer not working', 'speedo dead', 'wala reading speedometer',
+        'speedometer nabasag', 'hindi gumagalaw ang speedometer',
+    ],
+    'starts_then_dies': [
+        'starts and dies', 'starts then dies', 'starts but dies', 'runs then dies',
+        'fires then dies', 'starts and stalls', 'starts then stalls',
+        'nag-start tapos namatay', 'start dayon napatay', 'start tapos patay',
+        'mag-start tapos mamatay', 'nag-start tapos nag-stall',
+    ],
+    'dropped_bike': [
+        'dropped my bike', 'dropped the bike', 'fell off', 'tipped over',
+        'nabagsak', 'natumba', 'tumba', 'fell down', 'dropped it',
+        'handlebar bent', 'manubela bengkong', 'bent handlebar', 'handlebar crooked',
+        'crash', 'low side', 'lay down',
+    ],
+    'oil_leak': [
+        'oil leak', 'leaking oil', 'oil dripping', 'oil seeping', 'oil puddle',
+        'tagas ng langis', 'tulo ang langis', 'natatalsikan ng langis',
+        'leak sa engine', 'oil sa sahig',
+    ],
+    'fuel_leak': [
+        'fuel leak', 'gas leak', 'petrol leak', 'gasoline dripping', 'fuel dripping',
+        'leak sa carb', 'leak sa carburetor', 'fuel overflow', 'carb overflow',
+        'tagas ng gasolina', 'tulo ng gasolina', 'amoy gasolina',
     ],
 }
 
@@ -1662,12 +1735,13 @@ def _match_option(area, q_index, message):
 
     # 2. Common ways of saying the same answer.
     syn = {
-        'dead': ['no lights', 'no dash', 'walang ilaw', 'wala ilaw', 'patay'],
-        'click': ['clicking', 'click', 'relay'],
-        'slow': ['slowly', 'slow crank', 'mabagal', 'sluggish'],
-        'crank_no_fire': ['cranks normally', 'turns over but', 'cranks but',
-                          'ayaw mag-start', 'ayaw umandar'],
-        'starts_dies': ['starts then dies', 'starts briefly', 'namamatay agad'],
+        'dead': ['no lights', 'no dash', 'walang ilaw', 'wala ilaw', 'patay ang dashboard', 'dead dash', 'completely dead'],
+        'silence_lights_on': ['no sound', 'silence', 'nothing happens', 'walang tunog', 'tahimik', 'no reaction', 'tahimik lang', 'dash on but no sound', 'lights on but no sound'],
+        'click': ['clicking', 'click', 'it clicks', 'relay', 'tunog click', 'nagki-click', 'rapid click', 'clicking sound'],
+        'slow': ['slowly', 'slow crank', 'mabagal', 'sluggish', 'hirap umikot', 'weak crank'],
+        'crank_no_fire': ['cranks normally', 'turns over but', 'cranks but', 'it cranks', 'cranking', 'cranks',
+                          'ayaw mag-start', 'ayaw umandar', 'umiikot'],
+        'starts_dies': ['starts then dies', 'starts briefly', 'namamatay agad', 'starts but dies', 'dies at idle', 'stalls'],
         'spark_ok': ['blue spark', 'may spark', 'spark ok'],
         'spark_none': ['no spark', 'walang spark'],
         'spongy': ['spongy', 'soft', 'malambot', 'humok'],
@@ -1715,8 +1789,11 @@ def _match_option(area, q_index, message):
         'tune_up': ['tune'],
     }
     for value, words in syn.items():
-        if value in valid and any(w in msg for w in words):
-            return value
+        if value in valid:
+            if value == 'dead' and any(w in msg for w in ['turn on', 'turns on', 'lights on', 'light on', 'meron ilaw', 'may ilaw']) and not any(w in msg for w in ['no lights', 'walang ilaw', 'patay']):
+                continue
+            if any(w in msg for w in words):
+                return value
 
     # 3. Score label overlap (two shared words beat one shared word).
     best_value, best_score = None, 0
@@ -1741,6 +1818,35 @@ AREA_STOP = {
     'chassis': 'you feel a wobble at speed, the steering locks, or a wheel bearing has play.',
     'maintenance': 'you find metal flakes in the oil, a leaking drain bolt, or a bolt you cannot remove safely.',
 }
+
+
+def _get_part_image_for_verdict(area, verdict):
+    """Returns a [part-image: URL | Name] markdown tag appropriate for the verdict."""
+    title = (verdict.get('title') or '').lower()
+    why = (verdict.get('why') or '').lower()
+    parts = " ".join(verdict.get('parts', [])).lower()
+    combined = f"{title} {why} {parts}"
+
+    if 'battery' in combined or 'terminal' in combined or 'voltage' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Yuasa_YTX12-BS.jpg/480px-Yuasa_YTX12-BS.jpg | Motorcycle 12V Battery]"
+    if 'relay' in combined or 'starter' in combined or 'solenoid' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg | Starter Motor & Relay]"
+    if 'spark' in combined or 'plug' in combined or 'ignition' in combined or 'coil' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Spark_plug_comparison.jpg/480px-Spark_plug_comparison.jpg | Spark Plug & Ignition]"
+    if 'carb' in combined or 'jet' in combined or 'fuel' in combined or 'petcock' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Carburetor_of_a_scooter.jpg/480px-Carburetor_of_a_scooter.jpg | Carburetor & Fuel Delivery]"
+    if 'caliper' in combined or 'pad' in combined or 'disc' in combined or 'brake' in combined or area == 'brakes':
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Brake_disc_and_pads.jpg/480px-Brake_disc_and_pads.jpg | Brake Pads & Disc Caliper]"
+    if 'radiator' in combined or 'coolant' in combined or 'fan' in combined or area == 'overheat':
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Radiator-overflow.jpg/480px-Radiator-overflow.jpg | Radiator & Cooling System]"
+    if 'cvt' in combined or 'belt' in combined or 'roller' in combined or 'variator' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Variator_and_belt.jpg/480px-Variator_and_belt.jpg | CVT Variator & Belt]"
+    if 'chain' in combined or 'sprocket' in combined or area == 'chassis':
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/A_drive_chain.jpg/480px-A_drive_chain.jpg | Motorcycle Drive Chain]"
+    if 'air filter' in combined:
+        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Air_filter_element.jpg/480px-Air_filter_element.jpg | Air Filter Element]"
+
+    return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg | Motorcycle Component]"
 
 
 def pick_verdict(area, answers):
@@ -2099,10 +2205,21 @@ def _looks_like_part_location_query(msg, history=None):
 
 
 def _looks_like_vehicle_identification(msg):
-    """True for a bare vehicle answer such as "2022 Honda Click 125i"."""
+    """True for a bare vehicle answer such as "2022 Honda Click 125i".
+
+    Spec questions and question-word sentences must NOT be trapped here even
+    when they mention a bike name (e.g. "What is the valve clearance for a
+    Honda TMX 125?" has a bike name but is a spec query, not a vehicle ID).
+    """
     if not _mentions_bike_name(msg):
         return False
+    # Question words → NOT an identification answer
+    if re.search(r'\b(?:what|when|how|why|where|which|who|ano|paano|bakit|kailan|saan|alin|unsa|ngaa)\b', msg):
+        return False
     if GENERAL_MAINTENANCE_RE.search(msg):
+        return False
+    # Spec-related terms beside a bike name → NOT an identification answer
+    if re.search(r'\b(?:valve|clearance|spark|plug|gap|coolant|fluid|belt|roller|clutch|cable|torque|spec|interval|oil|type|grade)\b', msg):
         return False
     return len(msg.split()) <= 10
 
@@ -2131,7 +2248,18 @@ def is_general_motorcycle_query(message, history=None):
 
     Active fault reports are deliberately excluded so they keep using the
     guided diagnostic flow. Visual part queries are also excluded.
+    Spec, model-info, comparison, buying, gear, and rain queries always qualify.
     """
+    # Always route via intent classifier for the unambiguous categories
+    try:
+        from apps.core.services.intent import classify_intent
+        c_intent = classify_intent(message, history=history)
+        if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice',
+                        'riding_gear', 'riding_advice', 'off_topic', 'resolution'):
+            return c_intent != 'off_topic'  # off_topic is NOT a general motorcycle query
+    except Exception:
+        pass
+
     msg = _norm(message)
     if not msg:
         return False
@@ -2246,6 +2374,23 @@ def _is_procedure_or_step_msg(msg):
 def is_guided_intent(message, history=None, state=None):
     """True when the guided flow should handle this turn."""
     msg = _norm(message)
+    # Explicit off-topic domains (photosynthesis, refrigerator, poems, capitals, etc.) NEVER enter guided flow
+    from apps.core.services.intent import FICTIONAL_PARTS, INJECTION_PATTERNS, OFF_TOPIC_DOMAINS
+    if any(fp in msg for fp in FICTIONAL_PARTS) or any(re.search(pat, msg) for pat in INJECTION_PATTERNS):
+        return False
+    for pat, _dom in OFF_TOPIC_DOMAINS:
+        if re.search(pat, msg):
+            return False
+
+    _is_year_entry = (state and state.get('stage') == 'year' and re.fullmatch(r'\d{4}', msg))
+    _is_proc = _is_procedure_or_step_msg(msg) or (state and state.get('stage') == 'procedure' and (_has_any(msg, HOWTO_UNKNOWN_PHRASES) or _has_any(msg, LOCATION_UNKNOWN_PHRASES) or _has_any(msg, CONTINUE_SESSION_PHRASES)))
+    _is_chip = _is_guided_chip_answer(msg) or _is_guided_area_choice(msg) or _has_any(msg, SKIP_PHRASES)
+
+    if not (_is_year_entry or _is_proc or _is_chip):
+        from apps.core.services.intent import classify_intent
+        c_intent = classify_intent(message, history=history, vehicle_profile=state.get('bike') if state else None)
+        if c_intent == 'off_topic':
+            return False
     if _has_any(msg, RESET_PHRASES):
         return True
     # General maintenance/how-to questions get a direct answer, not an intake
@@ -2307,6 +2452,24 @@ def start_state():
 
 
 def _safety_prefix(message, lang, force_brake=False):
+    # Prefer the authoritative assess_safety first
+    try:
+        from apps.core.services.safety import assess_safety
+        probe = message
+        if force_brake or _has_any(_norm(message), [
+            'brake not working', 'brakes not working', 'no front brake',
+            'no rear brake', 'brakes failed', 'hindi gumagana ang preno',
+            'ayaw gumana ang preno',
+        ]):
+            probe = f"{message} spongy"
+        safety_result = assess_safety(probe, language=lang)
+        if safety_result.get('warnings'):
+            first_warn = safety_result['warnings'][0]
+            marker = 'CAUTION' if safety_result.get('severity') == 'critical' else 'WARNING'
+            return f"> [!{marker}]\n> **SAFETY ALERT:** {first_warn}\n\n"
+    except Exception:
+        pass
+    # Fallback to diagnostic engine
     try:
         from .diagnostic_engine import evaluate_safety_hazards
         probe = message
@@ -2315,14 +2478,12 @@ def _safety_prefix(message, lang, force_brake=False):
             'no rear brake', 'brakes failed', 'hindi gumagana ang preno',
             'ayaw gumana ang preno',
         ]):
-            # A brake problem is a critical stop even when the shortcut phrase
-            # does not contain one of the engine's standard tripwire words.
             probe = f"{message} spongy"
         hazard = evaluate_safety_hazards(probe, lang)
+        if hazard:
+            return f"> [!CAUTION]\n> **SAFETY ALERT:** {hazard['alert_text']}\n\n"
     except Exception:
-        hazard = None
-    if hazard:
-        return f"> [!CAUTION]\n> **SAFETY ALERT:** {hazard['alert_text']}\n\n"
+        pass
     return ""
 
 
@@ -2343,12 +2504,13 @@ def _enter_checks(state, profile, area, lang, safety_message='', suppress_safety
     state['area'] = area
     state['stage'] = 'narrow'
     state['q_index'] = 0
+    state['answers'] = {}
     state['checks_shown'] = True
     return _checks_reply(
         profile, area, lang,
         safety_message=safety_message,
         suppress_safety=suppress_safety,
-    )
+    ) + "\n\n[stage: 2]" 
 
 
 def _get_procedure_steps_for_area(area, answers):
@@ -2840,6 +3002,111 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
     state = state if isinstance(state, dict) else {}
     msg = _norm(message)
 
+    # --- Off-topic check in guided flow ------------------------------------
+    from apps.core.services.intent import classify_intent
+    c_intent = classify_intent(message, history=history, vehicle_profile=state.get('bike'))
+    # --- Off-topic check in handle_guided_turn --------------------------
+    # We are already inside an active guided session; is_guided_intent has
+    # already blocked clearly non-motorcycle openers on fresh turns.
+    # Here we intercept explicit off-topic messages that slipped through
+    # the outer gate (e.g. a mid-session question like 'write me a poem').
+    # Short in-session responses ('haven't checked yet', 'fluid is fine',
+    # 'not fixed', 'next', 'ready', 'yes', 'no') are NEVER blocked here
+    # because they are valid answers to guided diagnostic questions.
+    _handle_explicit_offtopic = False
+    if c_intent == 'off_topic':
+        _sub_intent = getattr(c_intent, 'sub_intent', '')
+        # Named domain match (geography, sports, home_appliance, cooking, creative, academics)
+        if _sub_intent not in ('', 'non_motorcycle'):
+            _handle_explicit_offtopic = True
+        else:
+            # 'non_motorcycle' sub-intent: block if the message has content words
+            # but no motorcycle relevance AND is not a short in-session reply.
+            # 'write me a poem', 'train my dog', 'photosynthesis' are blocked.
+            # 'haven't checked yet', 'fluid is fine', 'next', 'yes' are NOT.
+            from apps.core.services.intent import is_motorcycle_related, OFF_TOPIC_DOMAINS
+            # First: check explicit domain patterns (fastest path)
+            for _offt_pat, _offt_dom in OFF_TOPIC_DOMAINS:
+                if re.search(_offt_pat, msg):
+                    _handle_explicit_offtopic = True
+                    break
+            # Second: if message is long enough and clearly not motorcycle-related
+            # and not a short status/continuation reply, treat as explicit off-topic.
+            if not _handle_explicit_offtopic and len(msg.split()) >= 3:
+                # In active procedure stage, location, how-to, and continuation requests are valid
+                _is_proc_turn = (
+                    _is_procedure_or_step_msg(msg)
+                    or _has_any(msg, CONTINUE_SESSION_PHRASES)
+                    or _has_any(msg, LOCATION_UNKNOWN_PHRASES)
+                    or _has_any(msg, HOWTO_UNKNOWN_PHRASES)
+                    or _has_any(msg, REASSURE_CONFIRM_PHRASES)
+                )
+                if _is_proc_turn:
+                    _handle_explicit_offtopic = False
+                elif not is_motorcycle_related(msg, history=history, vehicle_profile=state.get('bike')):
+                    # Additional check: not a continuation phrase (not fixed, havent checked etc.)
+                    _is_continuation = (
+                        _has_any(msg, SKIP_PHRASES)
+                        or _is_guided_chip_answer(msg)
+                        or _is_guided_area_choice(msg)
+                        or _has_any(msg, NOT_CHECKED_PHRASES)
+                        or _has_any(msg, [
+                            'not fixed', 'not yet', 'havent checked', "haven't checked",
+                            'haven checked', 'not checked', 'fluid is', 'oil is',
+                            'still not', 'nothing yet', 'unsure', 'not sure',
+                            'i checked', 'i have', 'i did', 'looks fine', 'looks ok',
+                            'seems fine', 'seems ok', 'it looks', 'it seems',
+                            'above minimum', 'above min', 'below min', 'level ok',
+                            'clear fluid', 'dark fluid', 'dirty fluid', 'no sound',
+                            'spongy', 'soft lever', 'rapid click', 'clicking',
+                        ])
+                    )
+                    if not _is_continuation:
+                        _handle_explicit_offtopic = True
+        # Allow year entry and skip phrases even for explicit off-topic (edge cases)
+        if _handle_explicit_offtopic:
+            if (state.get('stage') == 'year' and re.fullmatch(r'\d{4}', msg)) or _has_any(msg, SKIP_PHRASES):
+                _handle_explicit_offtopic = False
+    if _handle_explicit_offtopic:
+        sub = getattr(c_intent, 'sub_intent', '')
+        fictional = (c_intent.details or {}).get('fictional_part') if hasattr(c_intent, 'details') else None
+        title_sir = sir.title() if sir else 'Sir'
+        if sub == 'fictional_part' and fictional:
+            return (
+                f"{title_sir}, **{fictional.title()}** does not exist on a motorcycle — it is a well-known automotive joke.\n\n"
+                "MotorAssistant is here to help you diagnose and fix genuine motorcycle problems. "
+                "What issue are you experiencing with your motorcycle?\n\n"
+                "[chips: Engine won't start | Front brake check | Oil change | Strange engine noise]"
+            )
+        elif sub == 'prompt_injection':
+            return (
+                f"{title_sir}, this is MotorAssistant. I cannot alter my core diagnostic instructions or safety guidelines. "
+                "I am here exclusively to help you diagnose and repair motorcycles.\n\n"
+                "[chips: Help with my motorcycle | Engine won't start | Brake check | Oil change]"
+            )
+        else:
+            off_topic_replies = {
+                'english': (
+                    "Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle, scooter, or underbone.\n\n"
+                    "Is this inquiry regarding a motorcycle?\n\n"
+                    "If you have a motorcycle problem or question, please let me know your motorcycle's make, model, and what issue you need help fixing, and I will be glad to assist you.\n\n"
+                    "[chips: Help with my motorcycle | Engine won't start | Front brake check | Oil change | Strange engine noise]"
+                ),
+                'tagalog': (
+                    "Sir, ito po ang MotorAssistant, nakalaan para tulungan kayong mag-diagnose, mag-maintain, at mag-ayos ng mga problema sa inyong motorsiklo, scooter, o underbone.\n\n"
+                    "Tungkol po ba ito sa isang motorsiklo?\n\n"
+                    "Kung may problema po kayo sa inyong motor, pakisabi po ang brand, modelo, at ang partikular na isyu o sira para matulungan ko kayong ayusin ito.\n\n"
+                    "[chips: Tulong sa aking motor | Ayaw mag-start | Suriin ang preno | Palit langis | Kakaibang ingay sa makina]"
+                ),
+                'hiligaynon': (
+                    "Sir, ini ang MotorAssistant, gintuyo gid agud magbulig diagnose, maintain, kag magkay-o sang mga problema sa imo motorsiklo, scooter, ukon underbone.\n\n"
+                    "Parte bala ini sa isa ka motorsiklo?\n\n"
+                    "Kon may problema ka sa imo motor, palihog sugiri ako sang brand, modelo, kag ang problema sang imo salakyan agud mabuligan ko ikaw kay-o sini.\n\n"
+                    "[chips: Bulig sa aking motor | Indi mag-start | Tuluka ang preno | Ilis langis | Gahod sa makina]"
+                ),
+            }
+            return off_topic_replies.get(lang, off_topic_replies['english'])
+
     # --- Reset -------------------------------------------------------------
     if _has_any(msg, RESET_PHRASES):
         state.clear()
@@ -3154,30 +3421,27 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                               'saan titingin', 'diin kitaon', 'checks']):
                 return (
                     f"{checks_block(area, profile, lang)}\n\n"
-                    f"{question_block(area, q_index, lang)}"
+                    f"{question_block(area, q_index, lang)}\n\n[stage: 2]"
                 )
 
             # User doesn't know where a part is — give a location guide
             if _has_any(msg, LOCATION_UNKNOWN_PHRASES):
-                # Find the part from the current check
                 checks = AREAS[area].get('checks', [])
                 part_key = None
                 if q_index < len(checks):
                     part_key = _extract_part_from_step(checks[q_index][0])
                 if part_key is None:
-                    # Try from the question text
                     q_text = AREAS[area]['questions'][q_index].get('text', '')
                     part_key = _extract_part_from_step(q_text)
                 if part_key:
                     guide = _build_location_guide(part_key, q_index + 1, sir)
                     if guide:
                         state['awaiting_location_confirm'] = True
-                        return guide
-                # Generic fallback
+                        return guide + "\n\n[stage: 2]"
                 return (
                     f"No problem, {sir}. Here are the checks with location hints:\n\n"
                     f"{checks_block(area, profile, lang)}\n\n"
-                    f"{question_block(area, q_index, lang)}"
+                    f"{question_block(area, q_index, lang)}\n\n[stage: 2]"
                 )
 
             # User says "continue / found it / ok" after a location guide
@@ -3189,7 +3453,7 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 state.pop('awaiting_location_confirm', None)
                 return (
                     f"Great, {sir}! Now let us continue.\n\n"
-                    f"{question_block(area, q_index, lang)}"
+                    f"{question_block(area, q_index, lang)}\n\n[stage: 2]"
                 )
 
             answer = _match_option(area, q_index, message)
@@ -3199,32 +3463,68 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 state['q_index'] = q_index + 1
 
                 if state['q_index'] < len(questions):
-                    return question_block(area, state['q_index'], lang)
+                    return question_block(area, state['q_index'], lang) + "\n\n[stage: 2]"
                 state['stage'] = 'verdict'
+            elif _has_any(msg, NOT_CHECKED_PHRASES) or _norm(message) in ('havent checked yet', "haven't checked yet", 'not yet', 'di ko pa', 'wala pa'):
+                # User hasn't checked the current item yet: guide them on the safe check without guessing
+                curr_q = questions[q_index]
+                curr_key = curr_q.get('key')
+                if curr_key == 'start_behavior':
+                    return (
+                        f"No problem at all, {sir}. Take your time. Before we can diagnose whether this is electrical or engine-related, we need to observe what happens when you attempt to start:\n\n"
+                        f"**Safe 10-Second Test:**\n"
+                        f"1. Make sure your **engine stop switch is set to RUN** and side stand is fully raised.\n"
+                        f"2. Switch the ignition key ON (see if instrument panel lights turn on).\n"
+                        f"3. Firmly squeeze a brake lever and press the starter button once.\n\n"
+                        f"**What do you observe?**\n"
+                        f"- **It clicks:** Rapid clicking sound from under the seat (starter relay / weak battery).\n"
+                        f"- **It cranks:** Engine turns over normally but will not fire up (fuel or spark issue).\n"
+                        f"- **No sound / silence:** Total silence or no reaction (fuse, kill switch, or dead battery).\n\n"
+                        f"[chips: It clicks | It cranks | No sound | Dash doesn't light up | Where is the kill switch?]\n\n"
+                        f"[stage: 2]"
+                    )
+                else:
+                    checks = AREAS[area].get('checks', [])
+                    check_hint = checks[q_index][1] if q_index < len(checks) else "Inspect the affected assembly safely."
+                    return (
+                        f"No problem at all, {sir}. Take your time. Here is the safe check to perform:\n\n"
+                        f"**Safe Check:** {check_hint}\n\n"
+                        f"Let me know what you observe, or if you would like me to review findings with what we know so far.\n\n"
+                        f"[chips: I checked it - looks good | I checked it - looks bad | Review findings now | Show another check]\n\n"
+                        f"[stage: 2]"
+                    )
             else:
                 # Also accept a direct "show verdict" request.
-                if _has_any(msg, ['likely cause', 'what is the cause', 'diagnose it', 'just tell me']):
+                if _has_any(msg, ['likely cause', 'what is the cause', 'diagnose it', 'just tell me', 'review findings', 'review findings now']):
                     state['stage'] = 'verdict'
                 elif _has_any(msg, [
                     'begin', 'start', 'proceed', 'commence', 'step 1', 'step one', 'first step',
                     'ready to start', 'ready', 'yes, ready', 'start procedure', 'begin procedure',
                     'simulan', 'umpisahan', 'gawin natin', 'read step 1',
+                    'yes, show repair plan', 'show repair plan', 'repair plan', 'view repair plan', 'plan',
                 ]):
                     answers = state.get('answers', {})
                     state['procedure_steps'] = _get_procedure_steps_for_area(area, answers)
                     state['stage'] = 'procedure'
                     state['procedure_index'] = 0
                     steps = state['procedure_steps']
+                    checklist_lines = [
+                        "## Motorcycle Repair Plan & Checklist",
+                        f"Follow this manufacturer-standard repair procedure for your motorcycle:\n",
+                    ]
+                    for i, st in enumerate(steps, start=1):
+                        checklist_lines.append(f"- [ ] **Step {i}:** {st}")
                     step_1 = steps[0] if steps else "Inspect the affected assembly."
-                    return (
-                        f"**Step 1:** {step_1}\n\n"
-                        f"Perform this check, {sir}, and let me know what you find.\n\n"
-                        f"[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]"
-                    )
+                    checklist_lines.append(f"\n**Immediate Action (Step 1):** {step_1}\n")
+                    checklist_lines.append(f"Perform this check, {sir}, and let me know what you find.\n")
+                    checklist_lines.append("[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]")
+                    checklist_lines.append("\n[stage: 4]")
+                    return "\n".join(checklist_lines)
                 else:
                     return (
-                        f"{_tr(lang, 'again')}\n\n"
-                        f"{question_block(area, q_index, lang)}"
+                        f"To narrow down the problem safely on your {bike_label(profile)}, {sir}, please let me know what you observe:\n\n"
+                        f"{question_block(area, q_index, lang)}\n\n"
+                        f"[stage: 2]"
                     )
 
     # --- Stage: verdict ----------------------------------------------------
@@ -3246,21 +3546,33 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             'yes', 'oo', 'sige', 'umpisahan', 'simulan', 'suguran', "let's start",
             "lets start", "let's do it", "lets do it", 'cge', 'padayon', 'tuloy',
             'begin procedure', 'start procedure', 'gawin natin', 'read step 1',
-            'ready to start', 'yes, ready', 'ready',
+            'ready to start', 'yes, ready', 'ready', 'yes, show repair plan',
+            'show repair plan', 'repair plan', 'view repair plan', 'plan',
         ] + CONTINUE_SESSION_PHRASES):
             state['stage'] = 'procedure'
             state['procedure_index'] = 0
             steps = state['procedure_steps']
+            checklist_lines = [
+                "## Motorcycle Repair Plan & Checklist",
+                f"Follow this manufacturer-standard repair procedure for your motorcycle:\n",
+            ]
+            for i, st in enumerate(steps, start=1):
+                checklist_lines.append(f"- [ ] **Step {i}:** {st}")
             step_1 = steps[0] if steps else "Inspect the affected assembly."
-            return (
-                f"**Step 1:** {step_1}\n\n"
-                f"Perform this check, {sir}, and let me know what you find.\n\n"
-                f"[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]"
-            )
+            checklist_lines.append(f"\n**Immediate Action (Step 1):** {step_1}\n")
+            checklist_lines.append(f"Perform this check, {sir}, and let me know what you find.\n")
+            checklist_lines.append("[chips: Step 1 done | How to do this step | Where is it? | Next step | It worked]")
+            checklist_lines.append("\n[stage: 4]")
+            return "\n".join(checklist_lines)
 
+        part_img = _get_part_image_for_verdict(area, verdict)
         lines = [
+            "## Review Findings & Diagnostic Assessment\n",
             f"**{_tr(lang, 'verdict')}: {verdict['title']}**",
+            f"**Confidence:** {verdict.get('confidence', 'High')}\n",
             verdict['why'],
+            "",
+            part_img,
             "",
             f"**{_tr(lang, 'free_fix')}**",
         ]
@@ -3277,7 +3589,10 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             f"{verdict.get('stop') or AREA_STOP.get(area) or _tr(lang, 'safe_stop')}"
         )
         lines.append("")
-        lines.append(f"[chips: {_tr(lang, 'verdict_chips')}]")
+        lines.append("**Next Step:** Would you like to view the step-by-step **Repair Plan** checklist for this repair?")
+        lines.append("")
+        lines.append("[chips: Yes, show repair plan | How to test further | What parts do I need? | Start over]")
+        lines.append("\n[stage: 3]")
         return "\n".join(lines)
 
     # --- Stage: procedure --------------------------------------------------

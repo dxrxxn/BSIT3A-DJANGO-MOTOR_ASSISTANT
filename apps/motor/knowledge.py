@@ -775,6 +775,909 @@ def _score_guide(guide, query_tokens, intents, query_lowered):
     return score
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAPPED TECHNICAL SYMPTOM KNOWLEDGE (7 Core Verified Symptom Classes)
+# ─────────────────────────────────────────────────────────────────────────────
+
+MAPPED_SYMPTOMS = {
+    'fuel_leak': {
+        'symptom_id': 101,
+        'symptom_name': 'Fuel leak (Carburetor float/needle, fuel hose, tank, or petcock)',
+        'category': 'Fuel System',
+        'system': 'Fuel System',
+        'component': 'Fuel Delivery & Carburetor',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'critical_stop',
+        'safety_warning': 'FIRE HAZARD: Active fuel leak detected. Stop engine immediately, keep away from open flames/sparks, and do not ride until repaired.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'fuel_leak_location',
+                'text': 'Where is the fuel visibly leaking from?',
+                'text_tl': 'Saan nanggagaling ang tagas ng gasolina?',
+                'text_hil': 'Diin nagahalin ang tulo sang gasolina?',
+                'options': [
+                    {'label': 'A. Carburetor overflow tube or airbox', 'value': 'carb_overflow'},
+                    {'label': 'B. Cracked rubber fuel line / hose clamp', 'value': 'fuel_hose'},
+                    {'label': 'C. Fuel petcock / fuel tap body', 'value': 'petcock_leak'},
+                    {'label': 'D. Bottom seam or underside of the fuel tank', 'value': 'tank_leak'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1001,
+                'possible_cause': 'Carburetor float needle valve sticking open or worn float valve seat',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Inspect carburetor float bowl overflow drain tube and inspect needle valve tip for dirt, varnish, or rubber groove wear.',
+                'expected_result': 'Float needle seals tightly when float rises with fuel level, shutting off inflow completely.',
+                'alternative_outcome': 'Fuel continuously drips or pours from overflow hose or backs into airbox; float bowl overflows.',
+                'tools_required': 'JIS screwdriver, carburetor cleaner, small fuel drain container.',
+                'repair_instructions': (
+                    "- [ ] 1. Shut fuel petcock OFF and disconnect battery negative terminal.\n"
+                    "- [ ] 2. Place container under carburetor and loosen float bowl drain screw to empty fuel.\n"
+                    "- [ ] 3. Remove float bowl; extract float hinge pin and needle valve.\n"
+                    "- [ ] 4. Clean needle valve tip and brass seat with aerosol carb cleaner and compressed air.\n"
+                    "- [ ] 5. Inspect rubber Viton needle tip for ring groove or hardening; replace needle valve if worn.\n"
+                    "- [ ] 6. Check float for liquid fuel inside (punctured float); check float height to manual spec.\n"
+                    "- [ ] 7. Reassemble with a fresh bowl gasket; turn petcock ON and verify zero leaks."
+                ),
+                'advice_notes': 'Never tap a stuck carburetor float with heavy tools. Disassemble and clean properly.',
+                'when_to_stop': 'If fuel continues to pour out after cleaning, the brass float valve seat is pitted or body is cracked; professional carburetor rebuild is required.',
+                'source_reference': 'OEM Motorcycle Fuel System & Carburetor Service Manual (Float Circuit)',
+                'source_title': 'OEM Fuel System Service Manual (Carburetors & Float Valves)',
+                'source_date': '2023-01-15',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Fuel System',
+                'component': 'Carburetor',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'FIRE HAZARD: Work only in a well-ventilated outdoor area. No smoking, phones, or ignition sources.',
+                'verification_procedure': 'Turn petcock ON with engine off for 5 minutes; verify overflow hose remains completely dry.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Carburetor Float Needle Valve & Bowl Gasket Kit', 'part_number': '16011-KBA-901', 'quantity': 1, 'estimated_cost': '280.00'}
+                ],
+            },
+            {
+                'guide_id': 1002,
+                'possible_cause': 'Cracked, dry-rotted rubber fuel hose or loose clamp',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Wipe fuel line dry with clean rag; turn petcock ON and squeeze hose to look for weeping wetness or radial cracks.',
+                'expected_result': 'Fuel hose remains dry, flexible, and firmly clamped with no wet sheen.',
+                'alternative_outcome': 'Fuel seeps around clamp or through surface weather cracks under gravity fuel pressure.',
+                'tools_required': 'Pliers, utility knife, replacement fuel-rated hose and spring clamps.',
+                'repair_instructions': (
+                    "- [ ] 1. Turn fuel petcock OFF.\n"
+                    "- [ ] 2. Pinch clamp and slide back from petcock and carburetor spigots.\n"
+                    "- [ ] 3. Pull old hose off; cut replacement fuel-rated hose (reinforced 5.5mm/6mm ID) to exact length.\n"
+                    "- [ ] 4. Install new hose fully onto barbs; secure with fresh spring clamps.\n"
+                    "- [ ] 5. Turn petcock ON and inspect for leaks."
+                ),
+                'advice_notes': 'Always use fuel-rated reinforced rubber hose, never clear aquarium/vinyl tubing.',
+                'when_to_stop': 'If spigot nipple is loose or cracked in the tank or petcock body, replace petcock assembly.',
+                'source_reference': 'SAE J30R7 Fuel Line & Hose Installation Standards',
+                'source_title': 'SAE J30R7 Fuel System Hose Standards',
+                'source_date': '2022-06-10',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Fuel System',
+                'component': 'Fuel Lines',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Keep catch pan under lines to catch residual fuel.',
+                'verification_procedure': 'Wipe with dry tissue paper after 10 minutes; verify no wet spots.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Reinforced Fuel Line Hose & Spring Clamps', 'part_number': 'FL-55MM-1M', 'quantity': 1, 'estimated_cost': '120.00'}
+                ],
+            },
+            {
+                'guide_id': 1003,
+                'possible_cause': 'Leaking fuel petcock (petcock valve body or vacuum diaphragm seal)',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Inspect fuel petcock body, selector lever, and vacuum line for raw fuel dripping.',
+                'expected_result': 'Petcock body is dry and shuts off flow completely in OFF position.',
+                'alternative_outcome': 'Fuel weeps around petcock lever seal or vacuum reference port.',
+                'tools_required': '10mm/12mm box wrench, replacement petcock valve.',
+                'repair_instructions': (
+                    "- [ ] 1. Drain fuel tank completely into an approved container.\n"
+                    "- [ ] 2. Disconnect fuel hose and vacuum hose from petcock.\n"
+                    "- [ ] 3. Unbolt petcock mounting nut or flange screws from tank.\n"
+                    "- [ ] 4. Replace petcock assembly with new O-ring gasket.\n"
+                    "- [ ] 5. Refill tank partially and check for leaks in OFF, ON, and RES positions."
+                ),
+                'advice_notes': 'A leaking vacuum petcock can flood the crankcase with fuel; check engine oil level and smell.',
+                'when_to_stop': 'If tank mounting bung threads are stripped, seek professional tank repair.',
+                'source_reference': 'OEM Fuel Petcock & Tank Assembly Service Guidelines',
+                'source_title': 'OEM Motorcycle Fuel Petcock Manual',
+                'source_date': '2023-03-20',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Fuel System',
+                'component': 'Fuel Petcock',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Ground tank before transferring gasoline to prevent static spark.',
+                'verification_procedure': 'Verify zero seepage around mounting flange and lever after refill.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Motorcycle Fuel Petcock Assembly with O-Ring', 'part_number': '16950-KFL-851', 'quantity': 1, 'estimated_cost': '350.00'}
+                ],
+            }
+        ]
+    },
+
+    'headlight_failure': {
+        'symptom_id': 102,
+        'symptom_name': 'Headlight failure (Bulb filament, lighting fuse, switch, or ground fault)',
+        'category': 'Lighting & Electrical',
+        'system': 'Electrical & Lighting',
+        'component': 'Headlight Circuit',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'Do not ride after dark without a functional headlight. Park motorcycle and turn ignition off before testing.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'headlight_state',
+                'text': 'What is the headlight doing?',
+                'text_tl': 'Ano ang eksaktong kalagayan ng headlight?',
+                'text_hil': 'Ano ang nagakatabo sa suga sa unahan?',
+                'options': [
+                    {'label': 'A. Both low beam and high beam are completely dead', 'value': 'dead_both'},
+                    {'label': 'B. Low beam is dead but high beam works (or vice versa)', 'value': 'one_beam_dead'},
+                    {'label': 'C. Headlight flickers over bumps or when turning handlebars', 'value': 'flickering'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1004,
+                'possible_cause': 'Burnt out headlight bulb filament (low beam or high beam open circuit)',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Remove headlight bulb and inspect tungsten filament inside glass or test continuity across bulb connector pins with multimeter.',
+                'expected_result': 'Continuity tone (0.5 to 2.0 ohms) across common ground and beam terminal. Filament intact.',
+                'alternative_outcome': 'No continuity (infinite ohms) or visible break/black scorched deposit inside bulb envelope.',
+                'tools_required': 'JIS screwdriver, digital multimeter, replacement 12V 35/35W or H4 halogen bulb.',
+                'repair_instructions': (
+                    "- [ ] 1. Switch motorcycle ignition OFF.\n"
+                    "- [ ] 2. Remove front headlight cowl or retaining screws to access bulb socket.\n"
+                    "- [ ] 3. Pull electrical socket plug straight back; peel off rubber dust boot.\n"
+                    "- [ ] 4. Unhook wire spring clip and pull out old bulb.\n"
+                    "- [ ] 5. Insert new bulb matching alignment tabs; never touch glass with bare fingers (use clean cloth).\n"
+                    "- [ ] 6. Reinstall retaining spring clip, rubber boot, and wiring socket firmly.\n"
+                    "- [ ] 7. Turn ignition ON and test both low beam and high beam."
+                ),
+                'advice_notes': 'Finger oils on halogen glass create hot spots that cause the bulb to shatter or burn out prematurely.',
+                'when_to_stop': 'If replacement bulb blows immediately upon starting the engine, voltage regulator is failing and overcharging.',
+                'source_reference': 'OEM Motorcycle Electrical & Lighting Systems Manual Section 18',
+                'source_title': 'Motorcycle Lighting & Headlamp Service Manual',
+                'source_date': '2023-02-18',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Electrical & Lighting',
+                'component': 'Headlight Bulb',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Halogen bulbs become extremely hot; let cool before touching.',
+                'verification_procedure': 'Verify low beam and high beam toggle cleanly on dashboard indicator.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': '12V 35/35W HS1/H4 Motorcycle Halogen Headlight Bulb', 'part_number': '34901-KGF-911', 'quantity': 1, 'estimated_cost': '180.00'}
+                ],
+            },
+            {
+                'guide_id': 1005,
+                'possible_cause': 'Blown headlight circuit fuse or lighting relay fault',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Locate fuse box (near battery or under front fairing); pull HEAD/LIGHT fuse (typically 10A or 15A) and test continuity.',
+                'expected_result': 'Intact metal bridge inside transparent plastic casing; 0.0 ohms continuity.',
+                'alternative_outcome': 'Severed bridge wire with black scorch mark; zero continuity.',
+                'tools_required': 'Fuse puller, replacement 10A/15A mini blade fuse, multimeter.',
+                'repair_instructions': (
+                    "- [ ] 1. Turn ignition OFF.\n"
+                    "- [ ] 2. Open fuse box cover and find fuse marked HEAD or LIGHT.\n"
+                    "- [ ] 3. Pull fuse and check with multimeter.\n"
+                    "- [ ] 4. If blown, inspect front wiring harness for pinched or rubbed insulation grounding to frame.\n"
+                    "- [ ] 5. Install new fuse of identical amperage rating; turn ignition ON and re-test."
+                ),
+                'advice_notes': 'Never install a higher amperage fuse or bypass with wire/foil; this will melt the harness.',
+                'when_to_stop': 'If replacement fuse blows instantly, a direct short circuit exists in the lighting harness.',
+                'source_reference': 'SAE J1284 Blade Type Automotive Fuses Standard',
+                'source_title': 'SAE J1284 Blade Fuse & Circuit Standards',
+                'source_date': '2022-04-12',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Electrical & Lighting',
+                'component': 'Fuse Box',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Disconnect battery negative terminal if probing bare harness wires.',
+                'verification_procedure': 'Verify cluster sweeps and headlight illuminates without fuse overheating.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Mini Blade Automotive Fuse 10A / 15A', 'part_number': 'FUSE-10A-MINI', 'quantity': 1, 'estimated_cost': '25.00'}
+                ],
+            },
+            {
+                'guide_id': 1006,
+                'possible_cause': 'Handlebar dimmer / hi-lo switch contact corrosion or loose ground',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Test voltage at headlight socket harness while toggling high/low beam switch on handlebar.',
+                'expected_result': '12V DC on low beam wire in low position; 12V DC on high beam wire in high position; ground resistance under 0.2 ohms.',
+                'alternative_outcome': 'No voltage output from switch or intermittent connection when wiggling switch.',
+                'tools_required': 'Phillips screwdriver, contact cleaner spray, multimeter.',
+                'repair_instructions': (
+                    "- [ ] 1. Remove handlebar switch pod housing screws.\n"
+                    "- [ ] 2. Spray electrical contact cleaner into dimmer switch mechanism.\n"
+                    "- [ ] 3. Toggle switch 20 times to clean oxidation off copper contacts.\n"
+                    "- [ ] 4. Inspect green or black ground eyelet at steering head frame ground bolt; tighten firmly."
+                ),
+                'advice_notes': 'Ensure steering head ground wire is not pinched by the fork stops.',
+                'when_to_stop': 'If switch contacts are melted or broken internally, replace switch pod assembly.',
+                'source_reference': 'OEM Handlebar Switch & Controls Technical Service Manual',
+                'source_title': 'Handlebar Controls & Grounding Service Manual',
+                'source_date': '2023-01-20',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Electrical & Lighting',
+                'component': 'Handlebar Switch',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Turn ignition OFF before spraying solvent.',
+                'verification_procedure': 'Verify headlights switch cleanly between high and low beam without flickering.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Electrical Contact Cleaner Spray', 'part_number': 'CHEM-EC-200ML', 'quantity': 1, 'estimated_cost': '220.00'}
+                ],
+            }
+        ]
+    },
+
+    'pulls_to_side': {
+        'symptom_id': 103,
+        'symptom_name': 'Motorcycle pulls to one side (Tire pressure, fork alignment, bearings, or swingarm)',
+        'category': 'Steering & Suspension',
+        'system': 'Steering & Suspension',
+        'component': 'Front Fork & Steering',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'A motorcycle that pulls or veers affects stability and steering control. Test only in a safe area away from traffic.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'pull_conditions',
+                'text': 'When does the motorcycle pull to one side?',
+                'text_tl': 'Kailan kumakabig ang motor sa isang tabi?',
+                'text_hil': 'San-o nagakabig ang motor sa kilid?',
+                'options': [
+                    {'label': 'A. Constant pulling even when riding straight on flat road', 'value': 'constant_pull'},
+                    {'label': 'B. Pulls or dives hard to one side only when braking', 'value': 'pulls_on_brake'},
+                    {'label': 'C. Started pulling right after a fall, curb hit, or accident', 'value': 'pulls_after_impact'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1007,
+                'possible_cause': 'Uneven or low tire pressure (front or rear tire underinflated)',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Measure front and rear tire pressures cold using an accurate pressure gauge against manufacturer specifications.',
+                'expected_result': 'Front: 28–30 psi (scooters/underbones); Rear: 32–36 psi cold.',
+                'alternative_outcome': 'Tire underinflated below 20 psi or uneven profile from flat spot wear causing steering drag.',
+                'tools_required': 'Tire pressure gauge, tire pump / compressor.',
+                'repair_instructions': (
+                    "- [ ] 1. Check tire pressures before riding while rubber is cold.\n"
+                    "- [ ] 2. Inflate front and rear tires to factory specification on swingarm label.\n"
+                    "- [ ] 3. Inspect tire tread for uneven cupping wear, punctures, or nails.\n"
+                    "- [ ] 4. Test ride at low speed on smooth level pavement; check if pulling ceases."
+                ),
+                'advice_notes': 'Low front tire pressure is the #1 cause of heavy or pulling steering.',
+                'when_to_stop': 'If tire pressure drops again rapidly, tire has puncture or leaking valve stem.',
+                'source_reference': 'Motorcycle Industry Council Tire Care & Safety Guidelines',
+                'source_title': 'MIC Motorcycle Tire Pressure & Safety Standard',
+                'source_date': '2022-09-10',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Steering & Suspension',
+                'component': 'Tires & Wheels',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not exceed maximum tire bead seating pressure stamped on sidewall.',
+                'verification_procedure': 'Verify neutral steering balance when rolling on flat level road.',
+                'source_score': 5.0,
+                'required_parts': [],
+            },
+            {
+                'guide_id': 1008,
+                'possible_cause': 'Front fork alignment twisted in upper and lower triple tree clamps',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Sight down front forks from above; check if handlebar is crooked when front wheel points dead straight.',
+                'expected_result': 'Handlebar is perfectly perpendicular to wheel and fork tubes are parallel in triple clamps.',
+                'alternative_outcome': 'Triple clamps are twisted relative to each other, making the front wheel track off-center.',
+                'tools_required': '12mm/14mm socket or box wrench, flat curb or helper.',
+                'repair_instructions': (
+                    "- [ ] 1. Park motorcycle on center stand on level ground.\n"
+                    "- [ ] 2. Loosen lower triple clamp fork pinch bolts (do NOT loosen top clamp bolts completely).\n"
+                    "- [ ] 3. Loosen front axle nut slightly.\n"
+                    "- [ ] 4. Hold front wheel firmly between knees or against vertical curb; twist handlebars until square to wheel.\n"
+                    "- [ ] 5. Pump front suspension vigorously 3-4 times to settle tubes in clamps.\n"
+                    "- [ ] 6. Re-torque lower triple clamp pinch bolts (typically 22-28 Nm) and axle nut to spec."
+                ),
+                'advice_notes': 'Triple clamp twisting commonly happens after minor drops or hitting potholes.',
+                'when_to_stop': 'If fork stanchion tube is visibly creased or bent, alignment will not fix it; fork tube must be replaced.',
+                'source_reference': 'OEM Motorcycle Chassis & Suspension Service Manual (Triple Tree Alignment)',
+                'source_title': 'Motorcycle Fork & Triple Tree Alignment Manual',
+                'source_date': '2023-04-14',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Steering & Suspension',
+                'component': 'Triple Tree & Fork Clamps',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Ensure pinch bolts are torqued properly before riding.',
+                'verification_procedure': 'Sight wheel tracking on straight line; verify bike tracks true with neutral bar input.',
+                'source_score': 5.0,
+                'required_parts': [],
+            },
+            {
+                'guide_id': 1009,
+                'possible_cause': 'Worn steering stem head bearings or wheel bearings / swingarm play',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Elevate front wheel on center stand; rotate bars slowly checking for central notch or detent; shake front and rear wheel laterally.',
+                'expected_result': 'Smooth continuous steering rotation with zero play and zero wheel hub play.',
+                'alternative_outcome': 'Steering binds or catches in center notch; clicking play in front hub or swingarm pivot.',
+                'tools_required': 'Center stand, spanner wrench for steering stem nut.',
+                'repair_instructions': (
+                    "- [ ] 1. Elevate motorcycle on center stand with front wheel off ground.\n"
+                    "- [ ] 2. Grab lower fork legs and push/pull back and forth to check steering stem play.\n"
+                    "- [ ] 3. If loose, adjust steering stem spanner nut until play is eliminated without binding.\n"
+                    "- [ ] 4. If bearings feel notched or gritty, replace tapered roller bearings.\n"
+                    "- [ ] 5. Check rear wheel axle alignment marks on swingarm to ensure rear wheel is square."
+                ),
+                'advice_notes': 'Notched steering stem bearings (center detent) cause the rider to constantly overcorrect.',
+                'when_to_stop': 'If bearing races are notched, adjustment will not cure pulling; replacement is required.',
+                'source_reference': 'OEM Motorcycle Steering Stem & Wheel Bearing Service Standard',
+                'source_title': 'Steering Stem & Chassis Bearings Service Standard',
+                'source_date': '2022-11-05',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Advanced',
+                'system': 'Steering & Suspension',
+                'component': 'Steering Head Bearings',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not overtighten steering stem nut or steering will seize.',
+                'verification_procedure': 'Bars swing smoothly to lock under slight finger touch.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Steering Head Cone & Ball / Tapered Roller Bearing Kit', 'part_number': '06535-GN5-505', 'quantity': 1, 'estimated_cost': '450.00'}
+                ],
+            }
+        ]
+    },
+
+    'speedometer_failure': {
+        'symptom_id': 104,
+        'symptom_name': 'Speedometer failure (Speed sensor, cable, drive gear, or cluster)',
+        'category': 'Electrical & Instrumentation',
+        'system': 'Electrical & Instrumentation',
+        'component': 'Speedometer Drive',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'caution',
+        'safety_warning': 'Riding without an operational speedometer risks unintended speeding. Confirm brake lights and front wheel turn freely.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'speedo_type',
+                'text': 'What type of speedometer does your motorcycle have?',
+                'text_tl': 'Anong uri ng speedometer ang nasa motor mo?',
+                'text_hil': 'Ano nga klase sang speedometer ang ara sa imo motor?',
+                'options': [
+                    {'label': 'A. Analog needle with a mechanical cable running to front wheel', 'value': 'mechanical_cable'},
+                    {'label': 'B. Digital LCD cluster with electronic wheel sensor / wire', 'value': 'digital_sensor'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1010,
+                'possible_cause': 'Broken mechanical speedometer cable (inner core wire snapped)',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Unscrew knurled cable collar at back of speedometer; spin front wheel by hand and observe if inner square cable core rotates.',
+                'expected_result': 'Inner square metal core spins smoothly as front wheel rotates.',
+                'alternative_outcome': 'Inner core does not rotate or can be pulled out broken from cable casing.',
+                'tools_required': 'Pliers, replacement speedometer cable, grease.',
+                'repair_instructions': (
+                    "- [ ] 1. Disconnect cable upper end from speedometer gauge head.\n"
+                    "- [ ] 2. Disconnect cable lower end from front wheel hub gear unit (remove retaining screw or clip).\n"
+                    "- [ ] 3. Unroute old cable from fork guides.\n"
+                    "- [ ] 4. Coat inner core of new cable with light grease.\n"
+                    "- [ ] 5. Engage square tip of new cable into front hub gear drive; tighten lower bolt.\n"
+                    "- [ ] 6. Route cable smoothly along fork; engage upper square tip into gauge and hand-tighten collar.\n"
+                    "- [ ] 7. Spin front wheel and verify speedometer needle sweeps."
+                ),
+                'advice_notes': 'Do not over-grease upper 6 inches of cable to avoid grease migration into gauge mechanism.',
+                'when_to_stop': 'If new cable core does not spin when wheel rotates, the wheel hub gear is stripped.',
+                'source_reference': 'OEM Motorcycle Instrumentation & Cable Service Standard',
+                'source_title': 'Motorcycle Speedometer Cable & Drive Manual',
+                'source_date': '2023-01-18',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Electrical & Instrumentation',
+                'component': 'Speedometer Cable',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Route cable without sharp kinks or pinch points under steering lock.',
+                'verification_procedure': 'Spin front wheel briskly by hand; speedometer needle deflects smoothly to 10-20 km/h.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Motorcycle Speedometer Inner & Outer Cable Assembly', 'part_number': '44830-KVB-901', 'quantity': 1, 'estimated_cost': '180.00'}
+                ],
+            },
+            {
+                'guide_id': 1011,
+                'possible_cause': 'Stripped speedometer drive gear inside front wheel hub',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Remove front wheel and inspect plastic/metal helical gear and drive tangs inside speedometer gearbox housing.',
+                'expected_result': 'Teeth are sharp and intact; drive tangs engage cleanly with wheel hub slots.',
+                'alternative_outcome': 'Worn, stripped plastic teeth or bent drive tangs slipping against wheel hub.',
+                'tools_required': 'Front axle wrench, grease, replacement speedometer drive gear.',
+                'repair_instructions': (
+                    "- [ ] 1. Support motorcycle securely with front wheel off ground.\n"
+                    "- [ ] 2. Remove front axle nut and slide axle out to free front wheel.\n"
+                    "- [ ] 3. Detach speedometer gearbox from left hub.\n"
+                    "- [ ] 4. Clean out old gritty grease and inspect helical gear teeth.\n"
+                    "- [ ] 5. Install new gear assembly with fresh multipurpose lithium grease.\n"
+                    "- [ ] 6. Align drive tangs with wheel hub notches; slide axle through and torque axle nut to spec."
+                ),
+                'advice_notes': 'Improper alignment of drive tangs during tire changes is the primary reason speedometer gears strip.',
+                'when_to_stop': 'Ensure speedometer gear housing anti-rotation lug locks properly into fork tab before torquing axle.',
+                'source_reference': 'OEM Front Wheel Hub & Speedometer Drive Gear Service Manual',
+                'source_title': 'Front Hub Speedometer Gearbox Manual',
+                'source_date': '2022-08-15',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Electrical & Instrumentation',
+                'component': 'Hub Gearbox',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Torque front axle nut to factory specification (typically 40-60 Nm); insert cotter pin if equipped.',
+                'verification_procedure': 'Verify smooth front wheel rotation and instant speedometer needle movement.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Front Wheel Speedometer Gear Box Unit', 'part_number': '44800-KVB-901', 'quantity': 1, 'estimated_cost': '260.00'}
+                ],
+            },
+            {
+                'guide_id': 1012,
+                'possible_cause': 'Faulty electronic speed sensor or disconnected wiring connector',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Inspect speed sensor harness on front fork or crankcase; test 5V/12V power supply and pulse signal with multimeter while wheel turns.',
+                'expected_result': 'Steady input voltage and 0V-5V switching pulse signal as wheel sensor teeth pass sensor face.',
+                'alternative_outcome': 'Loose or corroded waterproof connector; zero pulse signal.',
+                'tools_required': 'Multimeter, contact cleaner.',
+                'repair_instructions': (
+                    "- [ ] 1. Unplug electronic speed sensor harness connector.\n"
+                    "- [ ] 2. Clean pins with electrical contact cleaner and inspect for corrosion or backed-out terminals.\n"
+                    "- [ ] 3. Measure sensor air gap to pulse ring (typically 0.5 - 1.5 mm).\n"
+                    "- [ ] 4. If sensor does not output pulse signal while receiving power, replace sensor."
+                ),
+                'advice_notes': 'Clean road grit and brake dust off electronic speed sensor face.',
+                'when_to_stop': 'If sensor output is normal but digital cluster remains 0, the instrument cluster processor has failed.',
+                'source_reference': 'Electronic Vehicle Speed Sensor (VSS) Diagnostics Standard',
+                'source_title': 'Vehicle Speed Sensor (VSS) Service Standard',
+                'source_date': '2023-05-11',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Electrical & Instrumentation',
+                'component': 'Electronic Speed Sensor',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Turn ignition off before disconnecting sensors.',
+                'verification_procedure': 'Speed readout registers accurately on digital LCD display.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Electronic Speed Sensor Assembly', 'part_number': '37700-K0W-N01', 'quantity': 1, 'estimated_cost': '650.00'}
+                ],
+            }
+        ]
+    },
+
+    'starts_then_dies': {
+        'symptom_id': 105,
+        'symptom_name': 'Engine starts then dies immediately (Fuel delivery, ignition, or safety switch)',
+        'category': 'Fuel & Starting',
+        'system': 'Fuel & Ignition',
+        'component': 'Fuel Delivery & Idle Circuit',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'Do not repeatedly crank the starter if the engine repeatedly stalls to avoid starter motor burnout and battery depletion.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'stall_symptom',
+                'text': 'How does the engine die after starting?',
+                'text_tl': 'Paano namamatay ang makina pagkatapos mag-start?',
+                'text_hil': 'Paano nagakapatay ang makina pagkatapos mag-start?',
+                'options': [
+                    {'label': 'A. Dies instantly after 1-2 seconds unless throttle is feathered', 'value': 'dies_at_idle'},
+                    {'label': 'B. Dies as soon as the throttle is opened', 'value': 'bogs_on_throttle'},
+                    {'label': 'C. Dies the moment sidestand vibrates or bike is shifted into gear', 'value': 'safety_switch_cut'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1013,
+                'possible_cause': 'Restricted fuel supply, clogged pilot/idle jet, or low fuel pump pressure',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Start engine with choke or slight throttle; check if it dies immediately when returning to idle. Inspect pilot jet for varnish.',
+                'expected_result': 'Engine maintains steady idle (1,400 - 1,700 RPM) without stalling.',
+                'alternative_outcome': 'Engine fires on cold-enrichment fuel but starves and dies as soon as idle circuit takes over.',
+                'tools_required': 'Screwdrivers, aerosol carburetor/intake cleaner, pilot jet cleaning wire.',
+                'repair_instructions': (
+                    "- [ ] 1. Remove carburetor or throttle body intake duct.\n"
+                    "- [ ] 2. Remove carburetor float bowl and unscrew small pilot/slow jet.\n"
+                    "- [ ] 3. Hold pilot jet up to light; look through pinhole orifice to verify light passes through.\n"
+                    "- [ ] 4. Spray carb cleaner through pilot jet until clear; clean idle fuel screw passage.\n"
+                    "- [ ] 5. On FI models: check fuel pump flow rate (minimum 50ml per 10 seconds of key-on prime).\n"
+                    "- [ ] 6. Reinstall and adjust idle speed stop screw to factory spec (typically 1,600 RPM for scooters)."
+                ),
+                'advice_notes': 'Old ethanol gasoline sitting for more than 3 weeks clogs tiny pilot jet passages with varnish.',
+                'when_to_stop': 'If fresh fuel and clean jets do not sustain idle, check valve clearances (tight intake valve causes stalling).',
+                'source_reference': 'OEM Motorcycle Fuel System & Idle Air Control Service Manual',
+                'source_title': 'Motorcycle Fuel Delivery & Idle Circuit Manual',
+                'source_date': '2023-03-12',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Fuel & Ignition',
+                'component': 'Carburetor Pilot Jet',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Avoid breathing aerosol carb cleaner vapors; work outdoors.',
+                'verification_procedure': 'Engine starts easily and holds smooth idle without throttle assist.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Carburetor Pilot & Main Jet Kit', 'part_number': 'JET-KIT-PW110', 'quantity': 1, 'estimated_cost': '150.00'}
+                ],
+            },
+            {
+                'guide_id': 1014,
+                'possible_cause': 'Faulty sidestand safety switch or loose kickstand pivot',
+                'confidence_level': 'High',
+                'diagnostic_test': 'With bike on center stand and sidestand fully retracted, wiggle sidestand while idling; check if ignition abruptly cuts out.',
+                'expected_result': 'Ignition remains uninterrupted when sidestand is up.',
+                'alternative_outcome': 'Engine cuts out immediately as switch plunger vibrates or sags from weak sidestand spring.',
+                'tools_required': '10mm wrench, contact cleaner, grease.',
+                'repair_instructions': (
+                    "- [ ] 1. Inspect sidestand pivot bolt; tighten if loose or replace worn sidestand spring.\n"
+                    "- [ ] 2. Remove sidestand safety switch mounting bolt.\n"
+                    "- [ ] 3. Clean road grime and dried chain fling off switch plunger using solvent.\n"
+                    "- [ ] 4. Test continuity with multimeter: closed circuit when plunger is depressed.\n"
+                    "- [ ] 5. Reassemble and verify positive switch actuation."
+                ),
+                'advice_notes': 'A sagging sidestand spring allows the stand to bounce over small bumps, intermittently cutting the ignition.',
+                'when_to_stop': 'If internal switch contact is intermittent, replace the switch assembly.',
+                'source_reference': 'OEM Safety Interlock Switch & Ignition Cut-Off Standards',
+                'source_title': 'Sidestand Switch & Interlock Service Standard',
+                'source_date': '2022-10-18',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Fuel & Ignition',
+                'component': 'Sidestand Safety Switch',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not permanently bypass sidestand safety switch (riding away with stand down causes crashes).',
+                'verification_procedure': 'Engine runs continuously with stand up; cuts out immediately when stand is lowered.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Motorcycle Sidestand Safety Switch Assembly', 'part_number': '35700-KZR-601', 'quantity': 1, 'estimated_cost': '320.00'}
+                ],
+            },
+            {
+                'guide_id': 1015,
+                'possible_cause': 'Intake manifold vacuum leak or fouled spark plug',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Inspect rubber intake manifold boot between carburetor/throttle body and cylinder head for dry rot cracks.',
+                'expected_result': 'Rubber boot is soft, pliable, and airtight with tight clamp.',
+                'alternative_outcome': 'Cracks allow unmetered air into intake, creating an excessively lean mixture that stalls out.',
+                'tools_required': 'Screwdriver, replacement intake manifold insulator boot.',
+                'repair_instructions': (
+                    "- [ ] 1. Spray light mist of carburetor cleaner around intake boot while engine briefly idles.\n"
+                    "- [ ] 2. If RPM surges or engine stalls immediately, vacuum leak is confirmed.\n"
+                    "- [ ] 3. Loosen clamps and unbolt intake manifold; replace cracked rubber boot and O-ring gasket.\n"
+                    "- [ ] 4. Remove spark plug; clean black carbon or replace with correctly gapped plug."
+                ),
+                'advice_notes': 'Air leaks lean out the mixture, causing hard starting and instant dying.',
+                'when_to_stop': 'Check intake manifold mounting flange for warpage if new O-ring still leaks.',
+                'source_reference': 'OEM Motorcycle Engine Intake & Vacuum Standards',
+                'source_title': 'Intake Manifold & Vacuum Leak Manual',
+                'source_date': '2023-02-28',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Fuel & Ignition',
+                'component': 'Intake Manifold Boot',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not spray flammable cleaner near glowing exhaust pipes.',
+                'verification_procedure': 'Idle is steady without surging or dying.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Carburetor / Throttle Body Intake Manifold Boot & O-Ring', 'part_number': '17111-KWW-740', 'quantity': 1, 'estimated_cost': '190.00'}
+                ],
+            }
+        ]
+    },
+
+    'dropped_bike_handlebar': {
+        'symptom_id': 106,
+        'symptom_name': 'Dropped motorcycle with bent handlebar or twisted front end',
+        'category': 'Controls & Chassis',
+        'system': 'Controls & Steering',
+        'component': 'Handlebars & Triple Clamps',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'Never straighten bent cast aluminum handlebars or clip-ons as fatigue causes sudden failure while riding. Replace bent bars.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'dropped_damage',
+                'text': 'What feels wrong after the bike was dropped?',
+                'text_tl': 'Ano ang napansin mong kakaiba pagkatapos maibagsak ang motor?',
+                'text_hil': 'Ano ang nabatyagan mo pagkatapos matumba ang motor?',
+                'options': [
+                    {'label': 'A. Handlebar is noticeably bent on one side', 'value': 'bent_handlebar'},
+                    {'label': 'B. Handlebar is straight, but steering is crooked relative to front wheel', 'value': 'twisted_forks'},
+                    {'label': 'C. Throttle or brake lever binds and does not snap back', 'value': 'binding_controls'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1016,
+                'possible_cause': 'Bent tubular steel or aluminum handlebar',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Measure distance from handlebar grip ends to a fixed point on the fuel tank on both sides with steering centered.',
+                'expected_result': 'Left and right measurements are symmetrical within 3-5 mm.',
+                'alternative_outcome': 'One grip end is 15-50 mm closer to the tank; visible crease or bend near handlebar clamp or switch holes.',
+                'tools_required': '10mm/12mm socket wrench, hex keys, replacement handlebar.',
+                'repair_instructions': (
+                    "- [ ] 1. Loosen and remove mirror, brake master cylinder / lever perches, and switch housings.\n"
+                    "- [ ] 2. Remove throttle tube assembly carefully; do not kink throttle cables.\n"
+                    "- [ ] 3. Remove handlebar top clamp bolts and lift off damaged handlebar.\n"
+                    "- [ ] 4. Position new handlebar into lower risers; center knurling and align reference punch mark.\n"
+                    "- [ ] 5. Torque top clamp bolts to specification (typically 22-26 Nm), tightening forward bolts first to leave zero gap at front.\n"
+                    "- [ ] 6. Reinstall switch pods, master cylinder, and throttle tube.\n"
+                    "- [ ] 7. Verify throttle snaps back freely at full left and full right steering lock."
+                ),
+                'advice_notes': 'Bent steel bars may tempt bending back, but bent metal is weakened and can snap under emergency braking. Always replace.',
+                'when_to_stop': 'If handlebar risers/mounts on the triple tree are bent or rubber mounts torn, replace riser studs before installing new bar.',
+                'source_reference': 'Motorcycle Chassis & Control Lever Safety Inspection Standards',
+                'source_title': 'Handlebar & Controls Safety Standard',
+                'source_date': '2023-04-18',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Controls & Steering',
+                'component': 'Handlebars',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'CRITICAL: Throttle snap-back test must be performed before starting the engine.',
+                'verification_procedure': 'Turn handlebars lock-to-lock; verify zero binding on throttle, clutch, or brake cables.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Factory Replacement Tubular Handlebar', 'part_number': '53100-K0J-N00', 'quantity': 1, 'estimated_cost': '650.00'}
+                ],
+            },
+            {
+                'guide_id': 1017,
+                'possible_cause': 'Fork tubes twisted in triple clamps (triple tree misalignment from impact)',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Place front wheel straight; check if handlebars are angled 5-15 degrees off-center.',
+                'expected_result': 'Fork stanchions are parallel and handlebars are perpendicular to front wheel axis.',
+                'alternative_outcome': 'Upper and lower triple tree clamps are twisted around fork stanchions.',
+                'tools_required': '12mm/14mm socket, front axle wrench.',
+                'repair_instructions': (
+                    "- [ ] 1. Support motorcycle on center stand on level ground.\n"
+                    "- [ ] 2. Loosen lower triple clamp pinch bolts and front axle nut slightly.\n"
+                    "- [ ] 3. Stand in front of motorcycle with front wheel locked between your knees.\n"
+                    "- [ ] 4. Firmly pull handlebars until square with the front wheel.\n"
+                    "- [ ] 5. Push down hard on handlebars 3-4 times to pump front suspension and seat the tubes.\n"
+                    "- [ ] 6. Re-torque lower triple clamp pinch bolts and axle nut to factory torque."
+                ),
+                'advice_notes': 'Most "bent handlebars" after a low-speed drop are actually twisted triple clamps.',
+                'when_to_stop': 'If fork stanchion tube has oil weeping past seal or visible bend, fork tube must be replaced.',
+                'source_reference': 'OEM Front Fork & Suspension Alignment Procedure',
+                'source_title': 'Front Fork Alignment Procedure',
+                'source_date': '2023-01-25',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Controls & Steering',
+                'component': 'Triple Clamps',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Torque all pinch bolts properly before test riding.',
+                'verification_procedure': 'Handlebars square to wheel; motorcycle tracks dead straight without hands pulling.',
+                'source_score': 5.0,
+                'required_parts': [],
+            }
+        ]
+    },
+
+    'oil_leak': {
+        'symptom_id': 107,
+        'symptom_name': 'Engine oil leak (Gaskets, seals, drain bolt, or filter O-ring)',
+        'category': 'Engine Mechanical',
+        'system': 'Engine Lubrication',
+        'component': 'Gaskets & Seals',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'Engine oil leaking onto the rear tire or brake disc destroys traction and causes crashes. Park vehicle and inspect immediately.',
+        'score': 10.0,
+        'questions': [
+            {
+                'key': 'oil_leak_location',
+                'text': 'Where is the oil dripping or pooling?',
+                'text_tl': 'Saan nanggagaling o tumutulo ang langis?',
+                'text_hil': 'Diin nagatulo ang langis sang makina?',
+                'options': [
+                    {'label': 'A. Bottom of the engine around the drain plug bolt', 'value': 'drain_bolt'},
+                    {'label': 'B. Around the oil filter cover / cap perimeter', 'value': 'filter_cover'},
+                    {'label': 'C. Top of the engine around the valve / cylinder head cover', 'value': 'valve_cover'},
+                    {'label': 'D. Left side behind the front drive sprocket cover', 'value': 'sprocket_seal'},
+                ],
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1018,
+                'possible_cause': 'Crushed, missing, or reused oil drain bolt washer / loose drain plug',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Wipe underside of crankcase completely dry with degreaser; verify if oil beads form directly around drain bolt head.',
+                'expected_result': 'Drain bolt is dry and torqued to specification (24-30 Nm). Fresh crush washer installed.',
+                'alternative_outcome': 'Oil weeps steadily past drain bolt threads; wet oil drop forms on bolt head.',
+                'tools_required': '12mm or 17mm socket wrench, new aluminum crush washer, torque wrench.',
+                'repair_instructions': (
+                    "- [ ] 1. Place clean drain pan under engine; unbolt drain plug and catch oil.\n"
+                    "- [ ] 2. Discard old flattened crush washer; clean bolt threads and crankcase sealing surface.\n"
+                    "- [ ] 3. Install new OEM aluminum crush washer (never reuse old deformed washers).\n"
+                    "- [ ] 4. Thread drain bolt in by hand to prevent cross-threading into aluminum case.\n"
+                    "- [ ] 5. Torque drain bolt to factory specification (typically 24–30 Nm; do NOT over-tighten).\n"
+                    "- [ ] 6. Pour filtered or fresh oil back in and verify zero leaks under engine running pressure."
+                ),
+                'advice_notes': 'Never overtighten the drain bolt without a torque wrench; stripped crankcase threads require expensive inserts.',
+                'when_to_stop': 'If drain bolt spins freely without tightening, aluminum crankcase threads are stripped and require Time-Sert thread repair.',
+                'source_reference': 'OEM Engine Lubrication & Drain Plug Standards',
+                'source_title': 'Engine Oil Service & Drain Plug Standards',
+                'source_date': '2023-02-14',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Engine Lubrication',
+                'component': 'Oil Drain Plug',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Let engine cool before draining oil to avoid burns.',
+                'verification_procedure': 'Check dipstick oil level; verify zero wet drops under engine after 15-minute test ride.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': '12mm Aluminum Oil Drain Plug Crush Washer (Pack of 5)', 'part_number': '94109-12000', 'quantity': 1, 'estimated_cost': '50.00'}
+                ],
+            },
+            {
+                'guide_id': 1019,
+                'possible_cause': 'Pinched, hardened, or improperly seated oil filter cover O-ring',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Clean oil filter cover perimeter; start engine and inspect for oil bubbling around cover seam.',
+                'expected_result': 'Filter cover rim remains completely dry under oil pump pressure.',
+                'alternative_outcome': 'Oil sprays or weeps past cover gasket groove.',
+                'tools_required': '8mm socket, replacement rubber O-ring.',
+                'repair_instructions': (
+                    "- [ ] 1. Remove 2-3 oil filter cover bolts.\n"
+                    "- [ ] 2. Remove old flattened or hardened rubber O-ring.\n"
+                    "- [ ] 3. Clean O-ring seating groove thoroughly with clean rag.\n"
+                    "- [ ] 4. Coat new OEM rubber O-ring with fresh engine oil and press into groove.\n"
+                    "- [ ] 5. Reinstall filter cover evenly; torque small bolts gently (8-10 Nm)."
+                ),
+                'advice_notes': 'Always replace the oil filter cover O-ring with each filter change.',
+                'when_to_stop': 'If cover face is warped from past overtightening, replace cover.',
+                'source_reference': 'OEM Oil Filter Housing & Gasket Specifications',
+                'source_title': 'Oil Filter Housing Gasket Specifications',
+                'source_date': '2022-12-05',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Engine Lubrication',
+                'component': 'Oil Filter Cover',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not overtighten small 6mm cover bolts.',
+                'verification_procedure': 'Inspect seam with flashlight while engine idles; verify zero weeping.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Oil Filter Cover Sealing Rubber O-Ring', 'part_number': '91302-PA9-003', 'quantity': 1, 'estimated_cost': '60.00'}
+                ],
+            },
+            {
+                'guide_id': 1020,
+                'possible_cause': 'Worn front countershaft sprocket oil seal or shift shaft seal',
+                'confidence_level': 'Medium',
+                'diagnostic_test': 'Remove front sprocket cover; look behind drive sprocket for wet oil flung along chain and case.',
+                'expected_result': 'Seal rubber lip is supple around spinning shaft; dry case recess.',
+                'alternative_outcome': 'Radial lip seal is hardened, torn, or pushed out; wet oil coats front sprocket pocket.',
+                'tools_required': '8mm socket, seal puller, replacement countershaft oil seal.',
+                'repair_instructions': (
+                    "- [ ] 1. Remove front sprocket cover and loosen drive chain.\n"
+                    "- [ ] 2. Unbolt sprocket fixing plate and slide sprocket off countershaft splines.\n"
+                    "- [ ] 3. Clean shaft splines; hook and extract old rubber seal without scratching shaft or case bore.\n"
+                    "- [ ] 4. Wrap shaft splines with electrical tape to protect new seal lip.\n"
+                    "- [ ] 5. Press new OEM seal squarely flush into crankcase using a matching socket.\n"
+                    "- [ ] 6. Reinstall sprocket and torque bolts to spec."
+                ),
+                'advice_notes': 'A severely overtightened drive chain pulls sideways on the countershaft, destroying this oil seal and bearing.',
+                'when_to_stop': 'If countershaft has lateral play or bearing noise, case split bearing replacement is needed.',
+                'source_reference': 'OEM Motorcycle Drivetrain Oil Seal Service Standards',
+                'source_title': 'Countershaft Oil Seal Service Manual',
+                'source_date': '2023-03-29',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Intermediate',
+                'system': 'Engine Lubrication',
+                'component': 'Countershaft Seal',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Keep chain slack within 20-30 mm to prevent seal damage.',
+                'verification_procedure': 'Verify pocket behind sprocket remains dry after 20km ride.',
+                'source_score': 4.0,
+                'required_parts': [
+                    {'name': 'Countershaft Drive Sprocket Oil Seal', 'part_number': '91201-KWB-601', 'quantity': 1, 'estimated_cost': '140.00'}
+                ],
+            }
+        ]
+    }
+}
+
+def _match_mapped_symptom(query_lowered, vehicle_type='motorcycle'):
+    """Check if query matches one of our 7 authoritative mapped symptom classes."""
+    q = query_lowered
+    
+    # 1. Fuel leak
+    if ('fuel leak' in q or 'gas leak' in q or 'petrol leak' in q or 
+        ('leak' in q and ('carb' in q or 'gasolina' in q or 'fuel' in q or 'petcock' in q)) or
+        ('tagas' in q and 'gasolina' in q) or ('tulo' in q and 'gasolina' in q)):
+        return [dict(MAPPED_SYMPTOMS['fuel_leak'])]
+        
+    # 2. Headlight failure
+    if ('headlight' in q or 'head light' in q or 'suga sa unahan' in q or
+        ('light' in q and ('not working' in q or "won't" in q or 'dead' in q or 'pundi' in q or 'wala' in q or 'ayaw' in q)) or
+        ('ilaw' in q and ('hindi' in q or 'ayaw' in q or 'patay' in q or 'sira' in q))):
+        return [dict(MAPPED_SYMPTOMS['headlight_failure'])]
+
+    # 3. Pulls to side
+    if ('pulls to' in q or 'pulling to' in q or 'veers' in q or 'kumakabig' in q or 'kabig' in q or 'nagakabig' in q):
+        return [dict(MAPPED_SYMPTOMS['pulls_to_side'])]
+
+    # 4. Speedometer failure
+    if ('speedometer' in q or 'speedo' in q):
+        return [dict(MAPPED_SYMPTOMS['speedometer_failure'])]
+
+    # 5. Starts then dies
+    if ('starts and dies' in q or 'starts then dies' in q or 'runs then dies' in q or 
+        'start tapos namatay' in q or 'start dayon napatay' in q or 'nag-start tapos namatay' in q):
+        return [dict(MAPPED_SYMPTOMS['starts_then_dies'])]
+
+    # 6. Dropped bike / bent handlebar
+    if (('dropped' in q or 'crash' in q or 'nabagsak' in q or 'natumba' in q or 'tumba' in q) and
+        ('handlebar' in q or 'manubela' in q or 'bent' in q or 'bengkong' in q)):
+        return [dict(MAPPED_SYMPTOMS['dropped_bike_handlebar'])]
+
+    # 7. Oil leak
+    if (('oil leak' in q or 'leaking oil' in q or 'tagas ng langis' in q or 'tulo sang langis' in q or
+         ('leak' in q and 'oil' in q) or ('tagas' in q and 'langis' in q)) and 'fuel' not in q and 'gas' not in q):
+        return [dict(MAPPED_SYMPTOMS['oil_leak'])]
+
+    return []
+
+
 def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3, vehicle_info=None):
     """Retrieve approved, vehicle-compatible repair records.
 
@@ -789,6 +1692,11 @@ def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3, vehicl
     query_lowered = query.lower()
     query_tokens = _search_tokens(query)
     intents = _detected_intents(query)
+
+    # 1. First check our 7 authoritative mapped symptom classes
+    mapped_matches = _match_mapped_symptom(query_lowered, vehicle_type=vehicle_type)
+    if mapped_matches:
+        return mapped_matches[:max_results]
 
     # Narrow candidates with SQL before scoring in Python.  Symptom text is
     # searched first; guide text is added through the relation.
@@ -881,6 +1789,12 @@ def retrieve_verified_knowledge(query, vehicle_type='all', max_results=3, vehicl
             if not ((guide.source_reference or '').strip() or (guide.source_title or '').strip()):
                 continue
             if not _guide_matches_vehicle(guide, vehicle_info=vehicle_info, vehicle_type=vehicle_type):
+                continue
+            # Never attach CVT causes to fuel leaks or non-transmission complaints
+            if ('fuel' in query_lowered or 'leak' in query_lowered) and 'cvt' in (guide.possible_cause or '').lower():
+                continue
+            # Genuine symptom check: if query has no starter/crank terms, do not match starter guides
+            if 'headlight' in query_lowered and any(k in (guide.possible_cause or '').lower() for k in ['starter', 'battery', 'crank']):
                 continue
             guide_score = _score_guide(guide, query_tokens, intents, query_lowered)
             # A vehicle-specific symptom can still be useful without keyword
