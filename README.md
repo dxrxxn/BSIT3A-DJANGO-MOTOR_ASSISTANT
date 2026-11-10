@@ -2,7 +2,7 @@
 
 ## Project Documentation
 
-Maaari mong basahin ang buong concept paper sa ibaba, o i-download ang orihinal na file sa pamamagitan ng link na ito:
+concept paper and download link: 
 - **[I-download ang BSIT Capstone Project Concept Paper (DOCX)](docs/A%20WEB-BASED%20MOTORCYCLE%20DIAGNOSTIC%20ASSISTANT%20WITH%20GUIDED%20TROUBLESHOOTING%20AND%20AI-SUPPORTED%20REPAIR%20GUIDANCE.docx)**
 
 ---
