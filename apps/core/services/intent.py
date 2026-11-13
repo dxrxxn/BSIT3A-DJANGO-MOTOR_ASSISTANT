@@ -111,6 +111,35 @@ BUYING_PATTERNS = [
     r'ano\s+nga\s+motor\s+manami\s+sa\s+beginner',
 ]
 
+COMPONENT_INQUIRY_PATTERNS = [
+    # What controls / what regulates / what powers / what charges
+    r'\bwhat\s+(?:controls|powers|regulates|charges|drives|connects|operates|triggers|cuts\s*off|cuts\s*outs?)\b',
+    r'\bwhich\s+(?:controls|powers|regulates|charges|drives|connects|operates|triggers|cuts\s*off|cuts\s*outs?)\b',
+    r'\bano\s+ang\s+(?:nagpapatakbo|kumokontrol|nagpapatay|nagkakarga|nag-aayos|nagkontrol)\b',
+    r'\bano\s+ang\s+nagakontrol\b',
+    # Component purpose / function / role / what is it for
+    r'\b(?:what\s+is|what\'s)\s+(?:the\s+)?(?:purpose|function|role|job|use)\s+of\b',
+    r'\bwhat\s+(?:is|are)\s+(?:a|an|the)?\s*([a-z0-9\s-]+)\s+(?:for|used\s+for)\b',
+    r'\bpara\s+saan\s+(?:ang|yung|ang\s+mga)\b',
+    r'\bano\s+ang\s+(?:gamit|silbi|tungkulin)\s+ng\b',
+    r'\bano\s+ang\s+pulos\s+sang\b',
+    # How a component or system works / operates
+    r'\bhow\s+does\s+(?:the|a|an)\s+([a-z0-9\s-]+)\s+work\b',
+    r'\bhow\s+do\s+([a-z0-9\s-]+)\s+work\b',
+    r'\bpaano\s+gumagana\s+(?:ang|yung)\b',
+    r'\bpaano\s+naga-andar\s+(?:ang)\b',
+    # System inquiries & explanations
+    r'\bexplain\s+(?:the\s+)?([a-z0-9\s-]+)\s+(?:system|circuit|wiring|operation|mechanism|function)\b',
+    r'\bhow\s+(?:is|are)\s+([a-z0-9\s-]+)\s+(?:wired|connected|controlled|charged)\b',
+    r'\bwhat\s+does\s+(?:the|a|an)?\s*([a-z0-9\s-]+)\s+do\b',
+    r'\bwhat\s+parts?\s+(?:control|make\s+up|belong\s+to|are\s+in)\b',
+    # Electrical and ignition inquiry patterns
+    r'\bwhat\s+controls?\s+(?:the\s+)?engine\s+cut\s*outs?\b',
+    r'\bignition\s+(?:and\s+electrical|system)\b.*\bwhat\s+controls\b',
+    r'\bheadlight\s+and\s+battery\s+charging\b',
+    r'\belectrical\s+and\s+ignition\b',
+]
+
 GEAR_PATTERNS = [
     r'\bhelmet\b',
     r'what\s+helmet\b',
@@ -485,7 +514,15 @@ def classify_intent(message: str, history=None, vehicle_profile=None) -> IntentR
             return _make_intent('maintenance_howto', sub_intent='maintenance', entity=None, is_off_topic=False, details={})
         return _make_intent('off_topic', sub_intent='non_motorcycle', entity=None, is_off_topic=True, details={'reason': 'Non-motorcycle how-to'})
 
-    # 16. Courtesy / greeting / identity / help
+    # 16. Component / System Educational Inquiry
+    # Distinguish user wanting to learn how a motorcycle component/system functions
+    # vs reporting an active motorcycle breakdown
+    for pattern in COMPONENT_INQUIRY_PATTERNS:
+        if re.search(pattern, norm):
+            if is_motorcycle_related(norm, history, vehicle_profile):
+                return _make_intent('component_inquiry', sub_intent='concept_explanation', entity=None, is_off_topic=False, details={'pattern': pattern})
+
+    # 17. Courtesy / greeting / identity / help
     for pattern, kind in COURTESY_PATTERNS:
         if re.search(pattern, norm):
             return _make_intent(kind, sub_intent=kind, entity=None, is_off_topic=False, details={})

@@ -39,9 +39,49 @@
     <!-- Theme Settings Offcanvas Drawer & Floating Button -->
     {% include 'theme/settings.html' %}
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts: Tabler Core provides full local Bootstrap 5 components -->
     <script src="{% static 'js/tabler.js' %}"></script>
+    <script>
+      // Ensure window.bootstrap is exposed from local tabler bundle
+      if (typeof window.bootstrap === 'undefined' && window.tabler) {
+        window.bootstrap = window.tabler.bootstrap || window.tabler;
+      }
+      // Resilient offcanvas handler for slow connections & mobile browsers
+      document.addEventListener('click', function(e) {
+        var toggle = e.target.closest('[data-bs-toggle="offcanvas"]');
+        if (toggle) {
+          var targetId = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
+          if (targetId && targetId.startsWith('#')) {
+            var drawer = document.querySelector(targetId);
+            if (drawer) {
+              e.preventDefault();
+              if (window.bootstrap && window.bootstrap.Offcanvas) {
+                var instance = window.bootstrap.Offcanvas.getOrCreateInstance(drawer);
+                instance.toggle();
+              } else {
+                drawer.classList.toggle('show');
+                drawer.style.visibility = drawer.classList.contains('show') ? 'visible' : 'hidden';
+              }
+            }
+          }
+        }
+        var dismiss = e.target.closest('[data-bs-dismiss="offcanvas"]');
+        if (dismiss) {
+          var drawer = dismiss.closest('.offcanvas');
+          if (drawer) {
+            e.preventDefault();
+            if (window.bootstrap && window.bootstrap.Offcanvas) {
+              var instance = window.bootstrap.Offcanvas.getInstance(drawer);
+              if (instance) instance.hide();
+              else drawer.classList.remove('show');
+            } else {
+              drawer.classList.remove('show');
+              drawer.style.visibility = 'hidden';
+            }
+          }
+        }
+      });
+    </script>
     {% block extra_js %}{% endblock %}
   </body>
 </html>

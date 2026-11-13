@@ -415,3 +415,71 @@ class MotorcycleCardAndOptionsTests(TestCase):
         self.assertIn('vehicle', data)
         self.assertEqual(data['vehicle']['make'], 'Yamaha')
         self.assertEqual(data['vehicle']['model'], 'MT-09 SP')
+
+
+class ComponentInquiryIntentTests(TestCase):
+    # Verify educational component/system questions are routed correctly.
+
+    # --- intent classification ---
+    def test_classify_engine_cutout(self):
+        from apps.core.services.intent import classify_intent
+        self.assertEqual(classify_intent('what controls engine cut outs'), 'component_inquiry')
+
+    def test_classify_electrical_ignition_full(self):
+        from apps.core.services.intent import classify_intent
+        result = classify_intent(
+            'electrical and ignition what controls the engine cut outs which headlight and battery charging'
+        )
+        self.assertEqual(result, 'component_inquiry')
+
+    def test_classify_cdi_question(self):
+        from apps.core.services.intent import classify_intent
+        self.assertEqual(classify_intent('how does the CDI work on a scooter'), 'component_inquiry')
+
+    def test_classify_regulator_rectifier(self):
+        from apps.core.services.intent import classify_intent
+        self.assertEqual(classify_intent('what is the function of the regulator rectifier'), 'component_inquiry')
+
+    def test_classify_stator_tagalog(self):
+        from apps.core.services.intent import classify_intent
+        self.assertEqual(classify_intent('paano gumagana ang stator ng motor'), 'component_inquiry')
+
+    # --- guided / general routing ---
+    def test_component_inquiry_not_guided(self):
+        from apps.core.guided_diagnostic import is_guided_intent
+        self.assertFalse(is_guided_intent('what controls engine cut outs'))
+
+    def test_component_inquiry_is_general(self):
+        from apps.core.guided_diagnostic import is_general_motorcycle_query
+        self.assertTrue(is_general_motorcycle_query('what controls engine cut outs'))
+
+    def test_diagnostic_intent_is_guided(self):
+        from apps.core.guided_diagnostic import is_guided_intent
+        self.assertTrue(is_guided_intent('my engine wont start'))
+
+    def test_diagnostic_intent_not_general(self):
+        from apps.core.guided_diagnostic import is_general_motorcycle_query
+        self.assertFalse(is_general_motorcycle_query('my honda click 125 is overheating'))
+
+    # --- chat endpoint produces an answer, not the intake form ---
+    def test_chat_component_inquiry_no_vehicle_form(self):
+        import json as _json
+        from unittest.mock import patch
+        from django.urls import reverse
+        user = get_user_model().objects.create_user(
+            username='comp_tester', password='testpass123'
+        )
+        self.client.force_login(user)
+        with patch('apps.core.views._get_gemini_client', return_value=None):
+            resp = self.client.post(
+                reverse('jarvis_chat'),
+                data=_json.dumps({'message': 'what controls engine cut outs', 'history': []}),
+                content_type='application/json',
+            )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        reply = (data.get('reply') or '').lower()
+        self.assertNotIn('[vehicle-form:', reply,
+            'Component inquiry must NOT trigger the vehicle intake form')
+        self.assertGreater(len(reply.strip()), 20,
+            'Component inquiry must return a substantive answer')

@@ -2290,7 +2290,7 @@ def is_general_motorcycle_query(message, history=None):
         from apps.core.services.intent import classify_intent
         c_intent = classify_intent(message, history=history)
         if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice',
-                        'riding_gear', 'riding_advice', 'off_topic', 'resolution'):
+                        'riding_gear', 'riding_advice', 'component_inquiry', 'off_topic', 'resolution'):
             return c_intent != 'off_topic'  # off_topic is NOT a general motorcycle query
     except Exception:
         pass
@@ -2424,7 +2424,7 @@ def is_guided_intent(message, history=None, state=None):
     if not (_is_year_entry or _is_proc or _is_chip):
         from apps.core.services.intent import classify_intent
         c_intent = classify_intent(message, history=history, vehicle_profile=state.get('bike') if state else None)
-        if c_intent == 'off_topic':
+        if c_intent in ('off_topic', 'component_inquiry'):
             return False
     if _has_any(msg, RESET_PHRASES):
         return True

@@ -1687,21 +1687,38 @@
 
     await new Promise(r => setTimeout(r, 250));
 
+    let res = null;
     try {
-      const res = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ message: text, history: recentHistory }),
-      });
-      removeTyping();
-      if (!res.ok) {
-        const botErrId = appendBotMessage('A momentary malfunction, sir. Please try that again.');
-        scrollToTurnResponse(userMsgId, botErrId, 50);
-        return;
+      try {
+        res = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+          body: JSON.stringify({ message: text, history: recentHistory }),
+        });
+      } catch (netErr) {
+        // Slow internet automatic retry attempt
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+          body: JSON.stringify({ message: text, history: recentHistory }),
+        });
       }
-      const data = await res.json();
+      removeTyping();
+      let data = {};
+      if (res && res.ok) {
+        data = await res.json();
+      } else {
+        if (res) {
+          try { data = await res.json(); } catch(e) {}
+        }
+      }
       if (data.quota) updateQuotaUI(data.quota);
-      const replyText = data.reply || 'I appear to have lost that thought, sir. One more time, if you would.';
+      const replyText = data.reply || (
+        "I experienced a slight delay reaching the online diagnostic service, sir. " +
+        "Please check your connection and tap retry below.\n\n" +
+        "[chips: Retry last question | Help & capabilities | Engine won't start]"
+      );
       const botMsgId = appendBotMessage(replyText);
       scrollToTurnResponse(userMsgId, botMsgId, 50);
 
@@ -1737,6 +1754,7 @@
       const botFailId = appendBotMessage('I cannot reach the network, sir. Check the connection and I shall try again.');
       scrollToTurnResponse(userMsgId, botFailId, 50);
     } finally {
+      removeTyping();
       setLoading(false);
       input.focus();
     }

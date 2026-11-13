@@ -2800,21 +2800,9 @@
       card.innerHTML += '<div class="jarvis-structured-text">' + renderStructuredMarkdown(replyText) + '</div>';
     }
 
-    const symptoms = asArray(structured.symptoms).filter(Boolean);
-    if (symptoms.length) {
-      card.innerHTML += structuredSection('Reported symptoms', 'fa-notes-medical',
-        '<div class="jarvis-chips-grid">' + symptoms.map(item => '<span class="jarvis-chip" style="cursor:default;">' + esc(item) + '</span>').join('') + '</div>');
-    }
+// [Removed Reported symptoms per user request]
 
-    const questions = asArray(structured.missing_questions).filter(item => item && item.question);
-    if (questions.length) {
-      card.innerHTML += structuredSection('Useful next details', 'fa-circle-question',
-        questions.map(item => '<div class="jarvis-structured-test" style="margin-bottom:6px;">'
-          + '<div class="jarvis-structured-test-name">' + esc(item.question) + '</div>'
-          + (item.why ? '<div class="jarvis-structured-evidence">' + renderMarkdownInline(item.why) + '</div>' : '')
-          + (asArray(item.options).length ? '<div class="jarvis-structured-evidence">Options: ' + asArray(item.options).map(esc).join(' · ') + '</div>' : '')
-          + '</div>').join(''));
-    }
+// [Removed Useful next details per user request]
 
     const causes = asArray(structured.possible_causes).filter(item => item && item.cause);
     if (causes.length) {
@@ -2886,16 +2874,7 @@
       card.innerHTML += structuredSection('How to verify the repair', 'fa-circle-check', structuredList(verification));
     }
 
-    const sources = asArray(structured.sources).filter(item => item && (item.title || item.reference));
-    if (sources.length) {
-      card.innerHTML += structuredSection('Approved local sources', 'fa-book',
-        '<ul class="jarvis-structured-sources">' + sources.map(item =>
-          '<li>' + esc(item.title || item.reference)
-          + (item.reference && item.reference !== item.title ? '<div class="jarvis-structured-source-ref">' + esc(item.reference) + '</div>' : '')
-          + (item.reviewed ? '<span class="jarvis-structured-source-badge">reviewed</span>' : '<span class="jarvis-structured-unverified">unreviewed</span>')
-          + (item.date ? '<div class="jarvis-structured-source-ref">' + esc(item.date) + '</div>' : '')
-          + '</li>').join('') + '</ul>');
-    }
+// [Removed Approved local sources per user request]
 
     const limitations = asArray(structured.limitations).filter(Boolean);
     if (limitations.length) {
@@ -3081,6 +3060,7 @@
 
   let typingEl = null;
 
+  let typingTimer = null;
   function showTyping(anchorId) {
     if (typingEl) return;
     typingEl = document.createElement('div');
@@ -3093,9 +3073,12 @@
         <span>J.A.R.V.I.S.</span>
       </div>
       <div class="jarvis-typing-card">
-        <span class="jarvis-typing-dot"></span>
-        <span class="jarvis-typing-dot"></span>
-        <span class="jarvis-typing-dot"></span>
+        <div class="jarvis-typing-dots">
+          <span class="jarvis-typing-dot"></span>
+          <span class="jarvis-typing-dot"></span>
+          <span class="jarvis-typing-dot"></span>
+        </div>
+        <span class="jarvis-typing-status" id="jarvis-typing-status-text">Analyzing diagnostics...</span>
       </div>
     `;
     messagesContainer.appendChild(typingEl);
@@ -3104,9 +3087,32 @@
     } else {
       scrollToBottom();
     }
+
+    if (typingTimer) clearInterval(typingTimer);
+    let elapsed = 0;
+    typingTimer = setInterval(() => {
+      elapsed += 1;
+      const statusText = document.getElementById('jarvis-typing-status-text');
+      if (!statusText) return;
+      if (elapsed === 3) {
+        statusText.textContent = "Connecting to Gemini AI online...";
+      } else if (elapsed === 7) {
+        statusText.textContent = "Slow connection detected, keeping online line open...";
+      } else if (elapsed === 14) {
+        statusText.textContent = "Synthesizing motorcycle diagnostic report...";
+      } else if (elapsed === 25) {
+        statusText.textContent = "Still working, sir — AI is responding slowly...";
+      } else if (elapsed === 38) {
+        statusText.textContent = "Connection is very slow. Preparing offline answer...";
+      }
+    }, 1000);
   }
 
   function hideTyping() {
+    if (typingTimer) {
+      clearInterval(typingTimer);
+      typingTimer = null;
+    }
     if (typingEl) {
       typingEl.remove();
       typingEl = null;
@@ -3624,14 +3630,23 @@
       if (conversationId) payload.conversation_id = conversationId;
       if (retry.imageId) payload.image_id = retry.imageId;
 
-      const res = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify(payload)
-      });
+      // 50s hard timeout to prevent stuck spinner on slow connections
+      const structuredAbort = new AbortController();
+      const structuredAbortTimer = setTimeout(() => structuredAbort.abort(), 50000);
+      let res;
+      try {
+        res = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify(payload),
+          signal: structuredAbort.signal
+        });
+      } finally {
+        clearTimeout(structuredAbortTimer);
+      }
 
       let data = {};
       try { data = await res.json(); } catch (e) {}
@@ -3719,6 +3734,7 @@
       renderStructuredError(message, errorId, retry);
       scrollToBottom();
     } finally {
+      hideTyping();
       isLoading = false;
       sendBtn.disabled = false;
       inputEl.disabled = false;
@@ -3753,7 +3769,7 @@
 
   // ── Guided (Legacy) Turn ──────────────────────────────────────────────────
   async function sendGuidedMessage(manualText) {
-    const text = (manualText || inputEl.value).trim();
+    let text = (manualText || inputEl.value).trim();
     if (!text || isLoading) return;
 
     inputEl.value = '';
@@ -3793,29 +3809,81 @@
       const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
       const userLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
 
-      const res = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify({
-          message: text,
-          history: recentHistory,
-          language: userLang,
-          experience_level: userLevel
-        })
-      });
+      if (text.toLowerCase() === 'retry last request' && window._lastUserMessageText) {
+        text = window._lastUserMessageText;
+      } else {
+        window._lastUserMessageText = text;
+      }
+
+      let res = null;
+      // AbortController gives us a hard 50s ceiling — prevents infinite stuck spinner
+      let abortCtrl = new AbortController();
+      let abortTimer = setTimeout(() => abortCtrl.abort(), 50000);
+      try {
+        res = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify({
+            message: text,
+            history: recentHistory,
+            language: userLang,
+            experience_level: userLevel
+          }),
+          signal: abortCtrl.signal
+        });
+        clearTimeout(abortTimer);
+      } catch (netErr) {
+        clearTimeout(abortTimer);
+        // Slow internet automatic retry attempt
+        const statusEl = document.getElementById('jarvis-typing-status-text');
+        if (statusEl) statusEl.textContent = "Network is slow. Retrying online connection...";
+        await new Promise(r => setTimeout(r, 1500));
+        let abortCtrl2 = new AbortController();
+        let abortTimer2 = setTimeout(() => abortCtrl2.abort(), 45000);
+        try {
+          res = await fetch(CHAT_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': CSRF_TOKEN
+            },
+            body: JSON.stringify({
+              message: text,
+              history: recentHistory,
+              language: userLang,
+              experience_level: userLevel
+            }),
+            signal: abortCtrl2.signal
+          });
+          clearTimeout(abortTimer2);
+        } catch (retryErr) {
+          clearTimeout(abortTimer2);
+          res = null;
+        }
+      }
 
       hideTyping();
 
-      let reply = "A momentary network fluctuation, sir. Systems are attempting re-calibration.";
-      if (res.ok) {
+      let reply = "";
+      if (res && res.ok) {
         const data = await res.json();
         reply = data.reply || reply;
         if (data.quota) {
           updateQuotaUI(data.quota);
         }
+      } else {
+        let errData = {};
+        if (res) {
+          try { errData = await res.json(); } catch(e) {}
+        }
+        reply = errData.reply || errData.error || (
+          "I experienced a network delay reaching the online diagnostic servers, sir. " +
+          "Your connection may be slow or intermittent. Would you like me to retry now?\n\n" +
+          "[chips: Retry last request | Check connection | Help & capabilities]"
+        );
       }
 
       const botId = 'msg-b-' + Date.now();
@@ -3850,6 +3918,7 @@
       });
       scrollToBottom();
     } finally {
+      hideTyping();
       isLoading = false;
       sendBtn.disabled = false;
       inputEl.disabled = false;

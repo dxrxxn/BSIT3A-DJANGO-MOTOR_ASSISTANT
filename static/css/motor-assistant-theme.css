@@ -1219,14 +1219,16 @@ body {
 
 /* Typing indicator */
 .jarvis-typing-card {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: var(--ma-card-bg);
-  border: 1px solid var(--ma-border);
-  border-radius: 10px;
-  padding: 10px 14px;
+  gap: 10px;
+  background: var(--ma-card-bg, #131922);
+  border: 1px solid var(--ma-border, rgba(56, 189, 248, 0.2));
+  border-radius: 12px;
+  padding: 10px 16px;
   width: fit-content;
+  max-width: min(560px, 92vw);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .jarvis-typing-dot {

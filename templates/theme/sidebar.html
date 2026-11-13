@@ -117,8 +117,45 @@
 </aside>
 
 <script>
-/* Wire sidebar history and help links */
+/* Wire sidebar navigation, new diagnosis, recent sessions, history and help links */
 (function() {
+  // New Diagnosis Button
+  var newDiagBtn = document.getElementById('sidebar-btn-new-diagnosis');
+  if (newDiagBtn) {
+    newDiagBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var clearBtn = document.getElementById('btn-clear-logs');
+      if (clearBtn) {
+        clearBtn.click();
+      } else {
+        window.location.href = "{% url 'dashboard' %}";
+      }
+    });
+  }
+
+  // Recent Sessions clickable items
+  document.querySelectorAll('.jarvis-recent-session-item').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.jarvis-recent-session-item').forEach(function(b) {
+        b.classList.remove('active-session');
+        var badge = b.querySelector('.jarvis-recent-time');
+        if (badge && badge.classList.contains('is-active')) {
+          badge.classList.remove('is-active');
+        }
+      });
+      btn.classList.add('active-session');
+      var prompt = btn.getAttribute('data-session-prompt') || btn.querySelector('.jarvis-recent-title')?.textContent?.trim();
+      var input = document.getElementById('jarvis-user-input') || document.getElementById('jarvis-widget-input');
+      var send = document.getElementById('jarvis-btn-send') || document.getElementById('jarvis-widget-send');
+      if (input && send && prompt) {
+        input.value = prompt;
+        send.click();
+      }
+    });
+  });
+
+  // History link
   var histLink = document.getElementById('sidebar-history-link');
   if (histLink) {
     histLink.addEventListener('click', function(e) {
@@ -127,12 +164,14 @@
       if (histBtn) histBtn.click();
     });
   }
+
+  // Help link
   var helpLink = document.getElementById('sidebar-help-link');
   if (helpLink) {
     helpLink.addEventListener('click', function(e) {
       e.preventDefault();
-      var input = document.getElementById('jarvis-user-input');
-      var send = document.getElementById('jarvis-btn-send');
+      var input = document.getElementById('jarvis-user-input') || document.getElementById('jarvis-widget-input');
+      var send = document.getElementById('jarvis-btn-send') || document.getElementById('jarvis-widget-send');
       if (input && send) {
         input.value = "Help & capabilities";
         send.click();

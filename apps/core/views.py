@@ -52,10 +52,22 @@ def _get_gemini_client():
         return None
 
     from google import genai
+    from google.genai import types
     try:
+        timeout_ms = max(1000, int(getattr(settings, 'GEMINI_TIMEOUT_SECONDS', 45)) * 1000)
+        attempts = max(1, int(getattr(settings, 'GEMINI_MAX_RETRIES', 3)))
+        retry_options = types.HttpRetryOptions(
+            attempts=attempts,
+            initial_delay=1,
+            max_delay=8,
+            exp_base=2,
+            jitter=0.2,
+            http_status_codes=[429, 500, 502, 503, 504],
+        )
+        http_options = types.HttpOptions(timeout=timeout_ms, retry_options=retry_options)
         _gemini_client = genai.Client(
             api_key=api_key,
-            http_options={'timeout': 45000}
+            http_options=http_options
         )
     except Exception:
         try:
@@ -832,6 +844,13 @@ The user is asking a GENERAL motorcycle question — maintenance, how-to, servic
 4e. For RIDING GEAR / SAFETY EQUIPMENT questions ("what helmet", "what gear to wear"):
    - Recommend gear appropriate to the use case (commuting, sport, touring).
    - Always mention helmet safety standards (DOT/ECE/SNELL) and the ATGATT principle.
+4f. For COMPONENT FUNCTION, PURPOSE & SYSTEM INQUIRIES ("what controls X", "what is the function of Y", "how does Z work", "what is Y used for", "explain the electrical / ignition / charging system"):
+   - Act as an educational master mechanic mentor. Explain how the system operates and what each part does clearly.
+   - For electrical and ignition inquiries (e.g. cut-outs, headlights, charging):
+     * Explain what controls engine cut-outs: kill switch, ignition key switch, sidestand safety switch, bank angle sensor, and the CDI/ECU grounding or pulsing the ignition coil.
+     * Explain what powers/controls headlights: AC stator lighting coils on traditional/underbone bikes vs. DC 12V battery power through headlight relays / ignition switch / ECU on modern and EFI bikes.
+     * Explain battery charging: stator generating AC electricity -> regulator/rectifier unit converting AC to DC and maintaining ~14.0V-14.5V to charge the battery.
+   - Do NOT demand make/model or symptoms. Answer conceptually first, then offer relevant follow-up exploration chips.
 5. Never refuse a motorcycle-related question. If you do not know an exact figure, say so and give safe general guidance. Never invent torque values, clearances, fluid capacities, or part numbers.
 6. Use any vehicle details already present in the conversation. If none are known, keep the advice general — do not demand them.
 7. Match the user's language: English, Tagalog/Taglish, or Hiligaynon. Keep technical terms natural (oil, chain, brake pads, CVT, coolant).
@@ -884,10 +903,11 @@ User: {message}
 
 Your response as J.A.R.V.I.S.:"""
 
+    primary_model = model_name() or 'gemini-3.1-flash-lite'
     try:
         from google.genai import types
         response = client.models.generate_content(
-            model='gemini-3.1-flash-lite',
+            model=primary_model,
             contents=full_prompt,
             config=types.GenerateContentConfig(temperature=0.7),
         )
@@ -904,7 +924,21 @@ Your response as J.A.R.V.I.S.:"""
                 pass
         return reply_text
     except Exception as exc:
-        logger.warning('General Gemini call failed; using offline fallback: %s', exc)
+        logger.warning('General Gemini call failed (%s); attempting online fallback retry...', exc)
+        fallback = fallback_model_name()
+        if fallback and fallback != primary_model:
+            try:
+                response = client.models.generate_content(
+                    model=fallback,
+                    contents=full_prompt,
+                    config=types.GenerateContentConfig(temperature=0.7),
+                )
+                reply_text = response.text
+                if reply_text:
+                    _save_offline_knowledge(message, reply_text)
+                    return reply_text
+            except Exception as fb_exc:
+                logger.warning('Online fallback retry failed (%s); using local offline knowledge.', fb_exc)
         return None
 
 
@@ -1876,7 +1910,7 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
 
     is_general_query = is_general_motorcycle_query(message, history)
     # Route spec/model_info/comparison/buying/gear/rain to general fallback
-    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location'):
+    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location', 'component_inquiry'):
         is_general_query = True
 
     # A maintenance/how-to question must not be mistaken for a request to see a
@@ -1978,7 +2012,11 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
                 chips = FALLBACK_CHIPS['diagnostic'].get(lang, FALLBACK_CHIPS['diagnostic']['english'])
             reply += f'\n\n[chips: {chips}]'
 
-    return reply
+    # Always return a string - never None - so the view layer is protected
+    if not reply:
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        reply = _jarvis_general_fallback(message, user, history=history, language=lang)
+    return reply or ''
 
 
 def _jarvis_rule_based_diagnostic(message, user, history=None):
@@ -2940,10 +2978,16 @@ def jarvis_chat(request):
     if not isinstance(guided_state, dict):
         guided_state = {}
 
-    reply = _jarvis_response(
-        message, request.user, history=data.get('history', []), language=language,
-        experience_level=experience_level, guided_state=guided_state,
-    )
+    try:
+        reply = _jarvis_response(
+            message, request.user, history=data.get('history', []), language=language,
+            experience_level=experience_level, guided_state=guided_state,
+        )
+    except Exception as exc:
+        logger.exception("Error in _jarvis_response, falling back to offline answer: %s", exc)
+        reply = _find_offline_knowledge(message, request.user) or _jarvis_general_fallback(
+            message, request.user, history=data.get('history', []), language=language
+        )
 
     if guided_state:
         request.session['jarvis_guided'] = guided_state

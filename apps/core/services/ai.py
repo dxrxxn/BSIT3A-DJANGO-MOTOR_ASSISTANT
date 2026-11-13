@@ -275,4 +275,11 @@ def generate(prompt, *, system_instruction=None, images=None, response_schema=No
 
 
 def fallback_model_name():
-    return (getattr(settings, 'GEMINI_FALLBACK_MODEL', '') or '').strip().replace('models/', '')
+    configured = (getattr(settings, 'GEMINI_FALLBACK_MODEL', '') or '').strip().replace('models/', '')
+    primary = model_name()
+    if configured and configured != primary:
+        return configured
+    # Resilient online fallbacks when connection is slow or primary model encounters high demand
+    if primary != 'gemini-flash-latest':
+        return 'gemini-flash-latest'
+    return 'gemini-3.5-flash-lite' 

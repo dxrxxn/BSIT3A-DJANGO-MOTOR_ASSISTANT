@@ -512,9 +512,22 @@
 
     function applyConfig(key, value) {
       document.documentElement.setAttribute("data-bs-" + key, value);
+      if (document.body) {
+        document.body.setAttribute("data-bs-" + key, value);
+      }
       try {
         localStorage.setItem("tabler-" + key, value);
       } catch (e) {}
+
+      // If user switches to light theme, reset custom dark background and update UI
+      if (key === 'theme' && value === 'light') {
+        if (window.JarvisBg) {
+          window.JarvisBg.reset();
+        }
+        updateBgControls('#f1f5f9');
+      } else if (key === 'theme' && value === 'dark') {
+        updateBgControls(DEFAULT_BG);
+      }
     }
 
     function syncRadios() {
@@ -529,6 +542,9 @@
           radio.checked = (radio.value === value);
         });
         document.documentElement.setAttribute("data-bs-" + key, value);
+        if (document.body) {
+          document.body.setAttribute("data-bs-" + key, value);
+        }
       }
 
       // Sync Language & Experience level

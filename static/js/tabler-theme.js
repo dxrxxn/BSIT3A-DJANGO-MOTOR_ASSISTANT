@@ -137,12 +137,16 @@
       localStorage.setItem('tabler-' + key, param);
       selectedValue = param;
     } else {
-      var stored = localStorage.getItem('tabler-' + key);
-      // Default to dark theme for Jarvis Graphite Console
-      selectedValue = (key === 'theme' && (!stored || stored === 'light')) ? 'dark' : (stored ? stored : themeConfig[key]);
-      localStorage.setItem('tabler-' + key, selectedValue);
+      var stored = null;
+      try { stored = localStorage.getItem('tabler-' + key); } catch(e) {}
+      // Honor stored preference (light or dark); default to dark theme only if not set
+      selectedValue = stored ? stored : (key === 'theme' ? 'dark' : themeConfig[key]);
+      try { localStorage.setItem('tabler-' + key, selectedValue); } catch(e) {}
     }
     document.documentElement.setAttribute('data-bs-' + key, selectedValue);
+    if (document.body) {
+      document.body.setAttribute('data-bs-' + key, selectedValue);
+    }
   }
 
   // 3. Apply custom background immediately before DOM render
@@ -152,4 +156,13 @@
       applyJarvisBg(customBg);
     }
   } catch (e) {}
+
+  document.addEventListener('DOMContentLoaded', function() {
+    for (var k in themeConfig) {
+      var val = document.documentElement.getAttribute('data-bs-' + k);
+      if (val && document.body) {
+        document.body.setAttribute('data-bs-' + k, val);
+      }
+    }
+  });
 })();

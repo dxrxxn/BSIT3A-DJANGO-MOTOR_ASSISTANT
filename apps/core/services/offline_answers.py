@@ -446,6 +446,63 @@ def get_traffic_overheat_answer(query: str, make: str = '', model: str = '', lan
 # Public entry point
 # ---------------------------------------------------------------------------
 
+
+
+def get_electrical_ignition_inquiry_answer(message, language='english'):
+    """Educational breakdown of motorcycle electrical, ignition, cut-out, headlight, and charging systems."""
+    answers = {
+        'english': (
+            "Here is how the motorcycle electrical and ignition systems operate and what controls each circuit, sir:\n\n"
+            "### 1. Engine Cut-Out Controls (Ignition Shutdown)\n"
+            "The ignition circuit determines when spark is delivered or killed. Engine cut-out is governed by:\n"
+            "- **Engine Stop Switch (Kill Switch):** Handlebar switch that grounds the CDI kill circuit (on AC-CDI bikes) or cuts 12V power to the ECU/ignition coil (on DC/EFI bikes).\n"
+            "- **Ignition Key Switch:** Main power interrupter that disconnects battery/stator feed.\n"
+            "- **Side Stand Safety Switch:** Interrupts ignition if the kickstand is down while in gear.\n"
+            "- **Bank Angle Sensor (Roll-over sensor):** In modern EFI bikes, immediately shuts down ignition and fuel pump if the bike tilts past ~65 degrees in a crash.\n"
+            "- **CDI / ECU (Engine Control Unit):** Coordinates the pickup coil (CKP pulser) timing and grounds or pulses the ignition coil.\n\n"
+            "### 2. Headlight Power & Control\n"
+            "- **AC-Fed Lighting (Traditional/Carb Scooters & Underbones):** Powered directly by the AC lighting coil of the stator, independent of the battery. The headlight intensity fluctuates slightly with engine RPM.\n"
+            "- **DC-Fed Lighting (Modern EFI & Big Bikes):** Runs on steady 12V DC directly from the battery/charging system through a headlight relay activated by the ignition switch or ECU once the engine starts.\n\n"
+            "### 3. Battery Charging Circuit\n"
+            "- **Stator / Magneto:** Permanent magnets spinning around copper windings generate 3-phase (or single-phase) AC voltage (typically 20V–60V+ AC depending on RPM).\n"
+            "- **Regulator / Rectifier (RR Unit):** Converts (rectifies) AC into DC, then regulates voltage to a safe charging level (~14.0V–14.5V DC).\n"
+            "- **Battery:** Absorbs the regulated DC current to stay charged and powers starting, ECU, and auxiliary accessories.\n\n"
+            "[chips: Test charging voltage | How regulator works | Kill switch wiring | AC vs DC CDI]"
+        ),
+        'tagalog': (
+            "Narito po ang paliwanag kung paano gumagana ang electrical at ignition system ng motor at kung ano ang kumokontrol sa bawat bahagi, sir:\n\n"
+            "### 1. Kumokontrol sa Engine Cut-Out (Pagpatay ng Makina)\n"
+            "- **Kill Switch (Engine Stop Switch):** Switch sa manibela na nagi-ground sa CDI o nagpuputol ng kuryente sa ignition coil/ECU.\n"
+            "- **Ignition Switch (Susi):** Pangunahing nagpuputol ng koneksyon ng kuryente sa buong motor.\n"
+            "- **Side Stand Switch:** Papatay sa makina kapag ibinaba ang stand habang naka-kambyo.\n"
+            "- **Bank Angle Sensor (Tilt Sensor):** Sa mga EFI motor, pinuputol ang kuryente kapag natumba ang motor para sa kaligtasan.\n"
+            "- **CDI / ECU:** Nagpapadala o nagpuputol ng trigger pulse sa ignition coil patungo sa spark plug.\n\n"
+            "### 2. Kumokontrol sa Headlight\n"
+            "- **AC System (Karburo / Klasikong motor):** Diretsong kinukuha sa lighting coil ng stator; lumalakas ang ilaw habang binobomba ang gas.\n"
+            "- **DC System (Moderno / EFI):** Mula sa baterya o regulated 12V DC gamit ang headlight relay.\n\n"
+            "### 3. Sistema ng Pag-charge ng Baterya\n"
+            "- **Stator / Magneto:** Gumagawa ng AC voltage mula sa pag-ikot ng makina.\n"
+            "- **Regulator / Rectifier:** Kino-convert ang AC papuntang DC at pinapanatili ang boltahe sa ~14.0V–14.5V para ma-karga nang tama ang 12V baterya nang hindi nasisira.\n\n"
+            "[chips: Sukatin ang boltahe | Paano gumagana ang rectifier | Kill switch wiring | AC vs DC CDI]"
+        ),
+        'hiligaynon': (
+            "Yari ang paathag kon paano nagagana ang electrical kag ignition system sang motor, sir:\n\n"
+            "### 1. Nagakontrol sang Engine Cut-Out (Pagpatay sang Makina)\n"
+            "- **Kill Switch:** Switch sa manibela nga naga-ground sa CDI ukon nagautod sang kuryente sa ignition coil.\n"
+            "- **Ignition Switch (Sabi):** Nagautod sang kuryente sa bilog nga motor.\n"
+            "- **Side Stand Switch:** Nagapatay sang makina kon ipanaog ang stand samtang naka-kambyo.\n"
+            "- **CDI ukon ECU:** Nagakontrol sang spark kag kuryente pakadto sa spark plug.\n\n"
+            "### 2. Kuryente sang Headlight\n"
+            "- **AC System:** Diretso nagahalin sa stator lighting coil; nagasiga sing mas masanag kon magbomba gas.\n"
+            "- **DC System:** Halin sa baterya paagi sa relay para pirme stable ang suga.\n\n"
+            "### 3. Pag-charge sang Baterya\n"
+            "- **Stator:** Nagahimo sang AC power samtang nagaliko ang makina.\n"
+            "- **Regulator/Rectifier:** Ginaliwat ang AC pakadto sa DC kag ginapabilin sa 14V-14.5V agud mapuno ang baterya.\n\n"
+            "[chips: Sukat sang kuryente | Paano mag-obra ang rectifier | Kill switch check | Stator vs Battery]"
+        ),
+    }
+    return answers.get(language, answers['english'])
+
 def get_offline_answer(message, language='english'):
     """
     Return a rider-friendly offline answer for the given message, or None
@@ -471,6 +528,10 @@ def get_offline_answer(message, language='english'):
     for tl, en in tl_map.items():
         if tl in msg:
             msg = msg.replace(tl, en)
+
+    # 0. Electrical / ignition / component educational inquiry
+    if any(k in msg for k in ['cut out', 'cutout', 'cut-out', 'engine cut', 'headlight', 'charging', 'electrical and ignition', 'what controls', 'ignition system', 'stator', 'rectifier', 'regulator']) and any(q in msg for q in ['what', 'which', 'how', 'ano', 'paano', 'explain', 'controls']):
+        return get_electrical_ignition_inquiry_answer(msg, language=lang)
 
     # 1. Comparison: "aerox vs nmax", "which is better"
     if re.search(r'\b(?:vs|versus|compare|comparison)\b', msg) or ('better' in msg and any(b in msg for b in ['aerox', 'nmax', 'click', 'beat', 'raider', 'sniper'])):
