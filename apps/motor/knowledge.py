@@ -1633,6 +1633,187 @@ MAPPED_SYMPTOMS = {
                 ],
             }
         ]
+    },
+    'cvt_dragging_shudder': {
+        'symptom_id': 9008,
+        'symptom_name': 'CVT Shuddering, Dragging, or Belt Slipping on Acceleration',
+        'category': 'Drivetrain & Transmission',
+        'system': 'CVT Transmission',
+        'component': 'CVT Belt & Clutch Bell',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'routine',
+        'safety_warning': 'Inspect CVT components on the center stand with the engine OFF. Never touch spinning pulleys.',
+        'description': 'Scooter shudders violently during low-speed takeoff, groans under throttle, or engine revs high without proportionate speed.',
+        'questions': [
+            {
+                'key': 'shudder_timing',
+                'order': 1,
+                'en': 'Does the shudder happen from a complete stop as you start rolling, or at high speed?',
+                'tl': 'Nangyayari ba ang panginginig mula sa paghinto papuntang arangkada, o sa mabilis na takbo?',
+                'hil': 'Nagaturo-turo bala ang kurog halin sa untat pakadto sa arangkada, ukon sa madasig nga dalagan?',
+                'options': [
+                    {'label': 'A. Shudders during initial takeoff (0-20 km/h)', 'value': 'takeoff_shudder', 'cause_hint': 'clutch_bell_glaze'},
+                    {'label': 'B. Engine revs high but scooter accelerates slowly', 'value': 'belt_slip', 'cause_hint': 'belt_roller_wear'},
+                ]
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1021,
+                'possible_cause': 'Glazed clutch shoes and brake-dust contamination inside the clutch bell',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Remove CVT outer cover and clutch bell; inspect inside surface of outer bell and clutch friction pads.',
+                'expected_result': 'Bell inner friction surface has uniform satin steel finish; clutch shoes have at least 2.0 mm friction lining remaining.',
+                'alternative_outcome': 'Mirror-like glassy glaze, blue heat discolouration, or thick black rubber-dust powder coating the shoe lining.',
+                'tools_required': '8mm T-handle, 17mm socket or clutch bell holder tool, 120-grit emery sandpaper, brake/parts cleaner spray.',
+                'repair_instructions': (
+                    "- [ ] 1. Place scooter on solid center stand and switch ignition OFF.\n"
+                    "- [ ] 2. Remove CVT plastic duct and 8mm casing bolts; lift off CVT cover.\n"
+                    "- [ ] 3. Secure clutch bell with holder tool; loosen 17mm nut and remove bell.\n"
+                    "- [ ] 4. Clean accumulated black belt dust using brake cleaner spray.\n"
+                    "- [ ] 5. Deglaze inner steel bell surface and clutch shoe pads in a cross-hatch pattern using 120-grit sandpaper.\n"
+                    "- [ ] 6. Wipe clean with dry rag; reinstall bell, torque nut to 49 Nm (confirm in manual), and reinstall CVT cover."
+                ),
+                'advice_notes': 'Deglazing the clutch bell and shoes resolves 90% of low-speed scooter shudder without buying new parts.',
+                'when_to_stop': 'If clutch bell is warped out-of-round or has deep blue overheating heat cracks, replace bell and shoes.',
+                'source_reference': 'Automatic Scooter V-Matic Transmission Service Standards',
+                'source_title': 'Scooter CVT Clutch & Drive Belt Service Manual',
+                'source_date': '2023-05-18',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'CVT Transmission',
+                'component': 'Clutch Bell & Shoes',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Wear safety glasses and dust mask when cleaning CVT dust.',
+                'verification_procedure': 'Smooth, progressive acceleration from standstill with zero shudder or judder.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'Scooter CVT Drive Belt & Roller Set', 'part_number': '23100-K0S-V01', 'quantity': 1, 'estimated_cost': '650.00'}
+                ]
+            }
+        ]
+    },
+    'chain_slack_noise': {
+        'symptom_id': 9009,
+        'symptom_name': 'Drive Chain Loose, Slapping Swingarm, or Skipping Sprocket Teeth',
+        'category': 'Drivetrain & Transmission',
+        'system': 'Final Drive',
+        'component': 'Drive Chain & Sprockets',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'warning',
+        'safety_warning': 'Never adjust or lubricate chain with engine running or bike in gear. Severe amputation hazard.',
+        'description': 'Rattling or metallic slapping noise from the left swingarm, jerky low-speed throttle response, or chain visibly sagging.',
+        'questions': [
+            {
+                'key': 'chain_condition',
+                'order': 1,
+                'en': 'How much vertical movement does the chain have at the bottom middle?',
+                'tl': 'Gaano kaluwag ang kumpas ng kadena sa gitna sa ilalim?',
+                'hil': 'Daw ano kaluag ang hulag sang kadena sa tunga sa idalom?',
+                'options': [
+                    {'label': 'A. More than 40-50 mm (slapping swingarm)', 'value': 'excessive_slack', 'cause_hint': 'chain_needs_adjustment'},
+                    {'label': 'B. Chain has tight and loose spots when rotating wheel', 'value': 'uneven_stretch', 'cause_hint': 'chain_worn_out'},
+                ]
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1022,
+                'possible_cause': 'Drive chain slack exceeding 35 mm service limit due to normal elongation',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Place bike on side or center stand in Neutral (per swingarm sticker); measure vertical mid-span deflection with a ruler.',
+                'expected_result': 'Total free slack at lowest run midpoint is 20 to 30 mm (or 25–35 mm for dual-sports).',
+                'alternative_outcome': 'Slack exceeds 45 mm, allowing chain to strike the rubber swingarm slider or skip rear sprocket teeth.',
+                'tools_required': 'Rear axle wrench (typically 17mm/19mm), 10mm/12mm open-end adjuster wrenches, ruler.',
+                'repair_instructions': (
+                    "- [ ] 1. Place motorcycle on center stand in Neutral with engine OFF.\n"
+                    "- [ ] 2. Loosen rear axle nut 1-2 turns (do not remove completely).\n"
+                    "- [ ] 3. Loosen adjuster locknuts on both left and right swingarm ends.\n"
+                    "- [ ] 4. Turn both adjusters clockwise equally (1/4 turn at a time) to push axle rearward.\n"
+                    "- [ ] 5. Align index hash marks on both sides of swingarm for straight wheel alignment.\n"
+                    "- [ ] 6. Verify 20–30 mm mid-run vertical play; tighten axle nut firmly (typically 80–100 Nm).\n"
+                    "- [ ] 7. Tighten adjuster locknuts; lubricate chain with dedicated O-ring chain lube."
+                ),
+                'advice_notes': 'Never run a chain banjo-string tight: when rear suspension compresses over bumps, a tight chain destroys the gearbox output shaft bearing.',
+                'when_to_stop': 'If chain adjuster is at maximum rear mark, or rear sprocket teeth look hooked like wave crests, replace chain and both sprockets as a matched set.',
+                'source_reference': 'Motorcycle Industry Council Drive Chain Maintenance Guidelines',
+                'source_title': 'Motorcycle Drive Chain & Sprocket Standards',
+                'source_date': '2023-01-20',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Final Drive',
+                'component': 'Drive Chain',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Keep fingers away from sprockets and chain pinch points.',
+                'verification_procedure': 'Spin rear wheel by hand; confirm smooth rotation with 25 mm uniform slack and no binding.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': '428 Heavy-Duty O-Ring Motorcycle Drive Chain', 'part_number': '428HD-120L', 'quantity': 1, 'estimated_cost': '550.00'}
+                ]
+            }
+        ]
+    },
+    'clutch_slip_stiff': {
+        'symptom_id': 9010,
+        'symptom_name': 'Manual Clutch Slipping Under Acceleration or Stiff Lever',
+        'category': 'Drivetrain & Transmission',
+        'system': 'Clutch System',
+        'component': 'Clutch Cable & Friction Plates',
+        'vehicle_type': 'motorcycle',
+        'urgency_level': 'routine',
+        'safety_warning': 'Inspect on flat ground with engine OFF. Ensure correct freeplay before diagnosing internal clutch wear.',
+        'description': 'Engine RPM rises when twisting throttle in high gear without speed increasing, or clutch lever requires heavy hand strain to pull.',
+        'questions': [
+            {
+                'key': 'clutch_symptom',
+                'order': 1,
+                'en': 'Does the clutch lever have free play, and does the engine RPM shoot up without the bike accelerating?',
+                'tl': 'May play ba ang clutch lever, at tumataas ba ang RPM ng makina pero hindi bumibilis ang motor?',
+                'hil': 'May libre bala ang clutch lever, kag nagasaka ang RPM sang makina pero wala nagadasig ang motor?',
+                'options': [
+                    {'label': 'A. Engine revs up in 3rd/4th gear but speed lags (slipping)', 'value': 'clutch_slipping', 'cause_hint': 'no_freeplay_or_worn_plates'},
+                    {'label': 'B. Lever is very heavy/hard to pull or does not snap back', 'value': 'stiff_cable', 'cause_hint': 'dry_cable_frayed'},
+                ]
+            }
+        ],
+        'guides': [
+            {
+                'guide_id': 1023,
+                'possible_cause': 'Zero clutch cable free play (cable constantly pulling clutch partially disengaged)',
+                'confidence_level': 'High',
+                'diagnostic_test': 'Measure lever slack at the ball-end of the handlebar clutch lever before tension is felt.',
+                'expected_result': '10 to 15 mm of easy free play at lever tip before the clutch arm begins moving.',
+                'alternative_outcome': 'Zero slack (cable is taut at rest), which holds clutch release arm under continuous tension causing severe plate slip.',
+                'tools_required': '10mm/12mm open-end wrenches, cable lube tool or lubricant syringe.',
+                'repair_instructions': (
+                    "- [ ] 1. Slide back rubber dust boot at handlebar clutch perch.\n"
+                    "- [ ] 2. Loosen knurled lock ring; thread barrel adjuster inward toward perch to add slack.\n"
+                    "- [ ] 3. If barrel adjuster is bottomed out, adjust lower nuts on engine crankcase cable bracket.\n"
+                    "- [ ] 4. Set lever tip free play to 10–15 mm.\n"
+                    "- [ ] 5. Tighten knurled lock ring and slide rubber boot back in place.\n"
+                    "- [ ] 6. Test ride in 3rd gear under full throttle; verify solid engine-to-wheel coupling with zero rev flare."
+                ),
+                'advice_notes': 'Also verify correct JASO MA/MA2 motorcycle engine oil. Automotive "Energy Conserving" oils contain friction modifiers that cause clutch slip.',
+                'when_to_stop': 'If free play is correct and correct JASO MA oil is used, but clutch still slips under load, friction plates and springs are worn out and must be replaced.',
+                'source_reference': 'Manual Motorcycle Multi-Plate Wet Clutch Standards',
+                'source_title': 'Wet Clutch Cable & Friction Plate Service Manual',
+                'source_date': '2023-04-12',
+                'review_status': 'approved',
+                'reviewed': True,
+                'difficulty_level': 'Beginner',
+                'system': 'Clutch System',
+                'component': 'Clutch Cable & Perch',
+                'vehicle_type': 'motorcycle',
+                'safety_precautions': 'Do not test clutch performance in heavy traffic or near pedestrians.',
+                'verification_procedure': 'Clutch disengages fully with lever pulled and bites firmly with zero slip under full throttle in 4th gear.',
+                'source_score': 5.0,
+                'required_parts': [
+                    {'name': 'OEM Replacement Motorcycle Clutch Cable', 'part_number': '54011-K001', 'quantity': 1, 'estimated_cost': '180.00'}
+                ]
+            }
+        ]
     }
 }
 
@@ -1674,6 +1855,22 @@ def _match_mapped_symptom(query_lowered, vehicle_type='motorcycle'):
     if (('oil leak' in q or 'leaking oil' in q or 'tagas ng langis' in q or 'tulo sang langis' in q or
          ('leak' in q and 'oil' in q) or ('tagas' in q and 'langis' in q)) and 'fuel' not in q and 'gas' not in q):
         return [dict(MAPPED_SYMPTOMS['oil_leak'])]
+
+    # 8. CVT shudder / dragging / belt slipping
+    if ('cvt' in q or 'v-belt' in q or 'roller' in q or 'clutch bell' in q or
+        ('shudder' in q and ('takeoff' in q or 'start' in q or 'arangkada' in q or 'scooter' in q)) or
+        ('kurog' in q and ('arangkada' in q or 'scooter' in q)) or
+        ('nangangatal' in q and ('arangkada' in q or 'scooter' in q)) or
+        ('nginig' in q and ('arangkada' in q or 'scooter' in q))):
+        return [dict(MAPPED_SYMPTOMS['cvt_dragging_shudder'])]
+
+    # 9. Drive chain loose / slapping swingarm / skipping
+    if ('chain' in q or 'kadena' in q or 'sprocket' in q) and any(k in q for k in ['slack', 'loose', 'slap', 'slapping', 'ingay', 'gahod', 'hampas', 'kaluag', 'luwag', 'skip']):
+        return [dict(MAPPED_SYMPTOMS['chain_slack_noise'])]
+
+    # 10. Clutch slipping / stiff cable
+    if ('clutch' in q) and any(k in q for k in ['slip', 'slipping', 'dumudulas', 'stiff', 'matigas', 'mabigat', 'free play', 'freeplay', 'cable', 'kable']):
+        return [dict(MAPPED_SYMPTOMS['clutch_slip_stiff'])]
 
     return []
 

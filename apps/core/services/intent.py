@@ -175,6 +175,9 @@ RESOLUTION_PATTERNS = [
 ]
 
 FOLLOWUP_PATTERNS = [
+    ('continue_session', [
+        r'\b(?:can\s+we\s+continue|continue|resume|let\'?s\s+continue|let\s+us\s+continue|go\s+on|proceed|sige\s+continue|tuloy\s+na|tuloy\s+natin|ituloy\s+natin|magpatuloy|padayon|where\s+were\s+we|saan\s+tayo|ano\s+(?:ang\s+)?susunod|what\'?s\s+next|next\s+step|sunod\s+nga\s+tikang)\b',
+    ]),
     ('check_first', [
         r'what\s+should\s+i\s+check\s+first',
         r'what\s+(?:to|do\s+i)\s+check\s+first',
@@ -223,6 +226,10 @@ MOTORCYCLE_VOCABULARY = [
     'duke', 'gixxer', 'gsx', 'mt-09', 'mt09', 'mt 09', 'mt-09 sp', 'mt-07', 'mt-03', 'mt-15', 'mt15', 'cp3', 'r15', 'cbr', 'crf',
     'wr155', 'klx', 'w175', 'ninja', 'fz', 'sight', 'sz', 'boxer',
     'discover', 'pulsar', 'dink', 'like 125', 'like 150',
+    # Displacements & Engine Types
+    '50cc', '70cc', '100cc', '110cc', '115cc', '125cc', '135cc', '150cc', '155cc',
+    '160cc', '175cc', '200cc', '250cc', '300cc', '400cc', '500cc', '650cc', '890cc',
+    'displacement', 'engine size', 'engine type', 'fuel-injected', 'carbureted',
     # Parts & Systems
     'engine', 'makina', 'piston', 'cylinder', 'silindro', 'head gasket',
     'cylinder head', 'valve', 'valves', 'balbula', 'tappet', 'rocker arm',
@@ -337,8 +344,46 @@ def is_motorcycle_related(norm: str, history=None, vehicle_profile=None) -> bool
         if _DIAGNOSTIC_TERMS.search(norm):
             return True
 
-        # Short in-session answers (under 6 words) that aren\'t open-ended general knowledge questions
-        if len(norm.split()) <= 5 and not norm.startswith(('who ', 'where is ', 'what is ', 'how do i cook', 'tell me ')):
+        # In-session continuation / resumption phrases
+        _CONTINUATION_TERMS = re.compile(
+            r'\b(?:continue|resume|proceed|go\s+on|tuloy|padayon|saan\s+tayo|where\s+were\s+we|next\s+step|what\'?s\s+next)\b',
+            re.IGNORECASE,
+        )
+        if _CONTINUATION_TERMS.search(norm):
+            return True
+
+        # In-session part location inquiry (e.g. "where is it located", "where can i find it", "where to look for it", "how to remove", "can you show me where it is")
+        _LOCATION_INQUIRY = re.compile(
+            r'\b(?:where\s+is\s+it|where\s+it\s+is|where\s+can\s+i\s+find|where\s+do\s+i\s+find|where\s+to\s+look|where\s+to\s+find|'
+            r'how\s+to\s+locate|how\s+do\s+i\s+remove|how\s+to\s+remove|how\s+to\s+find|show\s+me\s+where|show\s+where\s+to\s+look|'
+            r'cant\s+find|can\'?t\s+find|cannot\s+find|dont\s+know\s+where|don\'?t\s+know\s+where|'
+            r'saan\s+(?:makikita|banda|matatagpuan|nandun)|san\s+makikita|asan\s+banda|nasaan\s+ang|di\s+ko\s+mahanap)\b',
+            re.IGNORECASE,
+        )
+        if _LOCATION_INQUIRY.search(norm):
+            return True
+
+        # In-session visual / diagram requests (e.g. "provide an image", "provide a visual image", "show me an image", "picture please")
+        _VISUAL_INQUIRY = re.compile(
+            r'\b(?:provide\s+(?:an?\s+)?(?:visual\s+)?image|provide\s+image|show\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|diagram|photo)|'
+            r'give\s+me\s+(?:an?\s+)?(?:image|picture|diagram)|picture\s+please|image\s+please|visual\s+(?:reference|diagram|image)|'
+            r'pakita\s+mo\s+(?:ang\s+)?(?:larawan|litrato|picture))\b',
+            re.IGNORECASE,
+        )
+        if _VISUAL_INQUIRY.search(norm):
+            return True
+
+        # Short in-session answers (under 6 words) that aren't open-ended general knowledge questions
+        if len(norm.split()) <= 6 and not norm.startswith(('who ', 'how do i cook', 'tell me a joke', 'tell me a poem')):
+            return True
+
+    # Location or visual requests with part/component/assembly context
+    if re.search(r'\b(?:parts?|components?|assembl(?:y|ies))\b', norm):
+        _GENERIC_PART_LOC = re.compile(
+            r'\b(?:where\s+(?:is|to|can|are|do)|how\s+to\s+(?:locate|find|remove)|provide\s+(?:an?\s+)?(?:visual\s+)?image|show\s+(?:me\s+)?(?:where|an?\s+image))\b',
+            re.IGNORECASE,
+        )
+        if _GENERIC_PART_LOC.search(norm):
             return True
 
     return False
@@ -486,17 +531,17 @@ def classify_intent(message: str, history=None, vehicle_profile=None) -> IntentR
             return _make_intent('spec', sub_intent=pattern, entity=None, is_off_topic=False, details={})
 
     # 13. Component location
-    if re.search(r'\b(?:where\s+(?:is|to\s+locate|can\s+i\s+find|are|do\s+i\s+find)|nasaan\s+ang|diin\s+ang|saan\s+matatagpuan)\b', norm) and not re.search(r'\b(?:noise|tunog|usok|smoke)\b', norm):
+    if re.search(r'\b(?:where\s+(?:is|to\s+(?:look\s+for|look|locate|find)|can\s+i\s+(?:find|look\s+for|locate|look)|are|do\s+i\s+(?:find|look\s+for|locate|look)|to\s+find)|how\s+to\s+locate|how\s+to\s+find|how\s+do\s+i\s+find|how\s+do\s+i\s+locate|nasaan\s+ang|diin\s+ang|saan\s+(?:matatagpuan|makikita|hahanapin))\b', norm) and not re.search(r'\b(?:noise|tunog|usok|smoke)\b', norm):
         # Explicit part word mentioned (e.g. "where to locate that part", "where is that component")
         if re.search(r'\b(?:parts?|components?)\b', norm):
             return _make_intent('location', sub_intent='part_location', entity=None, is_off_topic=False, details={})
-        # Pure pronoun reference (e.g. "where is it located")
+        # Pure pronoun reference (e.g. "where is it located", "where to look for it", "where can i find it")
         if re.search(r'\b(?:it|that|diyan|dito|ini|ina)\b', norm) and not any(kw in norm for kw in MOTORCYCLE_VOCABULARY if kw not in ('part', 'parts', 'component', 'components')):
             from apps.core.guided_diagnostic import _history_mentions_part
             if _history_mentions_part(history):
                 return _make_intent('location', sub_intent='part_location', entity=None, is_off_topic=False, details={})
             if history and len(history) > 0:
-                return _make_intent('diagnostic', sub_intent='symptom_location', entity=None, is_off_topic=False, details={})
+                return _make_intent('location', sub_intent='part_location', entity=None, is_off_topic=False, details={})
             return _make_intent('off_topic', sub_intent='non_motorcycle', entity=None, is_off_topic=True, details={'reason': 'Non-motorcycle location'})
         if is_motorcycle_related(norm, history, vehicle_profile):
             return _make_intent('location', sub_intent='part_location', entity=None, is_off_topic=False, details={})

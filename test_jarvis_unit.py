@@ -201,6 +201,91 @@ class TestOfflineKnowledge:
             'how often should radiator coolant be flushed', user)
         assert hit == 'Flush the coolant every 12,000 km, sir.'
 
+    def test_diagnostic_engine_saves_and_retrieves_offline_knowledge(self, user, clean_knowledge, monkeypatch):
+        from apps.core.diagnostic_engine import orchestrate_diagnostic_response
+        import apps.core.diagnostic_engine as de
+
+        # 1. Simulate successful online Gemini answer
+        online_response = "Step 1: Check your spark plug gap. Step 2: Test ignition coil.\n\n[chips: Test coil | Check gap]"
+        monkeypatch.setattr(de, 'call_configured_ai', lambda prompt, **kw: online_response)
+
+        res = orchestrate_diagnostic_response('Honda Click 125i won\'t accelerate properly', user)
+        assert res == online_response
+        # Verify it was persisted to JarvisKnowledge
+        cached_entry = JarvisKnowledge.objects.filter(clean_query__contains='click').first()
+        assert cached_entry is not None
+        assert cached_entry.ai_response == online_response
+
+        # 2. Simulate complete network offline / poor signal connection failure
+        monkeypatch.setattr(de, 'call_configured_ai', lambda prompt, **kw: (_ for _ in ()).throw(ConnectionError("No route to host")))
+
+        offline_res = orchestrate_diagnostic_response('Honda Click 125i won\'t accelerate properly', user)
+        assert "Stored Offline Knowledge" in offline_res
+        assert "Step 1: Check your spark plug gap" in offline_res
+
+    def test_assistant_saves_and_retrieves_offline_knowledge(self, user, clean_knowledge, monkeypatch):
+        from apps.core.services import assistant
+        from apps.core.services.ai import AiResult
+
+        monkeypatch.setattr(assistant, 'is_ai_available', lambda: True)
+        online_ai_text = "The stator on a Click 125i produces AC voltage to the regulator.\n\n[chips: Stator | Battery | Rectifier]"
+        monkeypatch.setattr(assistant, 'generate', lambda *a, **k: AiResult(text=online_ai_text, model='gemini-2.5-flash'))
+
+        res = assistant.respond(user, 'how does the stator work on my Click 125i')
+        assert res['mode'] == 'ai'
+        assert JarvisKnowledge.objects.count() > 0
+
+        # Now simulate AI service failure / offline
+        monkeypatch.setattr(assistant, 'is_ai_available', lambda: False)
+        offline_res = assistant.respond(user, 'how does the stator work on my Click 125i')
+        assert offline_res['mode'] == 'offline'
+        assert "stator on a Click 125i" in offline_res['reply']
+
+    def test_poor_connection_retries_before_failing(self, monkeypatch):
+        from apps.core.services import ai
+
+        attempts = []
+
+        class FakeClient:
+            class models:
+                @staticmethod
+                def generate_content(*args, **kwargs):
+                    attempts.append(len(attempts) + 1)
+                    if len(attempts) < 2:
+                        raise TimeoutError("Socket read timeout")
+                    res = type('Response', (), {
+                        'text': 'Recovered after retry!',
+                        'candidates': [],
+                        'usage_metadata': None,
+                    })()
+                    return res
+
+        monkeypatch.setattr(ai, 'is_ai_configured', lambda: True)
+        monkeypatch.setattr(ai, '_daily_budget_remaining', lambda: True)
+        monkeypatch.setattr(ai, '_make_client', lambda: (FakeClient(), type('Types', (), {'GenerateContentConfig': lambda **kw: None})))
+
+        result = ai.generate("Is my battery dead?")
+        assert result.text == 'Recovered after retry!'
+        assert len(attempts) == 2
+
+    def test_new_mapped_symptoms_offline(self):
+        from apps.motor.knowledge import retrieve_verified_knowledge
+        
+        # 1. CVT shudder
+        cvt_res = retrieve_verified_knowledge('my scooter has cvt shudder and vibration on takeoff')
+        assert len(cvt_res) > 0
+        assert 'CVT' in cvt_res[0]['symptom_name']
+
+        # 2. Chain slack
+        chain_res = retrieve_verified_knowledge('motorcycle drive chain is loose and slapping swingarm')
+        assert len(chain_res) > 0
+        assert 'Chain' in chain_res[0]['symptom_name']
+
+        # 3. Clutch slipping
+        clutch_res = retrieve_verified_knowledge('manual clutch is slipping when accelerating')
+        assert len(clutch_res) > 0
+        assert 'Clutch' in clutch_res[0]['symptom_name']
+
 
 # ---------------------------------------------------------------------------
 # Rule-based diagnostic engine (offline fallback)

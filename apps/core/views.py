@@ -439,6 +439,19 @@ GENERAL_FALLBACK_TEXTS = {
         "The owner's manual is always the final authority for exact specs.\n\n"
         "[chips: How often should I change oil? | What to check before changing a tire? | How to clean and lube the chain? | Brake maintenance checklist | Full maintenance schedule]"
     ),
+    'carb_fi': (
+        "Here is why diagnosing a **Carbureted (Carb)** motorcycle is completely different from a **Fuel-Injected (FI)** motorcycle, {sir}:\n\n"
+        "**1. Diagnostic & Workshop Tools:**\n"
+        "- **Carburetor:** Flathead & JIS screwdrivers, aerosol carburetor cleaner, ultra-fine copper wire/jet cleaners, float level gauge, and 8mm/10mm wrenches.\n"
+        "- **Fuel-Injected (FI):** Digital multimeter (volts/ohms/duty cycle), mechanical fuel pressure test gauge (0–5 bar / 0–70 psi), backprobe pins, sensor-safe cleaner, and OBD-II / DLC scanner.\n\n"
+        "**2. Diagnostic Methods:**\n"
+        "- **Carburetor:** Purely mechanical and atmospheric/vacuum-driven. You isolate fuel flow via float bowl drain, jet orifice cleanliness, slide diaphragm condition, and pilot mixture screw adjustments.\n"
+        "- **Fuel-Injected (FI):** Electro-mechanical and ECU-controlled. You verify electrical signals, listen for the 2-second fuel pump prime buzz at key-ON, test line pressure (must hit 2.5–3.0 bar / 36–43 psi), and confirm battery cranking voltage stays above 10.5V.\n\n"
+        "**3. What Actually Goes Wrong (Failure Modes):**\n"
+        "- **Carburetor:** Clogged pilot/main jets from stale fuel/gum, stuck float needle valve leaking gas through overflow tube, intake manifold rubber boot vacuum leaks, misadjusted air/fuel mixture.\n"
+        "- **Fuel-Injected (FI):** Fuel pump motor or relay failure, clogged injector pintle nozzle, weak battery causing ECU brownout during cranking, dirty throttle body butterfly/IACV, or malfunctioning TPS/CKP sensors.\n\n"
+        "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Engine won't start | Check engine noise]"
+    ),
 }
 
 
@@ -449,6 +462,8 @@ def _general_topic(message):
     def has(*words):
         return any(re.search(r'\b' + re.escape(w) + r'\b', msg) for w in words)
 
+    if has('carb or fi', 'carb vs fi', 'carburetor vs fi', 'difference between carb', 'carburetor or fi', 'karburador o fi', 'carburetor or fuel injected'):
+        return 'carb_fi'
     if has('oil', 'langis', 'lana', 'lubricant'):
         return 'oil'
     if has('tyre', 'tire', 'gulong', 'wheel', 'rim'):
@@ -606,6 +621,17 @@ def _extract_vehicle_info(text, history=None):
         'displacement': None,
     }
 
+    def _norm_make(mk):
+        if not mk:
+            return mk
+        m_str = str(mk).strip()
+        m_up = m_str.upper()
+        if m_up in ('KTM', 'BMW', 'TVS', 'SYM', 'CFMOTO', 'QJ MOTOR'):
+            return m_up
+        if m_str.lower() in ('harley', 'harley-davidson', 'harley davidson'):
+            return 'Harley-Davidson'
+        return m_str.title()
+
     # 1. Direct parsing for structured form submissions
     form_match = re.search(r'Vehicle:\s*(?:(\d{4})\s+)?([A-Za-z]+)\s+([^\(\n,]+)', text or '', re.I)
     if form_match:
@@ -613,14 +639,18 @@ def _extract_vehicle_info(text, history=None):
         if y:
             info['year'] = y.strip()
         if mk:
-            info['make'] = mk.strip().title()
+            info['make'] = _norm_make(mk)
         if mdl:
             info['model'] = mdl.strip().title()
 
     makes = [
-        'honda', 'yamaha', 'suzuki', 'kawasaki', 'toyota', 'mitsubishi', 'nissan',
-        'ford', 'hyundai', 'isuzu', 'mazda', 'bmw', 'ducati', 'ktm', 'vespa',
-        'tvs', 'bajaj', 'kymco', 'sym', 'rusi', 'motorstar', 'keeway', 'royal enfield'
+        'honda', 'yamaha', 'suzuki', 'kawasaki', 'bajaj', 'ktm', 'tvs',
+        'vespa', 'kymco', 'sym', 'rusi', 'motorstar', 'keeway', 'royal enfield',
+        'bmw', 'ducati', 'triumph', 'harley-davidson', 'harley', 'aprilia',
+        'benelli', 'bristol', 'cf moto', 'cfmoto', 'husqvarna', 'piaggio',
+        'euro motors', 'skygo', 'mitsukoshi', 'lifan', 'dayun', 'qj motor',
+        'zontes', 'voge', 'betamotor', 'beta', 'sherco', 'gasgas',
+        'toyota', 'mitsubishi', 'nissan', 'ford', 'hyundai', 'isuzu', 'mazda'
     ]
 
     # Prioritize make in current message before checking conversation history
@@ -628,33 +658,97 @@ def _extract_vehicle_info(text, history=None):
     if not info['make']:
         for m in makes:
             if re.search(r'\b' + re.escape(m) + r'\b', current_text):
-                info['make'] = m.title()
+                info['make'] = _norm_make(m)
                 make_switched = True
                 break
         if not info['make'] and history_turns:
             for turn_txt in reversed(history_turns):
                 for m in makes:
                     if re.search(r'\b' + re.escape(m) + r'\b', turn_txt):
-                        info['make'] = m.title()
+                        info['make'] = _norm_make(m)
                         break
                 if info['make']:
                     break
 
     models_list = [
-        'mt-09 sp', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'r15', 'r3', 'r1', 'r6',
-        'cbr 150r', 'cbr',
-        'click 125i', 'click 150i', 'click 160', 'click',
+        # Yamaha Big Bike & Sport
+        'mt-09 sp', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'mt-15', 'mt-10', 'mt 15', 'mt 07', 'mt 03',
+        'yzf-r15', 'yzf-r3', 'yzf-r7', 'yzf-r1', 'yzf-r6', 'r15', 'r3', 'r7', 'r1', 'r6',
+        'xsr 155', 'xsr 700', 'xsr 900', 'xsr', 'wr 155r', 'wr 155', 'wr 250', 'wr155', 'wr',
+        'serow 250', 'serow', 'xt250', 'tracer 9', 'tracer', 'tmax 560', 'tmax', 'xmax 300', 'xmax',
+        # Yamaha Underbone & Scooter & Commuter
         'aerox 155', 'aerox', 'nmax 155', 'nmax',
-        'raider 150', 'raider', 'mio sporty', 'mio i 125', 'mio gear', 'mio soul', 'mio',
-        'fazzio', 'gravis', 'burgman street', 'burgman',
-        'beat', 'pcx 160', 'pcx 150', 'pcx', 'adv 160', 'adv 150', 'adv',
-        'sniper 155', 'sniper 150', 'sniper',
-        'tmx 125', 'tmx supremo', 'tmx', 'barako 175', 'barako',
-        'bajaj ct 100', 'bajaj ct100', 'ct 100', 'ct100', 'ct 125', 'ct125',
+        'sniper 155', 'sniper 150', 'sniper 135', 'sniper',
+        'mio sporty', 'mio i 125', 'mio gear', 'mio soul i 125', 'mio soul', 'mio gravis', 'mio fazzio', 'mio',
+        'fazzio', 'gravis', 'sight 115', 'sight', 'vega force', 'vega', 'crypton', 'ytx 125', 'ytx', 'sz 160', 'sz',
+        # Honda Dual-Sport & Off-Road & Big Bike
+        'crf 150l', 'crf 150', 'crf 250', 'crf 250l', 'crf 250 rally', 'crf 300l', 'crf 300 rally', 'crf 300',
+        'crf 450', 'crf 1000l', 'crf 1100l', 'crf 1100', 'crf', 'xr 150l', 'xr 150', 'xr 200', 'xr', 'transalp',
+        'cbr 150r', 'cbr 250rr', 'cbr 500r', 'cbr 650r', 'cbr 1000rr', 'cbr',
+        'cb 150r', 'cb 500x', 'cb 650r', 'cb 1000r', 'cb150x', 'cb',
+        'rebel 300', 'rebel 500', 'rebel 1100', 'rebel', 'gold wing',
+        # Honda Scooters & Commuters & Underbones
+        'click 125i', 'click 150i', 'click 160', 'click',
+        'beat fi', 'beat street', 'beat',
+        'pcx 160', 'pcx 150', 'pcx', 'adv 160', 'adv 150', 'adv 750', 'adv',
+        'wave 100', 'wave 110', 'wave 125', 'wave alpha', 'wave dash', 'wave',
+        'xrm 110', 'xrm 125', 'xrm motard', 'xrm',
+        'tmx 125 alpha', 'tmx 125', 'tmx supremo', 'tmx 155', 'tmx',
+        'dio', 'zoomer x', 'zoomer', 'genio', 'airblade 150', 'airblade 160', 'airblade',
+        'scoopy', 'supra gtr 150', 'supra gtr', 'winner x', 'winner', 'monkey 125', 'dax 125',
+        # Suzuki Underbone, Scooter & Sport
+        'raider 150 fi', 'raider 150', 'raider j crossover', 'raider 125', 'raider',
+        'smash 115 fi', 'smash 115', 'smash',
+        'burgman street 125 ex', 'burgman street', 'burgman 200', 'burgman 400', 'burgman',
+        'gixxer 150', 'gixxer 250', 'gixxer sf250', 'gixxer',
+        'gsx-r150', 'gsx-s150', 'gsx-r1000', 'gsx-s750', 'gsx-8s', 'gsx-8r', 'gsx r150', 'gsx s150', 'gsx',
+        'v-strom 250 sx', 'v-strom 650', 'v-strom 800de', 'v-strom 1050', 'v-strom', 'vstrom',
+        'address 110', 'address 125', 'address', 'avenis 125', 'avenis',
+        'skydrive sport', 'skydrive crossover', 'skydrive', 'hayabusa', 'katana', 'sv650', 'gd110', 'thunder 125',
+        # Kawasaki Backbone, Sport, Dual-Sport
+        'barako 175', 'barako ii', 'barako',
+        'ninja 250', 'ninja 300', 'ninja 400', 'ninja 500', 'ninja 650', 'ninja 1000',
+        'ninja zx-25r', 'ninja zx-4r', 'ninja zx-6r', 'ninja zx-10r', 'zx-25r', 'zx-4r', 'zx-6r', 'zx-10r', 'ninja',
+        'z125', 'z400', 'z650', 'z900', 'z1000',
+        'versys x-300', 'versys-x 300', 'versys 650', 'versys 1000', 'versys',
+        'klx 140', 'klx 150', 'klx 230', 'klx 250', 'klx 300', 'klx', 'd-tracker 150', 'd-tracker',
+        'w175', 'w800', 'vulcan s', 'vulcan 900', 'vulcan', 'eliminator', 'fury 125', 'fury', 'ksr 110', 'ksr',
+        # Bajaj / Kawasaki-Bajaj
+        'bajaj ct 100', 'bajaj ct100', 'ct 100', 'ct100', 'ct 125', 'ct125', 'ct 150', 'ct150',
         'kawasaki ct100', 'kawasaki ct 100',
-        'rouser 200', 'rouser 160', 'rouser 135', 'rouser',
-        'boxer 150', 'discover 125', 'pulsar 200', 'pulsar 150', 'pulsar',
-        'wave 110', 'wave 125', 'wave', 'xrm 125', 'xrm', 'smash 115', 'smash',
+        'rouser ns200', 'rouser ns160', 'rouser ns125', 'rouser rs200', 'rouser 200', 'rouser 160', 'rouser 135', 'rouser',
+        'dominar 400', 'dominar', 'boxer 150', 'boxer', 'discover 125', 'discover',
+        'pulsar ns200', 'pulsar 200', 'pulsar 180', 'pulsar 150', 'pulsar', 'avenger 220', 'avenger', 'platina',
+        # KTM
+        'duke 200', 'duke 250', 'duke 390', 'duke 790', 'duke 890', 'duke 1290', 'duke',
+        'rc 200', 'rc 390', 'rc', 'adventure 250', 'adventure 390', 'adventure 790', 'adventure 890', 'adventure 1290',
+        # TVS
+        'apache rtr 160', 'apache rtr 180', 'apache rtr 200', 'apache rr 310', 'apache',
+        'ntorq 125', 'ntorq', 'dazz', 'xl100', 'jupiter', 'rockz', 'max 4r', 'ronin',
+        # Vespa / Piaggio
+        'primavera 150', 'primavera', 'sprint 150', 'sprint', 'gts 150', 'gts 300', 'gts', 's 125', 'lx 125',
+        # Royal Enfield
+        'classic 350', 'hunter 350', 'meteor 350', 'bullet 350',
+        'himalayan 450', 'himalayan 411', 'himalayan', 'scram 411',
+        'interceptor 650', 'continental gt 650', 'super meteor 650',
+        # CFMOTO
+        '450sr', '300sr', '250sr', '450mt', '300cl-x', '700cl-x', '400nk', '300nk', '250nk', '650nk', '800nk', 'papio',
+        # Kymco
+        'like 125', 'like 150i', 'like 150', 'super 8', 'agility 125', 'ak550', 'krv 180', 'xciting 400', 'downtown 350',
+        # BMW
+        'g310r', 'g310gs', 'f750gs', 'f850gs', 'f900r', 'f900xr', 'r1250gs', 'r1300gs', 's1000rr', 's1000r', 'r ninet',
+        # Ducati
+        'monster 821', 'monster 937', 'monster', 'panigale v2', 'panigale v4', 'panigale',
+        'scrambler 800', 'scrambler', 'multistrada v2', 'multistrada v4', 'multistrada', 'hypermotard', 'desertx',
+        # Harley-Davidson
+        'iron 883', 'iron 1200', 'street glide', 'road glide', 'fat boy', 'sportster s', 'sportster',
+        'softail', 'breakout', 'pan america', 'heritage classic', 'low rider',
+        # Keeway, Benelli, Bristol, Rusi, Motorstar
+        'cafe racer 152', 'superlight 200', 'k-light 202', 'tnt 135', 'tnt 300', 'tnt 600',
+        'leoncino 500', 'leoncino 250', 'trk 502x', 'trk 502',
+        'classic 400', 'veloce 500', 'venturi 500', 'classic 250', 'mojo 200', 'flash 150', 'cafe 400',
+        'star-x 125', 'star-x 155',
+        # Cars (for vehicle diagnostic boundary)
         'vios', 'mirage g4', 'mirage', 'wigo', 'innova', 'fortuner', 'hilux',
         'civic', 'corolla', 'city', 'almera', 'rush', 'raize', 'montero'
     ]
@@ -665,6 +759,15 @@ def _extract_vehicle_info(text, history=None):
         for mdl in models_list:
             mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', current_text)
             if mdl_match:
+                if mdl == 'click':
+                    # Do not treat symptom/noise words like "starter clicks" or "i hear a click" as Honda Click
+                    sound_click = re.search(
+                        r'\b(?:starter|relay|solenoid|dash|switch|sound|noise|hear|tunog|muffled|rapid|loud|single)\s+clicks?\b|\bclicks?\s+(?:sound|noise|tunog|when|or|lang|rapidly|instead)\b',
+                        current_text,
+                        re.I
+                    )
+                    if sound_click or not re.search(r'\b(?:honda\s+click|my\s+click|click\s+\d+|a\s+click)\b', current_text, re.I):
+                        continue
                 label = mdl_match.group(0).title()
                 label = re.sub(r'(\d+)I\b', r'\1i', label)
                 if 'ct' in label.lower():
@@ -673,30 +776,86 @@ def _extract_vehicle_info(text, history=None):
                 if 'mt' in label.lower():
                     label = re.sub(r'\bMt\b', 'MT', label, flags=re.I)
                     label = re.sub(r'\bMt-?0?9\b', 'MT-09 SP', label, flags=re.I)
+                for acr in ['Crf', 'Cbr', 'Cb', 'Gsx', 'Klx', 'Adv', 'Pcx', 'Tmx', 'Xrm', 'Rc', 'Gs', 'Trk', 'Nk', 'Sr', 'Wr']:
+                    label = re.sub(r'\b' + acr + r'\b', acr.upper(), label)
                 info['model'] = label
                 model_switched = True
                 # If make wasn't explicitly stated, infer make from brand-specific model
                 if not info['make']:
-                    if any(k in mdl for k in ['ct 100', 'ct100', 'rouser', 'boxer', 'pulsar', 'discover']):
+                    if any(k in mdl for k in ['ct 100', 'ct100', 'ct 125', 'ct 150', 'rouser', 'boxer', 'pulsar', 'discover', 'dominar', 'platina', 'avenger']):
                         info['make'] = 'Bajaj'
-                    elif any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'xrm', 'tmx']):
+                    elif any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'xrm', 'tmx', 'crf', 'cbr', 'cb', 'rebel', 'dio', 'zoomer', 'genio', 'airblade', 'scoopy', 'winner', 'supra gtr', 'transalp', 'xr ']):
                         info['make'] = 'Honda'
-                    elif any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'r15', 'r3', 'r1', 'r6']):
+                    elif any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt-09', 'mt 09', 'mt09', 'mt-07', 'mt-03', 'mt-15', 'r15', 'r3', 'r7', 'r1', 'r6', 'yzf', 'xsr', 'wr ', 'wr1', 'serow', 'sight', 'vega', 'crypton', 'tmax', 'xmax', 'tracer', 'ytx', 'sz']):
                         info['make'] = 'Yamaha'
-                    elif any(k in mdl for k in ['raider', 'smash', 'burgman']):
+                    elif any(k in mdl for k in ['raider', 'smash', 'burgman', 'gixxer', 'gsx', 'v-strom', 'vstrom', 'address', 'avenis', 'skydrive', 'hayabusa', 'katana', 'sv650']):
                         info['make'] = 'Suzuki'
-                    elif any(k in mdl for k in ['barako']):
+                    elif any(k in mdl for k in ['barako', 'ninja', 'zx-', 'z125', 'z400', 'z650', 'z900', 'z1000', 'versys', 'klx', 'd-tracker', 'w175', 'w800', 'vulcan', 'eliminator', 'fury', 'ksr']):
                         info['make'] = 'Kawasaki'
+                    elif any(k in mdl for k in ['duke', 'rc 200', 'rc 390', 'adventure 390']):
+                        info['make'] = 'KTM'
+                    elif any(k in mdl for k in ['apache', 'ntorq', 'dazz', 'xl100', 'jupiter', 'ronin']):
+                        info['make'] = 'TVS'
+                    elif any(k in mdl for k in ['primavera', 'sprint', 'gts', 'lx 125', 's 125']):
+                        info['make'] = 'Vespa'
+                    elif any(k in mdl for k in ['classic 350', 'hunter 350', 'meteor 350', 'bullet 350', 'himalayan', 'interceptor', 'continental gt']):
+                        info['make'] = 'Royal Enfield'
+                    elif any(k in mdl for k in ['450sr', '300sr', '250sr', '450mt', 'cl-x', 'nk', 'papio']):
+                        info['make'] = 'CFMOTO'
+                    elif any(k in mdl for k in ['like 125', 'like 150', 'krv', 'ak550', 'super 8']):
+                        info['make'] = 'Kymco'
+                    elif any(k in mdl for k in ['g310', 'f750', 'f850', 'f900', 'r1250', 'r1300', 's1000']):
+                        info['make'] = 'BMW'
+                    elif any(k in mdl for k in ['panigale', 'monster', 'scrambler', 'multistrada', 'desertx']):
+                        info['make'] = 'Ducati'
+                    elif any(k in mdl for k in ['iron 883', 'iron 1200', 'street glide', 'road glide', 'fat boy', 'sportster', 'softail', 'breakout', 'pan america', 'heritage classic', 'low rider']):
+                        info['make'] = 'Harley-Davidson'
                 break
+
+        # Dynamic model extraction: if make is known in current message but model was not in fixed list,
+        # extract the model phrase immediately following the make name
+        if not info['model'] and info['make']:
+            make_re = re.search(r'\b' + re.escape(info['make'].lower()) + r'\s+([a-z0-9\-\.\/]+(?:\s+[a-z0-9\-\.\/]+){0,3})', current_text)
+            if make_re:
+                cand = make_re.group(1).strip()
+                stop_words = {
+                    'motorcycle', 'motor', 'bike', 'motorbike', 'scooter', 'underbone',
+                    'is', 'are', 'was', 'were', 'my', 'the', 'a', 'an', 'has', 'have',
+                    'with', 'and', 'na', 'ang', 'sang', 'ng', 'ko', 'mo', 'ni', 'kay',
+                    'won\'t', 'wont', 'cannot', 'cant', 'can\'t', 'ayaw', 'indi', 'problem',
+                    'issue', 'brake', 'brakes', 'engine', 'starting', 'starts', 'noise',
+                    'leak', 'leaking', 'overheat', 'overheating', 'smoke', 'smoking',
+                    'speed', 'gear', 'oil', 'battery', 'flat', 'light', 'lights', 'clutch'
+                }
+                cand_tokens = cand.split()
+                valid_tokens = []
+                for t in cand_tokens:
+                    if t in stop_words or any(t.startswith(sw) for sw in ['preno', 'makina', 'kuryente', 'baterya', 'sira']):
+                        break
+                    valid_tokens.append(t)
+                if valid_tokens:
+                    cand_model = " ".join(valid_tokens).title()
+                    for acronym in ['Crf', 'Mt', 'Cbr', 'Cb', 'Gsx', 'Klx', 'Adv', 'Pcx', 'Tmx', 'Ct', 'Xrm', 'Rc', 'Gs', 'Trk', 'Nk', 'Sr', 'Wr']:
+                        cand_model = re.sub(r'\b' + acronym + r'\b', acronym.upper(), cand_model)
+                    info['model'] = cand_model
+                    model_switched = True
 
         if not info['model'] and history_turns and not make_switched:
             for turn_txt in reversed(history_turns):
                 for mdl in models_list:
                     mdl_match = re.search(r'\b' + re.escape(mdl) + r'\b', turn_txt)
                     if mdl_match:
+                        if mdl == 'click':
+                            sound_click = re.search(
+                                r'\b(?:starter|relay|solenoid|dash|switch|sound|noise|hear|tunog|muffled|rapid|loud|single)\s+clicks?\b|\bclicks?\s+(?:sound|noise|tunog|when|or|lang|rapidly|instead)\b',
+                                turn_txt,
+                                re.I
+                            )
+                            if sound_click or not re.search(r'\b(?:honda\s+click|my\s+click|click\s+\d+|a\s+click)\b', turn_txt, re.I):
+                                continue
                         # Guard: If make is known, ensure historical model is compatible with that make
-                        honda_only = any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm', 'cbr'])
-                        yamaha_only = any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt', 'r15', 'r3', 'r1', 'r6'])
+                        honda_only = any(k in mdl for k in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm', 'cbr', 'crf'])
+                        yamaha_only = any(k in mdl for k in ['aerox', 'nmax', 'mio', 'fazzio', 'gravis', 'sniper', 'mt', 'r15', 'r3', 'r1', 'r6', 'xsr', 'wr'])
                         if info['make'] == 'Yamaha' and honda_only:
                             continue
                         if info['make'] == 'Honda' and yamaha_only:
@@ -709,6 +868,8 @@ def _extract_vehicle_info(text, history=None):
                         if 'mt' in label.lower():
                             label = re.sub(r'\bMt\b', 'MT', label, flags=re.I)
                             label = re.sub(r'\bMt-?0?9\b', 'MT-09 SP', label, flags=re.I)
+                        for acr in ['Crf', 'Cbr', 'Cb', 'Gsx', 'Klx', 'Adv', 'Pcx', 'Tmx', 'Xrm', 'Rc', 'Gs', 'Trk', 'Nk', 'Sr', 'Wr']:
+                            label = re.sub(r'\b' + acr + r'\b', acr.upper(), label)
                         info['model'] = label
                         break
                 if info['model']:
@@ -716,10 +877,10 @@ def _extract_vehicle_info(text, history=None):
 
     # Brand compatibility guard: If make is Yamaha, never allow a Honda model like Click, and vice-versa
     if info['make'] == 'Yamaha' and info['model']:
-        if any(h in info['model'].lower() for h in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm']):
+        if any(h in info['model'].lower() for h in ['click', 'beat', 'pcx', 'adv', 'wave', 'tmx', 'xrm', 'crf']):
             info['model'] = None
     elif info['make'] == 'Honda' and info['model']:
-        if any(y in info['model'].lower() for y in ['aerox', 'nmax', 'mio', 'fazzio', 'sniper', 'mt']):
+        if any(y in info['model'].lower() for y in ['aerox', 'nmax', 'mio', 'fazzio', 'sniper', 'mt-', 'mt 0', 'mt0', 'r15', 'r3', 'r7', 'xsr', 'wr ']):
             info['model'] = None
 
     if info['make'] and info['model'] and info['model'].lower().startswith(info['make'].lower()):
@@ -745,14 +906,32 @@ def _extract_vehicle_info(text, history=None):
             if motorcycle_ctx or not off_topic_ctx:
                 info['year'] = year_candidate
 
-    # Type detection
-    if any(k in active_attr_text for k in ['scooter', 'click', 'aerox', 'nmax', 'mio', 'beat', 'pcx', 'adv', 'fazzio', 'burgman']):
+    # Type detection: use word boundaries so 'click' doesn't match 'clicks' or symptom descriptions
+    scooter_patterns = [
+        r'\bscooters?\b', r'\baerox\b', r'\bnmax\b', r'\bmio\b', r'\bpcx\b', r'\badv\b',
+        r'\bfazzio\b', r'\bburgman\b', r'\bdio\b', r'\bzoomer\b', r'\bgenio\b',
+        r'\bairblade\b', r'\bscoopy\b', r'\baddress\b', r'\bavenis\b', r'\bskydrive\b',
+        r'\bprimavera\b', r'\bsprint\b', r'\bgts\b', r'\bntorq\b'
+    ]
+    is_scooter = any(re.search(pat, active_attr_text, re.I) for pat in scooter_patterns)
+    if not is_scooter and re.search(r'\b(?:honda\s+click|click\s+\d+|my\s+click)\b', active_attr_text, re.I):
+        is_scooter = True
+    if not is_scooter and re.search(r'\b(?:honda\s+beat|beat\s+fi|my\s+beat)\b', active_attr_text, re.I):
+        is_scooter = True
+
+    if is_scooter:
         info['type'] = 'scooter'
-    elif any(k in active_attr_text for k in ['car', 'sedan', 'suv', 'van', 'truck', 'kotse', 'awto', 'salakyan', 'vios', 'wigo']):
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['cruiser', 'harley', 'iron 883', 'street glide', 'fat boy', 'sportster', 'softail', 'rebel', 'vulcan', 'eliminator']):
+        info['type'] = 'cruiser'
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['dual-sport', 'dual sport', 'trail', 'dirt bike', 'dirtbike', 'enduro', 'crf', 'klx', 'wr 155', 'wr155', 'xr 150', 'xr 200']):
+        info['type'] = 'dual-sport'
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['underbone', 'wave', 'xrm', 'raider', 'sniper', 'smash', 'sight', 'vega', 'fury']):
+        info['type'] = 'underbone'
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['car', 'sedan', 'suv', 'van', 'truck', 'kotse', 'awto', 'salakyan', 'vios', 'wigo']):
         info['type'] = 'car'
-    elif any(k in active_attr_text for k in ['tricycle', 'toda', 'trike']):
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['tricycle', 'toda', 'trike']):
         info['type'] = 'tricycle'
-    elif any(k in active_attr_text for k in ['motorcycle', 'motor', 'bike', 'underbone', 'ct 100', 'ct100', 'tmx', 'barako', 'rouser', 'boxer']):
+    elif any(re.search(r'\b' + re.escape(k) + r'\b', active_attr_text, re.I) for k in ['motorcycle', 'motorbike', 'motor', 'bike', 'ct 100', 'ct100', 'tmx', 'barako', 'rouser', 'boxer']):
         info['type'] = 'motorcycle'
 
     # Brake detection
@@ -762,16 +941,53 @@ def _extract_vehicle_info(text, history=None):
         info['brake_type'] = 'drum'
 
     # Fuel system detection
-    if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject|inject(?:ed|ion)', active_attr_text):
+    if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject|inject(?:ed|ion)', active_attr_text, re.I):
         info['engine_fuel'] = 'FI'
-    elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', active_attr_text) or (info['model'] and any(k in info['model'].lower() for k in ['ct 100', 'ct100', 'barako', 'tmx 125', 'wave 110', 'xrm 125'])):
+    elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', active_attr_text, re.I):
         info['engine_fuel'] = 'Carburetor'
+    elif info['model']:
+        mdl_lower = info['model'].lower()
+        if re.search(r'\b\d+i\b|\bfi\b', mdl_lower) or any(k in mdl_lower for k in [
+            'click 125i', 'click 150i', 'click 160', 'pcx', 'adv', 'aerox', 'nmax',
+            'fazzio', 'gravis', 'burgman', 'sniper 155', 'beat fi', 'mio i 125',
+            'mio soul i', 'crf 300l', 'crf 150l', 'mt-09', 'mt 09', 'ninja 400',
+            'duke 390', 'duke 200', 'r3', 'r15', 'xsr', 'iron 883'
+        ]):
+            info['engine_fuel'] = 'FI'
+        elif any(k in mdl_lower for k in ['ct 100', 'ct100', 'barako', 'tmx 125', 'tmx 155', 'wave 100', 'xrm 110', 'mio sporty', 'fury 125']):
+            info['engine_fuel'] = 'Carburetor'
 
-    disp_match = re.search(r'\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b', active_attr_text)
+    disp_match = re.search(r'\b(\d{2,4}\s?cc|\d\.\d\s?[lL])\b', active_attr_text, re.I)
     if disp_match:
         info['displacement'] = disp_match.group(1).upper()
-    elif info['model'] and ('ct 100' in info['model'].lower() or 'ct100' in info['model'].lower()):
-        info['displacement'] = '100CC'
+    else:
+        disp_num = re.search(
+            r'\b(?:engine\s*(?:size|displacement|type)?[:\s]+|is\s+it\s+|it\s+is\s+|mine\s+is\s+|a\s+|my\s+)?'
+            r'(50|70|100|110|115|125|135|150|155|160|175|180|200|220|230|250|286|300|321|350|373|390|400|450|500|600|650|689|700|750|790|800|850|883|890|900|937|1000|1100|1200|1250|1290|1300)\b'
+            r'(?:\s*cc|\b(?=\s*(?:or|and|engine|type|makina|motor|bike|scooter|underbone|size|displacement)))',
+            active_attr_text,
+            re.I
+        )
+        if disp_num:
+            info['displacement'] = f"{disp_num.group(1)}CC"
+        elif info['model']:
+            mdl_lower = info['model'].lower()
+            m_disp = re.search(r'\b(50|70|100|110|115|125|135|150|155|160|175|180|200|220|230|250|286|300|321|350|373|390|400|450|500|600|650|689|700|750|790|800|850|883|890|900|937|1000|1100|1200|1250|1290|1300)\b', mdl_lower)
+            if m_disp:
+                info['displacement'] = f"{m_disp.group(1)}CC"
+            elif any(k in mdl_lower for k in ['r3', 'mt-03', 'mt 03']):
+                info['displacement'] = '321CC'
+            elif any(k in mdl_lower for k in ['r15', 'mt-15', 'mt 15', 'xsr 155']):
+                info['displacement'] = '155CC'
+            elif any(k in mdl_lower for k in ['aerox', 'nmax']):
+                info['displacement'] = '155CC'
+            elif 'beat' in mdl_lower:
+                info['displacement'] = '110CC'
+            elif 'barako' in mdl_lower:
+                info['displacement'] = '175CC'
+
+    if info['model'] and ('ct 100' in info['model'].lower() or 'ct100' in info['model'].lower()):
+        info['displacement'] = info['displacement'] or '100cc'
         info['type'] = info['type'] or 'motorcycle'
         info['engine_fuel'] = info['engine_fuel'] or 'Carburetor'
 
@@ -783,6 +999,38 @@ def _extract_vehicle_info(text, history=None):
         info['displacement'] = info['displacement'] or '125cc'
         info['type'] = info['type'] or 'Scooter'
         info['engine_fuel'] = info['engine_fuel'] or 'FI'
+    elif info['model'] and 'crf' in info['model'].lower():
+        info['type'] = info['type'] or 'dual-sport'
+        if '300' in info['model'].lower():
+            info['displacement'] = info['displacement'] or '286cc'
+            info['engine_fuel'] = info['engine_fuel'] or 'FI'
+        elif '150' in info['model'].lower():
+            info['displacement'] = info['displacement'] or '149cc'
+            info['engine_fuel'] = info['engine_fuel'] or 'FI'
+        elif '250' in info['model'].lower():
+            info['displacement'] = info['displacement'] or '249cc'
+            info['engine_fuel'] = info['engine_fuel'] or 'FI'
+        else:
+            info['engine_fuel'] = info['engine_fuel'] or 'FI'
+    elif info['model'] and 'ninja' in info['model'].lower():
+        info['type'] = info['type'] or 'Sport Bike'
+        info['engine_fuel'] = info['engine_fuel'] or 'FI'
+    elif info['model'] and 'duke' in info['model'].lower():
+        info['type'] = info['type'] or 'Naked / Sport'
+        info['engine_fuel'] = info['engine_fuel'] or 'FI'
+    elif (info['make'] and 'harley' in info['make'].lower()) or (info['model'] and any(k in info['model'].lower() for k in ['iron 883', 'street glide', 'fat boy', 'sportster', 'softail', 'cruiser'])):
+        info['type'] = info['type'] or 'Cruiser'
+        info['engine_fuel'] = info['engine_fuel'] or 'FI'
+        if not info['displacement']:
+            if info['model'] and '883' in info['model'].lower():
+                info['displacement'] = '883cc'
+            elif info['model'] and '1200' in info['model'].lower():
+                info['displacement'] = '1200cc'
+            else:
+                info['displacement'] = '1746cc'
+
+    if not info['type']:
+        info['type'] = 'motorcycle'
 
     return info
 
@@ -1117,28 +1365,28 @@ The diagnostic UI displays 4 steps: (01 Describe issue -> 02 Run safe checks -> 
   4. NEVER show a vehicle-form or say you prepared an intake form when answering "what is X" or picture requests.
   5. NEVER say "I don't know" for these common parts — use the visual reference library below.
 
-- Use these EXACT image URLs (Wikimedia Commons, reliable):
-  - Brake Caliper: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Disc_brake_dba.jpg/480px-Disc_brake_dba.jpg | Brake Caliper]`
-  - Brake Pad: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Brake_disc_and_pads.jpg/480px-Brake_disc_and_pads.jpg | Brake Pads & Disc]`
-  - Disc Brake: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Disk_brake_dsc03270.jpg/480px-Disk_brake_dsc03270.jpg | Disc Brake System]`
-  - Sprocket: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sprocket_stars.jpg/480px-Sprocket_stars.jpg | Drive Sprocket]`
-  - Drive Chain: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/A_drive_chain.jpg/480px-A_drive_chain.jpg | Motorcycle Drive Chain]`
-  - Spark Plug: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Spark_plug_comparison.jpg/480px-Spark_plug_comparison.jpg | Spark Plug]`
-  - Carburetor: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Carburetor_of_a_scooter.jpg/480px-Carburetor_of_a_scooter.jpg | Carburetor]`
-  - Battery: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Yuasa_YTX12-BS.jpg/480px-Yuasa_YTX12-BS.jpg | Motorcycle Battery]`
-  - Radiator: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Radiator-overflow.jpg/480px-Radiator-overflow.jpg | Radiator]`
-  - Piston: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/4-Stroke-Engine.gif/240px-4-Stroke-Engine.gif | Engine Piston]`
-  - Headlight / Headlamp: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Honda_Click_150i_V3.jpg/480px-Honda_Click_150i_V3.jpg | Motorcycle Headlight]`
-  - Honda Click Headlight: `[part-image: https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/2022_Honda_Click_160_ABS.jpg/500px-2022_Honda_Click_160_ABS.jpg | Honda Click Headlight]`
-  - Tail Light: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Motorcycle_tail_light.jpg/480px-Motorcycle_tail_light.jpg | Motorcycle Tail Light]`
-  - Starter Motor: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg | Starter Motor]`
-  - CVT (Continuously Variable Transmission): `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Variator_and_belt.jpg/480px-Variator_and_belt.jpg | CVT Variator & Belt]`
-  - Shock Absorber: `[part-image: https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Mini_Shocks.JPG/500px-Mini_Shocks.JPG | Shock Absorber]`
-  - Front Fork: `[part-image: https://upload.wikimedia.org/wikipedia/commons/8/8b/Bmw-telescopic.jpg | Motorcycle Front Fork]`
-  - Air Filter: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Air_filter_element.jpg/480px-Air_filter_element.jpg | Air Filter Element]`
-  - Oil Filter: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Oil_filter_cutaway.jpg/480px-Oil_filter_cutaway.jpg | Oil Filter Cutaway]`
-  - Fuel Injector: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Fuel_injector.jpg/480px-Fuel_injector.jpg | Fuel Injector]`
-  - Throttle Body: `[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Throttle_body.jpg/480px-Throttle_body.jpg | Throttle Body]`
+- Use these EXACT image URLs (locally-served SVG diagrams — always available, no internet needed):
+  - Brake Caliper: `[part-image: /static/img/parts/brake_caliper.svg | Brake Caliper]`
+  - Brake Pad: `[part-image: /static/img/parts/brake_caliper.svg | Brake Pads & Disc]`
+  - Disc Brake: `[part-image: /static/img/parts/brake_caliper.svg | Disc Brake System]`
+  - Sprocket: `[part-image: /static/img/parts/drive_chain.svg | Drive Sprocket]`
+  - Drive Chain: `[part-image: /static/img/parts/drive_chain.svg | Motorcycle Drive Chain]`
+  - Spark Plug: `[part-image: /static/img/parts/spark_plug.svg | Spark Plug]`
+  - Carburetor: `[part-image: /static/img/parts/carburetor.svg | Carburetor]`
+  - Battery: `[part-image: /static/img/parts/battery.svg | Motorcycle Battery]`
+  - Radiator: `[part-image: /static/img/parts/radiator.svg | Radiator]`
+  - Piston: `[part-image: /static/img/parts/component.svg | Engine Piston]`
+  - Headlight / Headlamp: `[part-image: /static/img/parts/headlight.svg | Motorcycle Headlight]`
+  - Honda Click Headlight: `[part-image: /static/img/parts/headlight.svg | Honda Click Headlight]`
+  - Tail Light: `[part-image: /static/img/parts/headlight.svg | Motorcycle Tail Light]`
+  - Starter Motor: `[part-image: /static/img/parts/starter_motor.svg | Starter Motor]`
+  - CVT (Continuously Variable Transmission): `[part-image: /static/img/parts/cvt.svg | CVT Variator & Belt]`
+  - Shock Absorber: `[part-image: /static/img/parts/component.svg | Shock Absorber]`
+  - Front Fork: `[part-image: /static/img/parts/component.svg | Motorcycle Front Fork]`
+  - Air Filter: `[part-image: /static/img/parts/air_filter.svg | Air Filter Element]`
+  - Oil Filter: `[part-image: /static/img/parts/oil_filter.svg | Oil Filter Cutaway]`
+  - Fuel Injector: `[part-image: /static/img/parts/component.svg | Fuel Injector]`
+  - Throttle Body: `[part-image: /static/img/parts/component.svg | Throttle Body]`
 
 ## 8. NO VOLUNTARY OR ASSUMED SYMPTOMS (CRITICAL)
 - NEVER invent, assume, or voluntarily draft troubleshooting for a symptom (such as assuming a "No-Start" condition) if the user has NOT reported a problem or breakdown!
@@ -1205,7 +1453,7 @@ PART_VISUAL_LIBRARY = {
         'squeezing the brake pads against both sides of the spinning rotor disc to slow the wheel. '
         'Most motorcycles use a single-piston sliding caliper on the front wheel.\n\n'
         '**Key parts inside a caliper:** Piston(s) · Piston seals · Dust boot · Bleeder nipple/screw · Caliper body · Pad retaining pins',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Disc_brake_dba.jpg/480px-Disc_brake_dba.jpg',
+        '/static/img/parts/brake_caliper.svg',
         'What is a brake disc rotor? | What is a brake pad? | Brake lever feels soft | How to bleed brakes',
     ),
     'disc brake': (
@@ -1214,7 +1462,7 @@ PART_VISUAL_LIBRARY = {
         'The brake caliper squeezes brake pads onto both faces of the spinning rotor to generate stopping friction. '
         'Disc brakes are more effective than drum brakes and dissipate heat much faster, especially under heavy or repeated braking.\n\n'
         '**Main components:** Rotor disc · Caliper · Brake pads · Brake line · Master cylinder · Brake fluid (DOT 3 or DOT 4)',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Disk_brake_dsc03270.jpg/480px-Disk_brake_dsc03270.jpg',
+        '/static/img/parts/brake_caliper.svg',
         'What is a brake caliper? | What is a brake pad? | Brake lever feels soft | Squealing brake sound',
     ),
     'brake pad': (
@@ -1223,7 +1471,7 @@ PART_VISUAL_LIBRARY = {
         'It is made of metallic, semi-metallic, or organic compounds designed to withstand high heat while generating consistent stopping friction. '
         'Worn brake pads (under 2 mm remaining) cause squealing or grinding sounds and dramatically reduce stopping power.\n\n'
         '**Check:** Look at the pad thickness through the caliper inspection window. If the friction material is flush with or thinner than the metal backing plate, replace immediately.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Brake_disc_and_pads.jpg/480px-Brake_disc_and_pads.jpg',
+        '/static/img/parts/brake_caliper.svg',
         'What is a brake caliper? | What is a disc brake? | Squealing brake sound | Metal grinding when braking',
     ),
     'sprocket': (
@@ -1232,7 +1480,7 @@ PART_VISUAL_LIBRARY = {
         'Motorcycles have two: the **front countershaft sprocket** (smaller, attached to the gearbox output shaft) and the '
         '**rear sprocket** (larger, bolted to the rear wheel hub). As the engine turns, the chain rotates both sprockets, driving the rear wheel.\n\n'
         '**Signs of worn sprockets:** Hooked or shark-fin shaped teeth · Chain jumping or skipping · Excessive chain slack · Visible metal wear on tooth tips.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sprocket_stars.jpg/480px-Sprocket_stars.jpg',
+        '/static/img/parts/drive_chain.svg',
         'What is a drive chain? | Chain & sprocket replacement | Smoke near engine casing & sprocket | Strange engine noise',
     ),
     'drive chain': (
@@ -1243,7 +1491,7 @@ PART_VISUAL_LIBRARY = {
         '- Slack: 20–30 mm free play at the midpoint (check owner\'s manual)\n'
         '- Lubricate every 500 km with dedicated chain lube (not WD-40)\n'
         '- Replace if any link is stiff, rusted, kinked, or if sprocket teeth are hooked.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/A_drive_chain.jpg/480px-A_drive_chain.jpg',
+        '/static/img/parts/drive_chain.svg',
         'What is a sprocket? | Chain tension adjustment | Smoke near engine casing & sprocket | Strange engine noise',
     ),
     'spark plug': (
@@ -1256,7 +1504,7 @@ PART_VISUAL_LIBRARY = {
         '• **Black & sooty** = Rich mixture or oil fouling\n'
         '• **White / blistered** = Lean mixture or overheating\n'
         '• **Wet & fuel-smelling** = Engine flooded',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Spark_plug_comparison.jpg/480px-Spark_plug_comparison.jpg',
+        '/static/img/parts/spark_plug.svg',
         'Cranks normally but won\'t start | What is a carburetor? | Black smoke from exhaust | Engine overheating',
     ),
     'carburetor': (
@@ -1265,7 +1513,7 @@ PART_VISUAL_LIBRARY = {
         'It uses venturi effect (air flowing through a narrow passage creates low pressure) to draw fuel from a float bowl and atomize it into fine droplets.\n\n'
         '**Key parts inside a carburetor:** Main jet · Pilot (idle) jet · Float & needle valve · Air/fuel mixture screw · Choke plate / enricher · Throttle slide or butterfly valve\n\n'
         '**Common problems:** Clogged jets (hard start, stalling), incorrect float height (rich/lean mixture), vacuum air leaks.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Carburetor_of_a_scooter.jpg/480px-Carburetor_of_a_scooter.jpg',
+        '/static/img/parts/carburetor.svg',
         'Cranks normally but won\'t start | What is a spark plug? | Engine won\'t accelerate properly | Black smoke from exhaust',
     ),
     'battery': (
@@ -1277,7 +1525,7 @@ PART_VISUAL_LIBRARY = {
         '• **12.0V** = ~50% discharged — recharge immediately\n'
         '• **Below 11.5V** = Battery damaged or deeply discharged\n'
         '• **During cranking: must stay above 9.6V** — if it drops lower, the battery is too weak to start the engine.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Yuasa_YTX12-BS.jpg/480px-Yuasa_YTX12-BS.jpg',
+        '/static/img/parts/battery.svg',
         'Rapid clicking when starting | Completely dead — no lights | Battery diagnostic | What is a starter motor?',
     ),
     'starter motor': (
@@ -1288,7 +1536,7 @@ PART_VISUAL_LIBRARY = {
         '• Grinding or whirring sound when pressing starter\n'
         '• Starter spins freely but doesn\'t engage engine (worn Bendix drive)\n'
         '• Tap starter casing with a plastic mallet — if it then turns, the carbon brushes are worn.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg',
+        '/static/img/parts/starter_motor.svg',
         'Rapid clicking when starting | Starter doesn\'t respond, lights work | What is a battery? | Starting failure scan',
     ),
     'cvt': (
@@ -1297,7 +1545,7 @@ PART_VISUAL_LIBRARY = {
         'Instead of fixed gears, it uses a V-belt running between two variable-diameter pulleys — the **drive variator** (front) and **driven pulley** (rear). '
         'As engine speed increases, centrifugal flyball rollers push the front pulley wider, changing the belt ratio smoothly and automatically.\n\n'
         '**Key wear items:** Drive belt (V-belt) · Flyball rollers (variator weights) · Driven pulley spring · Clutch shoes',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Variator_and_belt.jpg/480px-Variator_and_belt.jpg',
+        '/static/img/parts/cvt.svg',
         'Engine revs high but won\'t speed up | What is a clutch? | Motorcycle won\'t accelerate properly | Strange engine noise',
     ),
     'radiator': (
@@ -1306,7 +1554,7 @@ PART_VISUAL_LIBRARY = {
         'Hot coolant from the engine water jacket flows through the radiator tubes; the thin aluminum fins dissipate heat to the passing air. '
         'An electric **radiator fan** turns on automatically when coolant temperature reaches ~95°C at idle or in traffic.\n\n'
         '**SAFETY WARNING:** Never open a hot radiator cap! Pressurized boiling coolant can cause severe scald burns. Allow the engine to cool 30–45 minutes.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Radiator-overflow.jpg/480px-Radiator-overflow.jpg',
+        '/static/img/parts/radiator.svg',
         'Engine overheating | Radiator fan not spinning | Coolant leaking | White smoke from exhaust',
     ),
     'piston': (
@@ -1315,7 +1563,7 @@ PART_VISUAL_LIBRARY = {
         'On the compression stroke it compresses the air-fuel mixture; on the power stroke the ignited explosion pushes the piston down, '
         'turning the crankshaft. The piston is sealed against the cylinder wall by **piston rings** (compression rings and oil scraper rings).\n\n'
         '**Signs of worn pistons/rings:** Blue oily smoke · Low compression reading · Excessive oil consumption · Engine noises.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/4-Stroke-Engine.gif/240px-4-Stroke-Engine.gif',
+        '/static/img/parts/component.svg',
         'Blue smoke from exhaust | Low compression symptoms | Engine overhaul | What is a spark plug?',
     ),
     'headlight': (
@@ -1329,7 +1577,7 @@ PART_VISUAL_LIBRARY = {
         '• Headlight not turning on → check fuse #5 or headlight relay\n'
         '• Flickering → loose bulb socket or failing charging system (stator)\n'
         '• Dim light → corroded ground wire or voltage regulator fault',
-        'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Scooter_headlights.jpg/500px-Scooter_headlights.jpg',
+        '/static/img/parts/headlight.svg',
         'What is a tail light? | Headlight not working | Electrical system check | What is a stator?',
     ),
     'tail light': (
@@ -1342,7 +1590,7 @@ PART_VISUAL_LIBRARY = {
         '**Common issues:** Bulb burned out (replace with equivalent T20 or LED) · '
         'Brake light not activating → faulty brake light switch on lever or pedal · '
         'Water ingress causing corrosion in bulb socket.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Motorcycle_tail_light.jpg/480px-Motorcycle_tail_light.jpg',
+        '/static/img/parts/headlight.svg',
         'What is a headlight? | Electrical system check | What is a brake switch?',
     ),
     'air filter': (
@@ -1356,7 +1604,7 @@ PART_VISUAL_LIBRARY = {
         '• Reduced acceleration and fuel economy\n'
         '• Rich fuel smell at exhaust\n\n'
         '**Service interval:** Inspect every 4,000 km; replace every 8,000–12,000 km or sooner in dusty conditions.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Air_filter_element.jpg/480px-Air_filter_element.jpg',
+        '/static/img/parts/air_filter.svg',
         'Motorcycle won\'t accelerate properly | Black smoke from exhaust | What is a carburetor? | Engine oil change',
     ),
     'oil filter': (
@@ -1366,7 +1614,7 @@ PART_VISUAL_LIBRARY = {
         '**Types:** Spin-on canister (common on larger bikes) · Cartridge/paper element (most scooters & underbones)\n\n'
         '**Replacement:** Always replace the oil filter at every engine oil change. '
         'Never re-use a filter — bypassed oil dumps particles directly onto engine bearings.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Oil_filter_cutaway.jpg/480px-Oil_filter_cutaway.jpg',
+        '/static/img/parts/oil_filter.svg',
         'Engine oil change | What is engine oil? | Metallic ticking from top end | Engine noise diagnostic',
     ),
     'shock absorber': (
@@ -1378,7 +1626,7 @@ PART_VISUAL_LIBRARY = {
         '• Oil leaking from the shock body or seal\n'
         '• Bottoming out on moderate bumps\n'
         '• Vague or wallowing handling on corners',
-        'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Mini_Shocks.JPG/500px-Mini_Shocks.JPG',
+        '/static/img/parts/component.svg',
         'Strange noise from suspension | Motorcycle handling problem | Front fork check | Tire inspection',
     ),
     'fuel injector': (
@@ -1389,7 +1637,7 @@ PART_VISUAL_LIBRARY = {
         '**EFI advantages over carburetor:** Better cold start · Precise fuel delivery at altitude · Lower emissions · Better fuel economy\n\n'
         '**Common injector problems:** Clogged nozzle (hard start, rough idle) · Leaking injector (rich mixture, fuel smell) · '
         'Failed injector (no start on that cylinder)',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Fuel_injector.jpg/480px-Fuel_injector.jpg',
+        '/static/img/parts/component.svg',
         'Cranks normally but won\'t start | What is a carburetor? | Engine won\'t accelerate properly | Black smoke from exhaust',
     ),
     'throttle body': (
@@ -1400,7 +1648,7 @@ PART_VISUAL_LIBRARY = {
         '**Common throttle body issues:** Carbon deposits causing rough idle (clean with throttle body cleaner) · '
         'TPS (Throttle Position Sensor) failure causing jerky response · '
         'IACV (Idle Air Control Valve) sticking causing high or low idle.',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Throttle_body.jpg/480px-Throttle_body.jpg',
+        '/static/img/parts/component.svg',
         'Engine won\'t accelerate properly | Cranks normally but won\'t start | What is a fuel injector? | Rough idle',
     ),
     'fork': (
@@ -1412,7 +1660,7 @@ PART_VISUAL_LIBRARY = {
         '• Soft or springy front end with little damping\n'
         '• Clunking or knocking noise over bumps\n'
         '• Uneven fork leg travel (one side lower than the other)',
-        'https://upload.wikimedia.org/wikipedia/commons/8/8b/Bmw-telescopic.jpg',
+        '/static/img/parts/component.svg',
         'What is a shock absorber? | Strange noise from suspension | Front brake not working | Tire inspection',
     ),
 }
@@ -1910,8 +2158,20 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
 
     is_general_query = is_general_motorcycle_query(message, history)
     # Route spec/model_info/comparison/buying/gear/rain to general fallback
-    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location', 'component_inquiry'):
+    if c_intent in ('spec', 'model_info', 'comparison', 'buying_advice', 'riding_gear', 'riding_advice', 'location', 'component_inquiry', 'follow_up'):
         is_general_query = True
+
+    is_engine_fix = bool(
+        re.search(r'\b(?:fix|repair|troubleshoot|diagnose|ayusin|kay-uhon|sira|guba|problem|issue)\b', message, re.I)
+        and re.search(r'\b(?:engine|makina|displacement|engine\s*part)\b', message, re.I)
+    ) or any(k in (message or '').lower() for k in [
+        'fix this in the engine', 'how to fix the engine', 'fix the engine',
+        'engine problem', 'engine issue', 'engine diagnostic', 'engine diagnostics',
+        'engine repair', 'makina problema', 'problema sa makina', 'guba ang makina',
+        'ayusin ang makina', 'kay-uhon ang makina', 'engine type', 'engine part'
+    ])
+    if is_engine_fix:
+        is_general_query = False
 
     # A maintenance/how-to question must not be mistaken for a request to see a
     # part picture, even if it starts with "what is ...".
@@ -2035,8 +2295,21 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
     lang = _detect_language(message, history)
     veh = _extract_vehicle_info(message, history)
 
-    has_vehicle = bool(veh['make'] or veh['model'])
-    veh_label = " ".join(filter(None, [veh['year'], veh['make'], veh['model']])).strip()
+    has_vehicle = bool(veh['make'] or veh['model'] or veh.get('displacement'))
+    veh_base = " ".join(filter(None, [veh['year'], veh['make'], veh['model']])).strip()
+    veh_disp = veh.get('displacement')
+    veh_fuel = veh.get('engine_fuel')
+    details = []
+    if veh_disp and veh_disp.lower() not in veh_base.lower():
+        details.append(veh_disp)
+    if veh_fuel and veh_fuel.lower() not in veh_base.lower():
+        details.append(veh_fuel)
+    if veh_base:
+        veh_label = f"{veh_base} ({', '.join(details)})" if details else veh_base
+    elif details:
+        veh_label = f"{', '.join(details)} motorcycle"
+    else:
+        veh_label = "your vehicle"
 
     # ── Generic follow-up ("what should I check first?", "ano ang susunod?")
     # continues the most recent diagnostic topic from the conversation history ──
@@ -2558,6 +2831,141 @@ def _jarvis_rule_based_diagnostic(message, user, history=None):
                 "[chips: Blue smoke from exhaust | Black smoke from exhaust | White sweet-smelling smoke | Smoke near engine casing & sprocket]"
             )
 
+    # 9b. Difference between Carburetor and Fuel Injection
+    if any(k in msg for k in ['difference between carb', 'carb vs fi', 'carburetor vs fi', 'carb or fi difference', 'karburador o fi', 'de-karburador o fuel injected', 'difference of carb and fi']):
+        if lang == 'tagalog':
+            return (
+                f"Narito ang malaking pagkakaiba ng **Carburetor (Carb)** vs **Fuel-Injected (FI)** sa motorsiklo, {sir}:\n\n"
+                "**1. Mga Gamit at Kasangkapan (Tools):**\n"
+                "- **Carburetor:** Flathead screwdriver, JIS screwdriver, carburetor cleaner spray, manipis na kawad/wire para sa baradong jet, at 8mm/10mm wrenches.\n"
+                "- **Fuel-Injected (FI):** Digital multimeter, fuel pressure gauge (para sa 2.5–3.0 bar), OBD-II / DLC scan tool o diagnostic bridge tool, at sensor-safe throttle body cleaner.\n\n"
+                "**2. Pagsusuri at Diagnostics (Diagnostics):**\n"
+                "- **Carburetor:** Puro mekanikal at vacuum suction — sinusuri ang float level, pilot/main jet, choke plunger, at air/fuel mixture screw.\n"
+                "- **Fuel-Injected (FI):** Electronic at sensor-driven — may ECU/ECM, high-pressure fuel pump (nakikinig sa 2-segundong ugong sa key-ON), fuel injector, at mga sensors (TPS, CKP, O2 sensor).\n\n"
+                "**3. Karaniwang Nagiging Sira (What Actually Goes Wrong):**\n"
+                "- **Carburetor:** Baradong jets dahil sa panis na gasolina, umaapaw na gasolina sa float bowl, vacuum leak sa intake rubber manifold, maling timpla ng hangin at gasolina.\n"
+                "- **Fuel-Injected (FI):** Mahinang fuel pump o pump relay, baradong injector spray nozzle, mababang boltahe ng baterya (< 10.5V habang nagki-crank na nagpuputol sa ECU), o maruming throttle body/IACV.\n\n"
+                "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Ayaw mag-start ng makina | Kakaibang ingay sa makina]"
+            )
+        elif lang == 'hiligaynon':
+            return (
+                f"Yari ang dako nga diperensya sang **Carburetor (Carb)** vs **Fuel-Injected (FI)** sa motorsiklo, {sir}:\n\n"
+                "**1. Mga Gamit (Tools):**\n"
+                "- **Carburetor:** Screwdriver, carb cleaner spray, manipis nga alambre/wire para sa jet, kag 8mm/10mm wrenches.\n"
+                "- **Fuel-Injected (FI):** Digital multimeter, fuel pressure gauge (para sa 2.5–3.0 bar), OBD scanner, kag throttle body cleaner.\n\n"
+                "**2. Pagsusuri (Diagnostics):**\n"
+                "- **Carburetor:** Puro mekanikal kag vacuum — gina-usisa ang float bowl, pilot/main jet, kag idle mixture screw.\n"
+                "- **Fuel-Injected (FI):** Electronic — may ECU, fuel pump (nagatunog sang 2 segundos kon i-ON ang yabi), injector, kag sensors.\n\n"
+                "**3. Karaniwan nga Diperensya (What Actually Goes Wrong):**\n"
+                "- **Carburetor:** Barado ang jet bangod sa daan nga gasolina, naga-awas ang float bowl, may hungaw sa manifold.\n"
+                "- **Fuel-Injected (FI):** Maluya ang fuel pump, barado ang injector nozzle, maluya ang baterya (< 10.5V cranking), ukon mahigko ang throttle body.\n\n"
+                "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Indi mag-andar ang makina | Gahod sa makina]"
+            )
+        else:
+            return (
+                f"Here is why diagnosing a **Carbureted (Carb)** motorcycle is completely different from a **Fuel-Injected (FI)** motorcycle, {sir}:\n\n"
+                "**1. Diagnostic & Workshop Tools:**\n"
+                "- **Carburetor:** Flathead & JIS screwdrivers, aerosol carburetor cleaner, ultra-fine copper wire/jet cleaners, float level gauge, and 8mm/10mm wrenches.\n"
+                "- **Fuel-Injected (FI):** Digital multimeter (volts/ohms/duty cycle), mechanical fuel pressure test gauge (0–5 bar / 0–70 psi), backprobe pins, sensor-safe cleaner, and OBD-II / DLC scanner.\n\n"
+                "**2. Diagnostic Methods:**\n"
+                "- **Carburetor:** Purely mechanical and atmospheric/vacuum-driven. You isolate fuel flow via float bowl drain, jet orifice cleanliness, slide diaphragm condition, and pilot mixture screw adjustments.\n"
+                "- **Fuel-Injected (FI):** Electro-mechanical and ECU-controlled. You verify electrical signals, listen for the 2-second fuel pump prime buzz at key-ON, test line pressure (must hit 2.5–3.0 bar / 36–43 psi), and confirm battery cranking voltage stays above 10.5V.\n\n"
+                "**3. What Actually Goes Wrong (Failure Modes):**\n"
+                "- **Carburetor:** Clogged pilot/main jets from stale fuel/gum, stuck float needle valve leaking gas through overflow tube, intake manifold rubber boot vacuum leaks, misadjusted air/fuel mixture.\n"
+                "- **Fuel-Injected (FI):** Fuel pump motor or relay failure, clogged injector pintle nozzle, weak battery causing ECU brownout during cranking, dirty throttle body butterfly/IACV, or malfunctioning TPS/CKP sensors.\n\n"
+                "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Engine won't start | Check engine noise]"
+            )
+
+    # 9c. Engine Diagnostics, Displacement & Repair System
+    is_engine_fix_query = (
+        re.search(r'\b(?:fix|repair|troubleshoot|diagnose|ayusin|kay-uhon|sira|guba|problem|issue)\b', msg)
+        and re.search(r'\b(?:engine|makina|displacement|engine\s*part)\b', msg)
+    ) or any(k in msg for k in [
+        'fix this in the engine', 'how to fix the engine', 'fix the engine',
+        'engine problem', 'engine issue', 'engine diagnostic', 'engine diagnostics',
+        'engine repair', 'makina problema', 'problema sa makina', 'guba ang makina',
+        'ayusin ang makina', 'kay-uhon ang makina', 'engine type', 'engine part'
+    ]) or re.search(r'\b(?:50|70|100|110|115|125|135|150|155|160|175|180|200|220|230|250|286|300|321|350|373|390|400|450|500|600|650|700|750|800|850|890|900|1000)\s*(?:cc)?\s*(?:engine|makina)\b', msg) or any(k in msg for k in [
+        'carb or fi', 'carbureted or fuel-injected', 'carburetor or fi', 'karburador o fi'
+    ])
+
+    if is_engine_fix_query:
+        fuel_sys = veh.get('engine_fuel')
+        disp_val = veh.get('displacement')
+        disp_line = f"• **Engine Displacement / Size:** {disp_val}\n" if disp_val else ""
+
+        if not fuel_sys:
+            if lang == 'tagalog':
+                return (
+                    f"Para maayos at matukoy ang sira sa makina ng iyong **{veh_label}**, {sir}:\n\n"
+                    f"{disp_line}"
+                    "**Mahalagang Tanong: De-karburador (Carb) ba o Fuel-Injected (FI) ang iyong motorsiklo?**\n\n"
+                    "*(Napakahalaga nito dahil magkaiba ang tools, diagnostics, at karaniwang nagiging sira ng de-karburador kumpara sa fuel-injected na motor: sa Carb kailangan ng screwdrivers, carb cleaner, at paglinis ng jet; sa FI kailangan ng multimeter, fuel pressure gauge, at sensor checks.)*\n\n"
+                    '[vehicle-form: {"category": "engine"}]\n'
+                    "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Hindi sigurado | Ano ang pagkakaiba ng Carb at FI?]"
+                )
+            elif lang == 'hiligaynon':
+                return (
+                    f"Agud matumod kag makay-o ang diperensya sa makina sang imo **{veh_label}**, {sir}:\n\n"
+                    f"{disp_line}"
+                    "**Importante nga Pamangkot: De-karburador (Carb) bala ukon Fuel-Injected (FI) ang imo motorsiklo?**\n\n"
+                    "*(Importante gid ini bangod lain ang mga gamit, diagnostics, kag mga diperensya sang de-karburador ikumpara sa fuel-injected nga motor: sa Carb kinahanglan sang screwdriver kag carb spray; sa FI kinahanglan sang multimeter kag pag-check sang fuel pump pressure.)*\n\n"
+                    '[vehicle-form: {"category": "engine"}]\n'
+                    "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Indi sigurado | Ano ang diperensya sang Carb kag FI?]"
+                )
+            else:
+                return (
+                    f"To accurately isolate and fix the engine problem on your **{veh_label}**, {sir}:\n\n"
+                    f"{disp_line}"
+                    "**Key Question: Is your motorcycle Carbureted (Carb) or Fuel-Injected (FI)?**\n\n"
+                    "*(Working on or fixing a carbureted motorcycle is very different from fixing a fuel-injected motorcycle, especially when it comes to tools, diagnostics, and what actually goes wrong. Carburetors rely on mechanical jets, float bowls, and screws, whereas FI systems rely on a high-pressure electric fuel pump, ECU sensors, injectors, and battery voltage stability.)*\n\n"
+                    '[vehicle-form: {"category": "engine"}]\n'
+                    "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Not sure | What is the difference between Carb and FI?]"
+                )
+
+        if fuel_sys == 'Carburetor':
+            return (
+                f"Engine Diagnostic & Repair Protocol for your **{veh_label}** (Carbureted Engine), {sir}:\n\n"
+                f"{disp_line}"
+                "**Fuel Delivery System: Mechanical Carburetor**\n"
+                "**Specialized Tools Required:** Flathead and JIS screwdrivers, carb cleaner spray, clean catch tray, ultra-fine copper wire/jet cleaning needle, 8mm & 10mm wrenches.\n\n"
+                "**Common Carburetor Failure Points:**\n"
+                "• Clogged pilot (slow) jet — causes hard starting, rough idle, or stalling when throttle is released.\n"
+                "• Clogged main jet — engine idles fine but bogs, sputters, or loses power at half-to-full throttle.\n"
+                "• Sticky float needle / varnished bowl — causes fuel starvation or fuel overflowing from the overflow tube.\n"
+                "• Intake manifold rubber vacuum leak — leans out air/fuel mixture, causing erratic idle and overheating.\n\n"
+                "**Interactive Carburetor Engine Repair Checklist:**\n"
+                "- [ ] 1. Shut off fuel petcock, place catch tray underneath, and loosen float bowl drain screw to check fuel freshness and flow.\n"
+                "- [ ] 2. Remove air filter and inspect for dirt obstruction or oil saturation choking airflow.\n"
+                "- [ ] 3. Inspect intake manifold rubber insulator boot and vacuum ports for cracks, loose clamps, or air leaks.\n"
+                "- [ ] 4. Remove carburetor, open float bowl, and spray carb cleaner through pilot jet, main jet, and idle passages until light shines through.\n"
+                "- [ ] 5. Verify float needle tip is pliable (no groove) and set float height to factory level.\n"
+                "- [ ] 6. Set air/fuel pilot mixture screw to baseline (typically 1.5 to 2.0 turns out from lightly seated), warm engine, and adjust idle speed screw.\n\n"
+                "[chips: Clean carburetor jets | Adjust idle mixture screw | Float bowl overflow check | Spark plug check]"
+            )
+
+        if fuel_sys == 'FI':
+            return (
+                f"Engine Diagnostic & Repair Protocol for your **{veh_label}** (Fuel-Injected Engine), {sir}:\n\n"
+                f"{disp_line}"
+                "**Fuel Delivery System: Electronic Fuel Injection (EFI/FI)**\n"
+                "**Specialized Tools Required:** Digital multimeter (DC Volts & Ohms), mechanical fuel pressure gauge (0–5 bar / 0–70 psi), 8mm & 10mm sockets, sensor-safe throttle body cleaner, wire backprobe pins.\n\n"
+                "**Common Fuel-Injection Failure Points:**\n"
+                "• Weak or failing electric fuel pump — must deliver 2.5–3.0 bar (36–43 psi) fuel rail pressure.\n"
+                "• Clogged injector nozzle / varnished pintle — causes poor atomization, lean misfire, or cutting out under load.\n"
+                "• Cranking voltage drop below 10.5V — ECU cuts fuel injector pulsing even if the starter motor still spins.\n"
+                "• Dirty throttle body butterfly valve or sticking IACV (Idle Air Control Valve) — causes stalling or erratic idle RPM.\n"
+                "• Faulty TPS (Throttle Position Sensor) or CKP (Crank Position Sensor) — breaks ignition/fuel timing.\n\n"
+                "**Interactive Fuel-Injected Engine Repair Checklist:**\n"
+                "- [ ] 1. Turn ignition key ON and listen for the distinct 2-second high-pitch fuel pump priming whine beneath the tank.\n"
+                "- [ ] 2. Measure resting battery voltage (12.6V+) and cranking voltage (must stay above 10.5V while pressing starter).\n"
+                "- [ ] 3. Connect fuel pressure gauge inline: verify pressure reaches 2.5–3.0 bar (36–43 psi) and holds pressure after key-off.\n"
+                "- [ ] 4. Remove fuel injector: inspect electrical resistance across terminals (typically 10–14 ohms) and spray pattern.\n"
+                "- [ ] 5. Inspect throttle body: spray sensor-safe cleaner onto butterfly valve and clean bypass air passages.\n"
+                "- [ ] 6. Inspect spark plug for crisp blue spark and verify engine ground cable connection is tight and clean.\n\n"
+                "[chips: Test fuel pump prime & pressure | Clean fuel injector nozzle | Check battery cranking voltage | Test TPS sensor]"
+            )
+
     # 10. Greetings (checked after diagnostic branches so "hi"-prefixed
     # complaints like "hindi mag-start" or "high pitched squeal" are diagnosed
     # instead of being answered with a greeting)
@@ -2998,6 +3406,18 @@ def jarvis_chat(request):
     from apps.core.models import GeminiUsageTracker
     quota = GeminiUsageTracker.get_current_quota()
     veh = _extract_vehicle_info(message, history=data.get('history', []))
+    if guided_state and guided_state.get('bike'):
+        b = guided_state['bike']
+        if b.get('make') and not veh.get('make'):
+            veh['make'] = b['make']
+        if b.get('model') and not veh.get('model'):
+            veh['model'] = b['model']
+        if b.get('year') and not veh.get('year'):
+            veh['year'] = b['year']
+        if b.get('type') and not veh.get('type'):
+            veh['type'] = b['type']
+        if b.get('displacement') and not veh.get('displacement'):
+            veh['displacement'] = b['displacement']
 
     return JsonResponse({
         'reply': reply,

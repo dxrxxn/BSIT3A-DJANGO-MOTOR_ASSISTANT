@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 260" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1120"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="520" height="260" rx="12" fill="url(#bg)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Top Header Badge -->
+  <rect x="16" y="14" width="220" height="28" rx="6" fill="#0f172a" stroke="#0ea5e9" stroke-width="1" opacity="0.9"/>
+  <circle cx="28" cy="28" r="4" fill="#10b981"/>
+  <text x="38" y="32" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" font-weight="700" letter-spacing="0.5">VISUAL REFERENCE</text>
+
+  <!-- Part Title -->
+  <text x="16" y="62" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="15" font-weight="700">CVT Variator & Drive Belt</text>
+
+  <!-- Left: Component Vector Drawing -->
+  <g transform="translate(16, 75)">
+    <rect width="230" height="135" rx="8" fill="#111827" stroke="#1e293b" stroke-width="1"/>
+    
+    <!-- Front Pulley -->
+    <circle cx="75" cy="70" r="35" fill="#475569" stroke="#64748b" stroke-width="2"/>
+    <!-- Rear Clutch Bell -->
+    <circle cx="165" cy="70" r="38" fill="#334155" stroke="#64748b" stroke-width="2"/>
+    <!-- V-Belt -->
+    <path d="M 75 38 L 165 34 A 38 38 0 0 1 165 106 L 75 102 A 35 35 0 0 1 75 38" stroke="#10b981" stroke-width="7" fill="none"/>
+    <text x="120" y="73" fill="#fff" font-family="sans-serif" font-size="10" font-weight="800" text-anchor="middle">RUBBER V-BELT</text>
+    <text x="120" y="115" fill="#94a3b8" font-family="sans-serif" font-size="9" text-anchor="middle">Variator / Flyball Rollers</text>
+
+  </g>
+
+  <!-- Right: Motorcycle Chassis Locator -->
+  <g transform="translate(260, 20)">
+    <rect width="244" height="190" rx="8" fill="#090d16" stroke="#1e293b" stroke-width="1"/>
+    <!-- Locator Title -->
+    <text x="12" y="22" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="600">MOTORCYCLE LOCATION</text>
+    
+    <!-- Motorcycle Silhouette (Scooter/Underbone Outline) -->
+    <g transform="translate(18, 38)" stroke="#475569" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Front Wheel -->
+      <circle cx="35" cy="85" r="24" stroke="#64748b" stroke-width="3"/>
+      <circle cx="35" cy="85" r="8" fill="#334155"/>
+      <!-- Rear Wheel -->
+      <circle cx="175" cy="85" r="24" stroke="#64748b" stroke-width="3"/>
+      <circle cx="175" cy="85" r="8" fill="#334155"/>
+      <!-- Front Fork & Handlebar -->
+      <path d="M 35 85 L 55 25 L 50 15 L 68 15" />
+      <!-- Frame Spine -->
+      <path d="M 55 35 L 75 60 L 110 60 L 140 45 L 175 48 L 180 65" />
+      <!-- Seat Contour -->
+      <path d="M 95 44 C 115 42, 140 40, 160 46" stroke="#0ea5e9" stroke-width="2.5"/>
+      <!-- Lower Chassis / Engine Mount -->
+      <path d="M 75 60 L 85 85 L 145 85 L 175 85" stroke="#334155"/>
+      <!-- Swingarm -->
+      <line x1="125" y1="80" x2="175" y2="85" stroke="#475569" stroke-width="2.5"/>
+    </g>
+
+    <!-- Glowing Location Hotspot Dot -->
+    <circle cx="150" cy="115" r="14" fill="#06b6d4" opacity="0.25">
+      <animate attributeName="r" values="8;16;8" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="150" cy="115" r="6" fill="#06b6d4" stroke="#ffffff" stroke-width="2"/>
+    <rect x="105" y="87" width="95" height="18" rx="4" fill="#0284c7" filter="url(#shadow)"/>
+    <text x="152" y="100" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="9" font-weight="700" text-anchor="middle">LEFT CVT COVER</text>
+  </g>
+
+  <!-- Bottom Location Banner -->
+  <rect x="16" y="220" width="488" height="28" rx="6" fill="#0369a1" fill-opacity="0.15" stroke="#0284c7" stroke-width="1"/>
+  <text x="28" y="238" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="700">📍 LOOK HERE:</text>
+  <text x="110" y="238" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="500">Left side engine casing / automatic transmission cover on scooters</text>
+</svg>

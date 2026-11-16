@@ -1018,28 +1018,7 @@
     </div>
   </header>
 
-  <!-- Step Wizard Horizontal Bar -->
-  <div class="ma-step-indicator-bar" id="ma-step-indicator" role="navigation" aria-label="Diagnostic Progression">
-    <div class="ma-step-item active" data-step="1" title="Step 1: Describe issue">
-      <span class="ma-step-num active">01</span>
-      <span class="ma-step-text active">Describe issue</span>
-    </div>
-    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
-    <div class="ma-step-item" data-step="2" title="Step 2: Run safe checks">
-      <span class="ma-step-num">02</span>
-      <span class="ma-step-text">Run safe checks</span>
-    </div>
-    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
-    <div class="ma-step-item" data-step="3" title="Step 3: Review findings">
-      <span class="ma-step-num">03</span>
-      <span class="ma-step-text">Review findings</span>
-    </div>
-    <span class="ma-step-divider"><i class="fa-solid fa-chevron-right"></i></span>
-    <div class="ma-step-item" data-step="4" title="Step 4: Repair plan">
-      <span class="ma-step-num">04</span>
-      <span class="ma-step-text">Repair plan</span>
-    </div>
-  </div>
+
 
   <!-- Main 2-Column Grid Workspace -->
   <div class="jarvis-dashboard-grid">
@@ -1732,212 +1711,316 @@
     // Exclude bot welcome greeting ('init-1', 'welcome-1') so example text "Click 125i 2022" doesn't contaminate detection
     const turns = history.filter(h => h && h.id !== 'init-1' && h.id !== 'welcome-1');
 
-    // Authoritative model registry with intrinsic brand, displacement, and 3D viewer mappings
+    // ── Vehicle card is ONLY updated when the server explicitly returns data.vehicle.
+    // History text scanning is intentionally disabled so the card stays null
+    // until the user mentions their motorcycle in the current session.
+    // The KNOWN_MODELS table is kept here for use by renderVehicleForm() only.
     const KNOWN_MODELS = [
-      {
-        patterns: [/\bmt-?0?9\s*sp\b/i, /\bmt-?0?9\b/i, /\bmt\s*09\b/i, /\bmt09\b/i],
-        make: 'Yamaha',
-        model: 'MT-09 SP',
-        displayName: 'Yamaha MT-09 SP',
-        defaultYear: '2025',
-        displacement: '890cc',
-        type: 'Big Bike / Naked',
-        bikeKey: 'yamaha_mt09'
-      },
-      {
-        patterns: [/\bclick\s*160\b/i, /\bclick\s*150i?\b/i, /\bclick\s*125i?\b/i, /\bclick\b/i],
-        make: 'Honda',
-        model: 'Click 125i',
-        displayName: 'Honda Click 125i',
-        defaultYear: '2022',
-        displacement: '125cc',
-        type: 'Scooter',
-        bikeKey: 'honda_click'
-      },
-      {
-        patterns: [/\bnmax\s*155\b/i, /\bnmax\b/i],
-        make: 'Yamaha',
-        model: 'NMAX 155',
-        displayName: 'Yamaha NMAX 155',
-        defaultYear: '2023',
-        displacement: '155cc',
-        type: 'Scooter'
-      },
-      {
-        patterns: [/\baerox\s*155\b/i, /\baerox\b/i],
-        make: 'Yamaha',
-        model: 'Aerox 155',
-        displayName: 'Yamaha Aerox 155',
-        defaultYear: '2023',
-        displacement: '155cc',
-        type: 'Scooter'
-      },
-      {
-        patterns: [/\bbeat\s*110\b/i, /\bbeat\b/i],
-        make: 'Honda',
-        model: 'Beat',
-        displayName: 'Honda Beat',
-        defaultYear: '2023',
-        displacement: '110cc',
-        type: 'Scooter'
-      },
-      {
-        patterns: [/\bpcx\s*160\b/i, /\bpcx\s*150\b/i, /\bpcx\b/i],
-        make: 'Honda',
-        model: 'PCX 160',
-        displayName: 'Honda PCX 160',
-        defaultYear: '2023',
-        displacement: '160cc',
-        type: 'Scooter'
-      },
-      {
-        patterns: [/\braider\s*150\b/i, /\braider\b/i],
-        make: 'Suzuki',
-        model: 'Raider 150',
-        displayName: 'Suzuki Raider 150',
-        defaultYear: '2022',
-        displacement: '150cc',
-        type: 'Underbone'
-      },
-      {
-        patterns: [/\bbarako\s*175\b/i, /\bbarako\b/i],
-        make: 'Kawasaki',
-        model: 'Barako 175',
-        displayName: 'Kawasaki Barako 175',
-        defaultYear: '2022',
-        displacement: '175cc',
-        type: 'Standard'
-      },
-      {
-        patterns: [/\bmio\s*(?:sporty|i\s*125|gear|soul)?\b/i],
-        make: 'Yamaha',
-        model: 'Mio',
-        displayName: 'Yamaha Mio',
-        defaultYear: '2022',
-        displacement: '125cc',
-        type: 'Scooter'
-      },
-      {
-        patterns: [/\bsniper\s*155\b/i, /\bsniper\b/i],
-        make: 'Yamaha',
-        model: 'Sniper 155',
-        displayName: 'Yamaha Sniper 155',
-        defaultYear: '2023',
-        displacement: '155cc',
-        type: 'Underbone'
-      },
-      {
-        patterns: [/\bwave\s*(?:125|110)?\b/i],
-        make: 'Honda',
-        model: 'Wave 125',
-        displayName: 'Honda Wave 125',
-        defaultYear: '2021',
-        displacement: '125cc',
-        type: 'Underbone'
-      },
-      {
-        patterns: [/\bxrm\s*125\b/i, /\bxrm\b/i],
-        make: 'Honda',
-        model: 'XRM 125',
-        displayName: 'Honda XRM 125',
-        defaultYear: '2021',
-        displacement: '125cc',
-        type: 'Dual-Sport'
-      },
-      {
-        patterns: [/\bct\s*100\b/i, /\bct100\b/i],
-        make: 'Bajaj',
-        model: 'CT 100',
-        displayName: 'Bajaj CT 100',
-        defaultYear: '2020',
-        displacement: '100cc',
-        type: 'Standard'
-      },
-      {
-        patterns: [/\brouser\s*(?:200|160)?\b/i],
-        make: 'Bajaj',
-        model: 'Rouser 200',
-        displayName: 'Bajaj Rouser 200',
-        defaultYear: '2022',
-        displacement: '200cc',
-        type: 'Standard'
-      },
-      {
-        patterns: [/\bninja\s*(?:400|300|250)?\b/i],
-        make: 'Kawasaki',
-        model: 'Ninja 400',
-        displayName: 'Kawasaki Ninja 400',
-        defaultYear: '2023',
-        displacement: '400cc',
-        type: 'Sport'
-      }
+      // Yamaha Big Bike / Naked
+      { patterns: [/\bmt-?0?9\s*sp\b/i, /\bmt-?0?9\b/i, /\bmt\s*09\b/i, /\bmt09\b/i],
+        make: 'Yamaha', model: 'MT-09 SP', displayName: 'Yamaha MT-09 SP',
+        defaultYear: '2025', displacement: '890cc', type: 'Big Bike / Naked', bikeKey: 'yamaha_mt09' },
+      { patterns: [/\bmt-?07\b/i],
+        make: 'Yamaha', model: 'MT-07', displayName: 'Yamaha MT-07',
+        defaultYear: '2024', displacement: '689cc', type: 'Big Bike / Naked' },
+      { patterns: [/\bmt-?15\b/i],
+        make: 'Yamaha', model: 'MT-15', displayName: 'Yamaha MT-15',
+        defaultYear: '2023', displacement: '155cc', type: 'Big Bike / Naked' },
+      { patterns: [/\bmt-?03\b/i],
+        make: 'Yamaha', model: 'MT-03', displayName: 'Yamaha MT-03',
+        defaultYear: '2023', displacement: '321cc', type: 'Big Bike / Naked' },
+      { patterns: [/\bmt-?10\b/i],
+        make: 'Yamaha', model: 'MT-10', displayName: 'Yamaha MT-10',
+        defaultYear: '2024', displacement: '998cc', type: 'Big Bike / Naked' },
+      // Yamaha Sport
+      { patterns: [/\byzf-?r15\b/i, /\br15\b/i],
+        make: 'Yamaha', model: 'YZF-R15', displayName: 'Yamaha YZF-R15',
+        defaultYear: '2023', displacement: '155cc', type: 'Sport' },
+      { patterns: [/\byzf-?r3\b/i, /\br3\b/i],
+        make: 'Yamaha', model: 'YZF-R3', displayName: 'Yamaha YZF-R3',
+        defaultYear: '2023', displacement: '321cc', type: 'Sport' },
+      { patterns: [/\bxsr\s*155\b/i, /\bxsr\b/i],
+        make: 'Yamaha', model: 'XSR 155', displayName: 'Yamaha XSR 155',
+        defaultYear: '2023', displacement: '155cc', type: 'Retro / Sport' },
+      { patterns: [/\bwr\s*155r?\b/i, /\bwr155\b/i],
+        make: 'Yamaha', model: 'WR 155R', displayName: 'Yamaha WR 155R',
+        defaultYear: '2023', displacement: '155cc', type: 'Dual-Sport' },
+      // Yamaha Scooter / Underbone
+      { patterns: [/\bnmax\s*155\b/i, /\bnmax\b/i],
+        make: 'Yamaha', model: 'NMAX 155', displayName: 'Yamaha NMAX 155',
+        defaultYear: '2023', displacement: '155cc', type: 'Scooter' },
+      { patterns: [/\baerox\s*155\b/i, /\baerox\b/i],
+        make: 'Yamaha', model: 'Aerox 155', displayName: 'Yamaha Aerox 155',
+        defaultYear: '2023', displacement: '155cc', type: 'Scooter' },
+      { patterns: [/\bmio\s*(?:sporty|i\s*125|gear|soul|gravis|fazzio)?\b/i],
+        make: 'Yamaha', model: 'Mio', displayName: 'Yamaha Mio',
+        defaultYear: '2022', displacement: '125cc', type: 'Scooter' },
+      { patterns: [/\bsniper\s*155\b/i, /\bsniper\b/i],
+        make: 'Yamaha', model: 'Sniper 155', displayName: 'Yamaha Sniper 155',
+        defaultYear: '2023', displacement: '155cc', type: 'Underbone' },
+      // Honda Scooters / Commuters
+      { patterns: [/\bclick\s*160\b/i, /\bclick\s*150i?\b/i, /\bclick\s*125i?\b/i, /\bclick\b/i],
+        make: 'Honda', model: 'Click 125i', displayName: 'Honda Click 125i',
+        defaultYear: '2022', displacement: '125cc', type: 'Scooter', bikeKey: 'honda_click' },
+      { patterns: [/\bbeat\s*110\b/i, /\bbeat\b/i],
+        make: 'Honda', model: 'Beat', displayName: 'Honda Beat',
+        defaultYear: '2023', displacement: '110cc', type: 'Scooter' },
+      { patterns: [/\bpcx\s*160\b/i, /\bpcx\s*150\b/i, /\bpcx\b/i],
+        make: 'Honda', model: 'PCX 160', displayName: 'Honda PCX 160',
+        defaultYear: '2023', displacement: '160cc', type: 'Scooter' },
+      { patterns: [/\badv\s*160\b/i, /\badv\s*150\b/i, /\badv\b/i],
+        make: 'Honda', model: 'ADV 160', displayName: 'Honda ADV 160',
+        defaultYear: '2023', displacement: '160cc', type: 'Scooter' },
+      { patterns: [/\bwave\s*(?:125|110|alpha|dash)?\b/i],
+        make: 'Honda', model: 'Wave 125', displayName: 'Honda Wave 125',
+        defaultYear: '2021', displacement: '125cc', type: 'Underbone' },
+      { patterns: [/\bxrm\s*125\b/i, /\bxrm\b/i],
+        make: 'Honda', model: 'XRM 125', displayName: 'Honda XRM 125',
+        defaultYear: '2021', displacement: '125cc', type: 'Dual-Sport' },
+      { patterns: [/\btmx\s*(?:125|155|supremo|alpha)?\b/i],
+        make: 'Honda', model: 'TMX 125', displayName: 'Honda TMX 125',
+        defaultYear: '2022', displacement: '125cc', type: 'Standard' },
+      // Honda Dual-Sport / Big Bike
+      { patterns: [/\bcrf\s*300\s*(?:l|rally)?\b/i, /\bcrf300\b/i],
+        make: 'Honda', model: 'CRF 300L', displayName: 'Honda CRF 300L',
+        defaultYear: '2023', displacement: '286cc', type: 'Dual-Sport' },
+      { patterns: [/\bcrf\s*250\s*(?:l|rally)?\b/i, /\bcrf250\b/i],
+        make: 'Honda', model: 'CRF 250L', displayName: 'Honda CRF 250L',
+        defaultYear: '2022', displacement: '249cc', type: 'Dual-Sport' },
+      { patterns: [/\bcrf\s*150\s*l?\b/i, /\bcrf150\b/i],
+        make: 'Honda', model: 'CRF 150L', displayName: 'Honda CRF 150L',
+        defaultYear: '2022', displacement: '150cc', type: 'Dual-Sport' },
+      { patterns: [/\bcrf\s*(?:450|1000|1100)\b/i],
+        make: 'Honda', model: 'CRF 450', displayName: 'Honda CRF 450',
+        defaultYear: '2023', displacement: '449cc', type: 'Dual-Sport' },
+      { patterns: [/\bcrf\b/i],
+        make: 'Honda', model: 'CRF', displayName: 'Honda CRF',
+        defaultYear: '', displacement: '', type: 'Dual-Sport' },
+      { patterns: [/\bcbr\s*150r?\b/i, /\bcbr150\b/i],
+        make: 'Honda', model: 'CBR 150R', displayName: 'Honda CBR 150R',
+        defaultYear: '2023', displacement: '150cc', type: 'Sport' },
+      { patterns: [/\bcbr\s*(?:250|500|650|1000)\b/i],
+        make: 'Honda', model: 'CBR', displayName: 'Honda CBR',
+        defaultYear: '', displacement: '', type: 'Sport' },
+      { patterns: [/\bxr\s*150l?\b/i, /\bxr150\b/i],
+        make: 'Honda', model: 'XR 150L', displayName: 'Honda XR 150L',
+        defaultYear: '2022', displacement: '150cc', type: 'Dual-Sport' },
+      { patterns: [/\brebell?\s*(?:300|500|1100)?\b/i],
+        make: 'Honda', model: 'Rebel', displayName: 'Honda Rebel',
+        defaultYear: '2023', displacement: '', type: 'Cruiser' },
+      // Suzuki
+      { patterns: [/\braider\s*150\b/i, /\braider\b/i],
+        make: 'Suzuki', model: 'Raider 150', displayName: 'Suzuki Raider 150',
+        defaultYear: '2022', displacement: '150cc', type: 'Underbone' },
+      { patterns: [/\bsmash\s*115\b/i, /\bsmash\b/i],
+        make: 'Suzuki', model: 'Smash 115', displayName: 'Suzuki Smash 115',
+        defaultYear: '2022', displacement: '115cc', type: 'Underbone' },
+      { patterns: [/\bburgman\s*(?:200|400|street)?\b/i],
+        make: 'Suzuki', model: 'Burgman Street', displayName: 'Suzuki Burgman Street',
+        defaultYear: '2022', displacement: '125cc', type: 'Scooter' },
+      { patterns: [/\bgsx-?r150\b/i, /\bgsx-?s150\b/i],
+        make: 'Suzuki', model: 'GSX-R150', displayName: 'Suzuki GSX-R150',
+        defaultYear: '2023', displacement: '150cc', type: 'Sport' },
+      { patterns: [/\bgixxer\s*(?:150|250)?\b/i],
+        make: 'Suzuki', model: 'Gixxer 150', displayName: 'Suzuki Gixxer 150',
+        defaultYear: '2022', displacement: '150cc', type: 'Sport' },
+      { patterns: [/\bv-?strom\s*(?:650|250|800)?\b/i, /\bvstrom\b/i],
+        make: 'Suzuki', model: 'V-Strom 650', displayName: 'Suzuki V-Strom 650',
+        defaultYear: '2023', displacement: '650cc', type: 'Adventure' },
+      { patterns: [/\bhayabusa\b/i],
+        make: 'Suzuki', model: 'Hayabusa', displayName: 'Suzuki Hayabusa',
+        defaultYear: '2023', displacement: '1340cc', type: 'Sport' },
+      // Kawasaki
+      { patterns: [/\bbarako\s*175\b/i, /\bbarako\b/i],
+        make: 'Kawasaki', model: 'Barako 175', displayName: 'Kawasaki Barako 175',
+        defaultYear: '2022', displacement: '175cc', type: 'Standard' },
+      { patterns: [/\bninja\s*(?:zx-?25r|400|300|250|500|650)?\b/i],
+        make: 'Kawasaki', model: 'Ninja 400', displayName: 'Kawasaki Ninja 400',
+        defaultYear: '2023', displacement: '400cc', type: 'Sport' },
+      { patterns: [/\bklx\s*(?:150|230|300)?\b/i],
+        make: 'Kawasaki', model: 'KLX 150', displayName: 'Kawasaki KLX 150',
+        defaultYear: '2022', displacement: '150cc', type: 'Dual-Sport' },
+      { patterns: [/\bversys\b/i],
+        make: 'Kawasaki', model: 'Versys 650', displayName: 'Kawasaki Versys 650',
+        defaultYear: '2023', displacement: '650cc', type: 'Adventure' },
+      { patterns: [/\bw175\b/i],
+        make: 'Kawasaki', model: 'W175', displayName: 'Kawasaki W175',
+        defaultYear: '2022', displacement: '175cc', type: 'Retro' },
+      { patterns: [/\bz(?:125|400|650|900|1000)\b/i],
+        make: 'Kawasaki', model: 'Z400', displayName: 'Kawasaki Z400',
+        defaultYear: '2023', displacement: '400cc', type: 'Naked' },
+      // Bajaj
+      { patterns: [/\bct\s*100\b/i, /\bct100\b/i],
+        make: 'Bajaj', model: 'CT 100', displayName: 'Bajaj CT 100',
+        defaultYear: '2020', displacement: '100cc', type: 'Standard' },
+      { patterns: [/\brouser\s*(?:ns200|200|160|135)?\b/i],
+        make: 'Bajaj', model: 'Rouser 200', displayName: 'Bajaj Rouser 200',
+        defaultYear: '2022', displacement: '200cc', type: 'Standard' },
+      { patterns: [/\bpulsar\s*(?:ns200|200|180|150)?\b/i],
+        make: 'Bajaj', model: 'Pulsar NS200', displayName: 'Bajaj Pulsar NS200',
+        defaultYear: '2022', displacement: '200cc', type: 'Sport' },
+      { patterns: [/\bdominar\s*(?:400|250)?\b/i],
+        make: 'Bajaj', model: 'Dominar 400', displayName: 'Bajaj Dominar 400',
+        defaultYear: '2023', displacement: '400cc', type: 'Sport Tourer' },
+      // KTM
+      { patterns: [/\bduke\s*390\b/i],
+        make: 'KTM', model: 'Duke 390', displayName: 'KTM Duke 390',
+        defaultYear: '2023', displacement: '373cc', type: 'Naked' },
+      { patterns: [/\bduke\s*200\b/i],
+        make: 'KTM', model: 'Duke 200', displayName: 'KTM Duke 200',
+        defaultYear: '2023', displacement: '200cc', type: 'Naked' },
+      { patterns: [/\brc\s*390\b/i],
+        make: 'KTM', model: 'RC 390', displayName: 'KTM RC 390',
+        defaultYear: '2023', displacement: '373cc', type: 'Sport' },
+      { patterns: [/\b390\s*adventure\b/i],
+        make: 'KTM', model: '390 Adventure', displayName: 'KTM 390 Adventure',
+        defaultYear: '2023', displacement: '373cc', type: 'Adventure' },
+      // Harley-Davidson
+      { patterns: [/\biron\s*883\b/i],
+        make: 'Harley-Davidson', model: 'Iron 883', displayName: 'Harley-Davidson Iron 883',
+        defaultYear: '2022', displacement: '883cc', type: 'Cruiser' },
+      { patterns: [/\biron\s*1200\b/i],
+        make: 'Harley-Davidson', model: 'Iron 1200', displayName: 'Harley-Davidson Iron 1200',
+        defaultYear: '2022', displacement: '1200cc', type: 'Cruiser' },
+      { patterns: [/\bstreet\s*glide\b/i],
+        make: 'Harley-Davidson', model: 'Street Glide', displayName: 'Harley-Davidson Street Glide',
+        defaultYear: '2023', displacement: '1868cc', type: 'Touring' },
+      { patterns: [/\broad\s*glide\b/i],
+        make: 'Harley-Davidson', model: 'Road Glide', displayName: 'Harley-Davidson Road Glide',
+        defaultYear: '2023', displacement: '1868cc', type: 'Touring' },
+      { patterns: [/\bfat\s*boy\b/i],
+        make: 'Harley-Davidson', model: 'Fat Boy', displayName: 'Harley-Davidson Fat Boy',
+        defaultYear: '2023', displacement: '1868cc', type: 'Cruiser' },
+      { patterns: [/\bsportster\s*s\b/i, /\bsportster\b/i],
+        make: 'Harley-Davidson', model: 'Sportster S', displayName: 'Harley-Davidson Sportster S',
+        defaultYear: '2023', displacement: '1252cc', type: 'Cruiser' },
+      { patterns: [/\bsoftail\b/i],
+        make: 'Harley-Davidson', model: 'Softail', displayName: 'Harley-Davidson Softail',
+        defaultYear: '2023', displacement: '1868cc', type: 'Cruiser' },
+      { patterns: [/\bbreakout\b/i],
+        make: 'Harley-Davidson', model: 'Breakout', displayName: 'Harley-Davidson Breakout',
+        defaultYear: '2023', displacement: '1923cc', type: 'Cruiser' },
+      { patterns: [/\bpan\s*america\b/i],
+        make: 'Harley-Davidson', model: 'Pan America', displayName: 'Harley-Davidson Pan America',
+        defaultYear: '2023', displacement: '1252cc', type: 'Adventure' },
+      { patterns: [/\blow\s*rider\b/i],
+        make: 'Harley-Davidson', model: 'Low Rider', displayName: 'Harley-Davidson Low Rider',
+        defaultYear: '2023', displacement: '1868cc', type: 'Cruiser' },
+      // Royal Enfield
+      { patterns: [/\bclassic\s*350\b/i],
+        make: 'Royal Enfield', model: 'Classic 350', displayName: 'Royal Enfield Classic 350',
+        defaultYear: '2023', displacement: '350cc', type: 'Retro' },
+      { patterns: [/\bhunter\s*350\b/i],
+        make: 'Royal Enfield', model: 'Hunter 350', displayName: 'Royal Enfield Hunter 350',
+        defaultYear: '2023', displacement: '350cc', type: 'Retro' },
+      { patterns: [/\bhimalayan\b/i],
+        make: 'Royal Enfield', model: 'Himalayan', displayName: 'Royal Enfield Himalayan',
+        defaultYear: '2023', displacement: '450cc', type: 'Adventure' },
+      { patterns: [/\binterceptor\s*650\b/i],
+        make: 'Royal Enfield', model: 'Interceptor 650', displayName: 'Royal Enfield Interceptor 650',
+        defaultYear: '2023', displacement: '650cc', type: 'Retro' },
+      // BMW
+      { patterns: [/\bg310gs\b/i, /\bg\s*310\s*gs\b/i],
+        make: 'BMW', model: 'G310GS', displayName: 'BMW G310GS',
+        defaultYear: '2023', displacement: '313cc', type: 'Adventure' },
+      { patterns: [/\bg310r\b/i, /\bg\s*310r\b/i],
+        make: 'BMW', model: 'G310R', displayName: 'BMW G310R',
+        defaultYear: '2023', displacement: '313cc', type: 'Naked' },
+      { patterns: [/\br1250gs\b/i],
+        make: 'BMW', model: 'R1250GS', displayName: 'BMW R1250GS',
+        defaultYear: '2023', displacement: '1254cc', type: 'Adventure' },
+      { patterns: [/\bs1000rr\b/i],
+        make: 'BMW', model: 'S1000RR', displayName: 'BMW S1000RR',
+        defaultYear: '2023', displacement: '999cc', type: 'Sport' },
+      // Ducati
+      { patterns: [/\bmonster\s*(?:821|937)?\b/i],
+        make: 'Ducati', model: 'Monster', displayName: 'Ducati Monster',
+        defaultYear: '2023', displacement: '937cc', type: 'Naked' },
+      { patterns: [/\bpanigale\s*(?:v4|v2)?\b/i],
+        make: 'Ducati', model: 'Panigale V4', displayName: 'Ducati Panigale V4',
+        defaultYear: '2023', displacement: '1103cc', type: 'Sport' },
+      { patterns: [/\bscrambler\s*(?:800)?\b/i],
+        make: 'Ducati', model: 'Scrambler', displayName: 'Ducati Scrambler',
+        defaultYear: '2023', displacement: '803cc', type: 'Retro' },
+      // TVS
+      { patterns: [/\bapache\s*rtr\s*(?:160|180|200|310)?\b/i, /\bapache\b/i],
+        make: 'TVS', model: 'Apache RTR 200', displayName: 'TVS Apache RTR 200',
+        defaultYear: '2023', displacement: '200cc', type: 'Sport' },
+      { patterns: [/\bntorq\s*125\b/i, /\bntorq\b/i],
+        make: 'TVS', model: 'Ntorq 125', displayName: 'TVS Ntorq 125',
+        defaultYear: '2023', displacement: '125cc', type: 'Scooter' },
+      { patterns: [/\bronin\b/i],
+        make: 'TVS', model: 'Ronin', displayName: 'TVS Ronin',
+        defaultYear: '2023', displacement: '225cc', type: 'Standard' },
+      // Vespa / Piaggio
+      { patterns: [/\bprimavera\s*150\b/i, /\bprimavera\b/i],
+        make: 'Vespa', model: 'Primavera 150', displayName: 'Vespa Primavera 150',
+        defaultYear: '2023', displacement: '150cc', type: 'Scooter' },
+      { patterns: [/\bsprint\s*150\b/i],
+        make: 'Vespa', model: 'Sprint 150', displayName: 'Vespa Sprint 150',
+        defaultYear: '2023', displacement: '150cc', type: 'Scooter' },
+      { patterns: [/\bgts\s*300\b/i, /\bgts\b/i],
+        make: 'Vespa', model: 'GTS 300', displayName: 'Vespa GTS 300',
+        defaultYear: '2023', displacement: '300cc', type: 'Scooter' },
+      // CFMOTO
+      { patterns: [/\b450sr\b/i],
+        make: 'CFMOTO', model: '450SR', displayName: 'CFMOTO 450SR',
+        defaultYear: '2023', displacement: '450cc', type: 'Sport' },
+      { patterns: [/\b(?:400|300|650)nk\b/i],
+        make: 'CFMOTO', model: '400NK', displayName: 'CFMOTO 400NK',
+        defaultYear: '2023', displacement: '400cc', type: 'Naked' },
+      { patterns: [/\b700cl-?x\b/i],
+        make: 'CFMOTO', model: '700CL-X', displayName: 'CFMOTO 700CL-X',
+        defaultYear: '2023', displacement: '700cc', type: 'Standard' },
+      // Kymco
+      { patterns: [/\bkrv\s*180\b/i, /\bkrv\b/i],
+        make: 'Kymco', model: 'KRV 180', displayName: 'Kymco KRV 180',
+        defaultYear: '2023', displacement: '180cc', type: 'Scooter' },
+      { patterns: [/\bak550\b/i],
+        make: 'Kymco', model: 'AK550', displayName: 'Kymco AK550',
+        defaultYear: '2023', displacement: '550cc', type: 'Maxi-Scooter' },
+      { patterns: [/\blike\s*125\b/i, /\blike\b/i],
+        make: 'Kymco', model: 'Like 125', displayName: 'Kymco Like 125',
+        defaultYear: '2022', displacement: '125cc', type: 'Scooter' },
     ];
 
-    // Scan turns from newest to oldest for mentioned motorcycle
-    let detected = null;
-    for (let i = turns.length - 1; i >= 0; i--) {
-      const turn = turns[i];
-      const text = (turn.text || '').toLowerCase();
+    // Brand list (kept for renderVehicleForm use)
+    const BRAND_PATTERNS = [
+      { re: /\bharley-davidson\b|\bharley\b/i, make: 'Harley-Davidson' },
+      { re: /\byamaha\b/i,          make: 'Yamaha' },
+      { re: /\bhonda\b/i,           make: 'Honda' },
+      { re: /\bsuzuki\b/i,          make: 'Suzuki' },
+      { re: /\bkawasaki\b/i,        make: 'Kawasaki' },
+      { re: /\bbajaj\b/i,           make: 'Bajaj' },
+      { re: /\bktm\b/i,             make: 'KTM' },
+      { re: /\btvs\b/i,             make: 'TVS' },
+      { re: /\bvespa\b/i,           make: 'Vespa' },
+      { re: /\broyal\s*enfield\b/i, make: 'Royal Enfield' },
+      { re: /\bbmw\b/i,             make: 'BMW' },
+      { re: /\bducati\b/i,          make: 'Ducati' },
+      { re: /\bkymco\b/i,           make: 'Kymco' },
+      { re: /\bcfmoto\b/i,          make: 'CFMOTO' },
+      { re: /\btriumph\b/i,         make: 'Triumph' },
+      { re: /\baprilia\b/i,         make: 'Aprilia' },
+      { re: /\bbenelli\b/i,         make: 'Benelli' },
+      { re: /\bkeeway\b/i,          make: 'Keeway' },
+      { re: /\brusi\b/i,            make: 'Rusi' },
+      { re: /\bmotorstar\b/i,       make: 'Motorstar' },
+      { re: /\bgasgas\b/i,          make: 'GasGas' },
+      { re: /\bhusqvarna\b/i,       make: 'Husqvarna' },
+      { re: /\bzontes\b/i,          make: 'Zontes' },
+      { re: /\bvoge\b/i,            make: 'Voge' },
+      { re: /\bbeta\b/i,            make: 'Beta' },
+      { re: /\bsym\b/i,             make: 'SYM' },
+    ];
 
-      // Check if structured profile was provided
-      if (turn.structured && turn.structured.vehicle_profile) {
-        const p = turn.structured.vehicle_profile;
-        if (p.make || p.model) {
-          const matchedKM = KNOWN_MODELS.find(k => (p.model && k.patterns.some(pat => pat.test(p.model))) || (p.make && k.make.toLowerCase() === p.make.toLowerCase() && p.model && k.model.toLowerCase().includes(p.model.toLowerCase())));
-          detected = {
-            make: p.make || (matchedKM ? matchedKM.make : ''),
-            model: p.model || (matchedKM ? matchedKM.model : ''),
-            displayName: (p.make ? p.make + ' ' : '') + (p.model || ''),
-            year: p.year || (matchedKM ? matchedKM.defaultYear : ''),
-            displacement: p.engine_displacement || (matchedKM ? matchedKM.displacement : ''),
-            type: p.vehicle_type || (matchedKM ? matchedKM.type : 'Motorcycle'),
-            bikeKey: matchedKM ? matchedKM.bikeKey : ''
-          };
-          break;
-        }
-      }
-
-      // Check known models in turn text
-      for (const km of KNOWN_MODELS) {
-        const matched = km.patterns.some(p => p.test(text));
-        if (matched) {
-          const yMatch = text.match(/\b(19[9]\d|20[012]\d)\b/);
-          const dMatch = text.match(/\b(\d{2,4}\s?cc)\b/i);
-
-          detected = {
-            make: km.make,
-            model: km.model,
-            displayName: km.displayName,
-            year: yMatch ? yMatch[1] : km.defaultYear,
-            displacement: dMatch ? dMatch[1].toUpperCase() : km.displacement,
-            type: km.type,
-            bikeKey: km.bikeKey || ''
-          };
-          break;
-        }
-      }
-      if (detected) break;
-    }
-
-    if (detected) {
-      try { localStorage.setItem('jarvis_active_vehicle', JSON.stringify(detected)); } catch (e) {}
-      return detected;
-    }
-
+    // Vehicle card shows only what the server explicitly confirmed via data.vehicle.
+    // activeSaved is only written by the handleSendMessage data.vehicle sync block.
+    // Return null until the user has told JARVIS their motorcycle in this session.
     if (activeSaved && (activeSaved.make || activeSaved.model)) {
       return activeSaved;
     }
-
-    // Default vehicle state: Honda Click 125i (available 3D model)
-    return {
-      make: 'Honda',
-      model: 'Click 125i',
-      displayName: 'Honda Click 125i',
-      year: '2022',
-      displacement: '125cc',
-      type: 'Scooter',
-      bikeKey: 'honda_click'
-    };
+    return null;
   }
 
   // ── Smart Parser for Bot Messages ─────────────────────────────────────────
@@ -2203,9 +2286,14 @@
         <div class="jarvis-form-group">
           <label class="jarvis-form-label" for="${formUid}-disp">
             <span>Engine Size / Displacement</span>
-            <span class="jarvis-form-label-hint">Optional</span>
+            <span class="jarvis-form-label-hint">e.g. 125, 150, 250</span>
           </label>
-          <input type="text" id="${formUid}-disp" class="jarvis-form-input" placeholder="e.g. 125cc or 1.5L" value="${escapeHtml(initDisp)}">
+          <input type="text" id="${formUid}-disp" class="jarvis-form-input" placeholder="e.g. 125cc, 150cc, 250cc" value="${escapeHtml(initDisp)}">
+          <div class="jarvis-form-pills" style="margin-top: 4px; gap: 4px;">
+            ${['110cc', '125cc', '150cc', '155cc', '200cc', '250cc', '400cc'].map(d => `
+              <button type="button" class="jarvis-form-pill-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="document.getElementById('${formUid}-disp').value='${d}';">${d}</button>
+            `).join('')}
+          </div>
         </div>
       </div>
 
@@ -2598,9 +2686,9 @@
       imgCard.className = 'jarvis-part-img-card';
       imgCard.innerHTML =
         '<div class="jarvis-part-img-badge"><i class="fa-solid fa-image"></i> Visual Reference</div>'
-        + '<img src="' + parsed.partImage.url + '" alt="' + parsed.partImage.alt + '" loading="lazy" referrerpolicy="no-referrer"'
+        + '<img src="' + parsed.partImage.url + '" alt="' + parsed.partImage.alt + '" loading="eager" referrerpolicy="no-referrer"'
         + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Image unavailable — check your internet connection</span></div>'
+        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Diagram unavailable — please refresh</span></div>'
         + '<div class="jarvis-part-img-caption"><i class="fa-solid fa-tag" style="font-size:0.6rem;opacity:0.6;margin-right:3px;"></i>' + parsed.partImage.alt + '</div>';
       card.appendChild(imgCard);
     }
@@ -3479,7 +3567,20 @@
     }).join('');
   }
 
+  function getOrCreateHistoryBackdrop() {
+    var bd = document.getElementById('jarvis-history-backdrop');
+    if (!bd) {
+      bd = document.createElement('div');
+      bd.id = 'jarvis-history-backdrop';
+      bd.className = 'jarvis-history-backdrop';
+      document.body.appendChild(bd);
+      bd.addEventListener('click', function() { toggleHistoryDrawer(false); });
+    }
+    return bd;
+  }
+
   function toggleHistoryDrawer(show) {
+    var backdrop = getOrCreateHistoryBackdrop();
     if (show === undefined) {
       historyDrawer.classList.toggle('open');
     } else if (show) {
@@ -3488,9 +3589,13 @@
       historyDrawer.classList.remove('open');
     }
 
-    if (historyDrawer.classList.contains('open')) {
+    var isOpen = historyDrawer.classList.contains('open');
+    if (isOpen) {
+      backdrop.classList.add('active');
       updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
       if (historySearchInput) setTimeout(() => historySearchInput.focus(), 150);
+    } else {
+      backdrop.classList.remove('active');
     }
   }
 
@@ -3534,6 +3639,7 @@
     const previousConversation = conversationId;
     conversationId = null;
     try { localStorage.removeItem(CONVERSATION_KEY); } catch (e) {}
+    try { localStorage.removeItem('jarvis_active_vehicle'); } catch (e) {}
     clearPendingPhoto();
     fetch(CHAT_URL, {
       method: 'POST',
@@ -3755,6 +3861,9 @@
   }
 
   function sendMessage(manualText) {
+    if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+      try { window.speechSynthesis.resume(); } catch (e) {}
+    }
     const text = (manualText != null ? manualText : (inputEl ? inputEl.value : '')).trim();
     if (pendingImage) {
       if (assistantMode !== 'structured') setAssistantMode('structured');
@@ -3874,6 +3983,28 @@
         if (data.quota) {
           updateQuotaUI(data.quota);
         }
+        // Sync vehicle card from server-authoritative vehicle data
+        if (data.vehicle && (data.vehicle.make || data.vehicle.model)) {
+          const sv = data.vehicle;
+          const vMake = sv.make || '';
+          const vModel = sv.model || '';
+          const vYear = sv.year || '';
+          const vDisp = sv.displacement || '';
+          const vType = sv.type || 'Motorcycle';
+          const displayName = (vMake && vModel)
+            ? vMake + ' ' + vModel
+            : (vMake || vModel);
+          const serverVehicle = {
+            make: vMake,
+            model: vModel,
+            displayName: displayName,
+            year: vYear,
+            displacement: vDisp,
+            type: vType,
+            bikeKey: ''
+          };
+          try { localStorage.setItem('jarvis_active_vehicle', JSON.stringify(serverVehicle)); } catch(e) {}
+        }
       } else {
         let errData = {};
         if (res) {
@@ -3904,7 +4035,8 @@
       setDiagnosticStep(calculateDiagnosticStep(history));
 
       if (window.jarvisVoiceAssistant && window.jarvisVoiceAssistant.isVoiceReplyEnabled()) {
-        window.jarvisVoiceAssistant.speakGuidedOrGeneral(reply);
+        const fullSpeech = getFullSpeechFromParsed(parsed) || reply;
+        window.jarvisVoiceAssistant.speakGuidedOrGeneral(fullSpeech);
       }
 
     } catch (err) {
@@ -4277,31 +4409,42 @@
 
   function pickBestJarvisVoice() {
     if (!availableVoices.length) loadVoices();
+    if (!availableVoices.length) return null;
+
     const isTagalog = languageSelect && languageSelect.value === 'tagalog';
     if (isTagalog) {
       const filVoice = availableVoices.find(v => v.lang.startsWith('fil') || v.lang.startsWith('tl'));
       if (filVoice) return filVoice;
     }
 
-    // 1. Prioritize British English male voices (Paul Bettany style)
+    // 1. Prefer reliable local/offline English male voices first (never fails, zero network latency, audible)
+    const localMaleVoice = availableVoices.find(v =>
+      v.localService === true &&
+      v.lang.startsWith('en') &&
+      (v.name.includes('David') || v.name.includes('Mark') || v.name.includes('George') || v.name.includes('Oliver') || v.name.includes('Ryan') || v.name.includes('Guy'))
+    );
+    if (localMaleVoice) return localMaleVoice;
+
+    // 2. High-quality UK English male voice
     const ukMaleVoice = availableVoices.find(v =>
       (v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB')) &&
       (v.name.includes('George') || v.name.includes('Oliver') || v.name.includes('Ryan') || v.name.includes('Male') || v.name.includes('Daniel') || v.name.includes('Arthur'))
     );
     if (ukMaleVoice) return ukMaleVoice;
 
-    // 2. Any UK English voice
+    // 3. Any local English voice (built-in Windows TTS, e.g. Microsoft David/Zira/Mark)
+    const localEnglish = availableVoices.find(v => v.localService === true && v.lang.startsWith('en'));
+    if (localEnglish) return localEnglish;
+
+    // 4. Any UK English voice
     const ukVoice = availableVoices.find(v => v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB'));
     if (ukVoice) return ukVoice;
 
-    // 3. Natural / Google US English voice
-    const usNatural = availableVoices.find(v =>
-      v.lang.startsWith('en') &&
-      (v.name.includes('Natural') || v.name.includes('Google UK') || v.name.includes('David') || v.name.includes('Guy'))
-    );
-    if (usNatural) return usNatural;
+    // 5. Any English voice
+    const anyEnglish = availableVoices.find(v => v.lang.startsWith('en'));
+    if (anyEnglish) return anyEnglish;
 
-    return availableVoices.find(v => v.lang.startsWith('en')) || null;
+    return availableVoices[0] || null;
   }
 
   try {
@@ -4331,11 +4474,8 @@
       try { localStorage.setItem(VOICE_SPEAKER_KEY, voiceReplyEnabled ? '1' : '0'); } catch (e) {}
       updateSpeakerUI();
       if (!voiceReplyEnabled) {
-        if (typeof stopAllSpeech === 'function') {
-          stopAllSpeech();
-        } else if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-        }
+        stopAllSpeech();
+        if (!isHandsFree) setVoiceHudState('hidden');
       }
     });
   }
@@ -4432,7 +4572,7 @@
           const lower = spokenNow.toLowerCase();
 
           // Interrupt command
-          if (/\b(jarvis stop|please stop|stop talking|quiet|silence|cancel)\b/i.test(lower)) {
+          if (/\b(jarvis stop|please stop|stop talking|quiet|silence|cancel|shut up|hinto|tigil|pause|wait)\b/i.test(lower)) {
             stopSpeaking();
             if (inputEl) inputEl.value = '';
             setVoiceHudState('listening', 'Speech stopped. Speak next question...');
@@ -4564,12 +4704,61 @@
     if (micBtn) micBtn.classList.remove('is-listening');
   }
 
-  function stopSpeaking() {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+  // Speech synthesis queue & state
+  window._activeUtterances = window._activeUtterances || [];
+  let currentSpeechQueue = [];
+  let currentSpeechIndex = 0;
+  let currentSpeechOptions = {};
+  let speechKeepAliveTimer = null;
+  let speechChunkTimeout = null;
+  let handsFreeIntroTimeout = null;
+
+  function stopAllSpeech() {
     isSpeaking = false;
+    currentSpeechQueue = [];
+    currentSpeechIndex = 0;
+    currentSpeechOptions = {};
+
+    if (speechChunkTimeout) {
+      clearTimeout(speechChunkTimeout);
+      speechChunkTimeout = null;
+    }
+    if (handsFreeIntroTimeout) {
+      clearTimeout(handsFreeIntroTimeout);
+      handsFreeIntroTimeout = null;
+    }
+    if (speechKeepAliveTimer) {
+      clearInterval(speechKeepAliveTimer);
+      speechKeepAliveTimer = null;
+    }
+
+    if (window._activeUtterances && window._activeUtterances.length) {
+      window._activeUtterances.forEach(u => {
+        try {
+          u.onend = null;
+          u.onerror = null;
+          u.onstart = null;
+          u.onpause = null;
+          u.onresume = null;
+        } catch (e) {}
+      });
+      window._activeUtterances = [];
+    }
+
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }
+    } catch (e) {}
+
     if (speakerBtn) speakerBtn.classList.remove('is-speaking');
+  }
+
+  function stopSpeaking() {
+    stopAllSpeech();
     if (isHandsFree) {
       if (isAwaitingConfirmation) {
         setVoiceHudState('confirming', 'Say "Yes" / "Ready" to start Step 1 · Say "Wait" to hold on');
@@ -4577,6 +4766,8 @@
         setVoiceHudState('listening', 'Ready · Speak your question hands-free...');
       }
       startListening();
+    } else {
+      setVoiceHudState('hidden');
     }
   }
 
@@ -4602,8 +4793,11 @@
 
       // Talk to the user immediately on activation in real time!
       if (voiceReplyEnabled && ('speechSynthesis' in window)) {
-        setTimeout(() => {
-          speakText("Hands-Free protocol online, sir. What motorcycle issue shall we inspect? Whenever you are ready, ask your question or say 'Start'.");
+        if (handsFreeIntroTimeout) clearTimeout(handsFreeIntroTimeout);
+        handsFreeIntroTimeout = setTimeout(() => {
+          if (isHandsFree && voiceReplyEnabled) {
+            speakText("Hands-Free protocol online, sir. What motorcycle issue shall we inspect? Whenever you are ready, ask your question or say 'Start'.");
+          }
         }, 300);
       }
     } else {
@@ -4748,35 +4942,22 @@
   }
 
   // Robust Chromium/Edge Text-To-Speech Engine with Complete Voice Output & Keep-Alive
-  window._activeUtterances = window._activeUtterances || [];
-  let currentSpeechQueue = [];
-  let currentSpeechIndex = 0;
-  let currentSpeechOptions = {};
-  let speechKeepAliveTimer = null;
-
-  function stopAllSpeech() {
-    currentSpeechQueue = [];
-    currentSpeechIndex = 0;
-    if (speechKeepAliveTimer) {
-      clearInterval(speechKeepAliveTimer);
-      speechKeepAliveTimer = null;
-    }
-    window._activeUtterances = [];
-    try {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    } catch (e) {}
-  }
 
   function cleanTextForSpeech(text) {
     if (!text) return '';
     return text
-      .replace(/\[chips:.*?\]/gi, '')
-      .replace(/\[vehicle-form.*?\]/gi, '')
-      .replace(/\[part-image:.*?\]/gi, '')
+      .replace(/\[chips:[\s\S]*?\]/gi, '')
+      .replace(/\[stage:\s*[1-4]\]/gi, '')
+      .replace(/\[vehicle-form[\s\S]*?\]/gi, '')
+      .replace(/\[part-image:[\s\S]*?\]/gi, '')
+      .replace(/\be\.g\.\s*/gi, 'for example, ')
+      .replace(/\bi\.e\.\s*/gi, 'that is, ')
+      .replace(/\bhal\.\s*/gi, 'halimbawa, ')
+      .replace(/\bvs\.\s*/gi, 'versus ')
+      .replace(/\betc\.\s*/gi, 'and so on. ')
       .replace(/<[^>]+>/g, '')
-      .replace(/-\s*\[\s*\]/g, '')
+      .replace(/-\s*\[\s*[xX]?\s*\]/g, '')
+      .replace(/^[\s*•\-]+(?=\w)/gm, '')
       .replace(/[*_#`~>]/g, '')
       .replace(/https?:\/\/\S+/g, '')
       .replace(/\s+/g, ' ')
@@ -4793,6 +4974,11 @@
     for (const raw of rawSentences) {
       const s = raw.trim();
       if (!s) continue;
+      // If a sentence is very short (under 5 chars like numbers or punctuation), merge it with the current chunk
+      if (s.length < 5 && currentChunk) {
+        currentChunk += ' ' + s;
+        continue;
+      }
       if (s.length > 180) {
         const subParts = s.match(/[^,;:—]+(?:[,;:—]+|$)/g) || [s];
         for (const sub of subParts) {
@@ -4821,11 +5007,8 @@
   }
 
   function playNextSpeechChunk() {
-    if (currentSpeechIndex >= currentSpeechQueue.length) {
-      // Completed all chunks!
+    if (!isSpeaking || !voiceReplyEnabled || currentSpeechIndex >= currentSpeechQueue.length) {
       stopAllSpeech();
-      isSpeaking = false;
-      if (speakerBtn) speakerBtn.classList.remove('is-speaking');
       if (isHandsFree && !currentSpeechOptions.immediateOnly) {
         if (isAwaitingConfirmation) {
           setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin · Say "Wait" to hold on');
@@ -4843,40 +5026,48 @@
     currentSpeechIndex++;
 
     try {
-      if (window.speechSynthesis.paused) {
+      if ('speechSynthesis' in window && window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
 
       const utter = new SpeechSynthesisUtterance(chunkText);
       utter.volume = 1.0;
-      utter.rate = 1.02;
+      utter.rate = 1.0;
       utter.pitch = 1.0;
 
       const bestVoice = pickBestJarvisVoice();
       if (bestVoice) {
         utter.voice = bestVoice;
-        utter.lang = bestVoice.lang;
+        utter.lang = bestVoice.lang || 'en-US';
       } else {
-        utter.lang = getRecLanguage();
+        utter.lang = 'en-US';
       }
 
       window._activeUtterances.push(utter);
 
       utter.onend = () => {
         window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
-        playNextSpeechChunk();
+        if (isSpeaking && voiceReplyEnabled) {
+          playNextSpeechChunk();
+        }
       };
 
       utter.onerror = (err) => {
-        console.warn('Jarvis TTS chunk event error:', err);
         window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
-        playNextSpeechChunk();
+        // Continue playing next chunk so speech does not die mid-message
+        if (isSpeaking && voiceReplyEnabled) {
+          setTimeout(() => {
+            if (isSpeaking && voiceReplyEnabled) playNextSpeechChunk();
+          }, 40);
+        }
       };
 
       window.speechSynthesis.speak(utter);
     } catch (err) {
       console.error('Jarvis speech chunk failed:', err);
-      playNextSpeechChunk();
+      if (isSpeaking && voiceReplyEnabled) {
+        playNextSpeechChunk();
+      }
     }
   }
 
@@ -4905,42 +5096,27 @@
     if (speakerBtn) speakerBtn.classList.add('is-speaking');
     setVoiceHudState('speaking', clean);
 
-    // Keep-alive timer prevents Chromium 15-second speech synthesis timeout bug
+    // Keep-alive timer ensures paused synthesis resumes without muting live audio
     if (speechKeepAliveTimer) clearInterval(speechKeepAliveTimer);
     speechKeepAliveTimer = setInterval(() => {
       try {
-        if ('speechSynthesis' in window && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-          window.speechSynthesis.pause();
+        if ('speechSynthesis' in window && window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
       } catch (e) {}
-    }, 9000);
+    }, 2500);
 
-    // 40ms timeout allows Chromium internal audio cancellation to settle before speaking
-    setTimeout(() => {
-      playNextSpeechChunk();
-    }, 45);
+    // Settle timeout allows Chromium internal audio cancellation to settle before speaking
+    if (speechChunkTimeout) clearTimeout(speechChunkTimeout);
+    speechChunkTimeout = setTimeout(() => {
+      if (isSpeaking && voiceReplyEnabled) {
+        playNextSpeechChunk();
+      }
+    }, 65);
   }
 
   function speakStructured(structured, options = {}) {
     if (!voiceReplyEnabled || !('speechSynthesis' in window) || !structured) return;
-
-    // Only prompt confirmation if not forced (e.g. user didn't click Listen) and procedure steps exist
-    if (!options.force) {
-      const hasSteps = (structured.repair_steps && structured.repair_steps.length > 0) ||
-                       (structured.diagnostic_tests && structured.diagnostic_tests.length > 0);
-
-      if (hasSteps) {
-        const firstStep = structured.repair_steps && structured.repair_steps[0] ? structured.repair_steps[0].instruction : '';
-        const prompt = `I have diagnosed the primary suspect: ${structured.possible_causes && structured.possible_causes[0] ? structured.possible_causes[0].cause : 'fault condition'}. Before we begin what we have to do, please ensure the motorcycle is turned off and on its stand. Say 'Ready' or 'Yes' to start Step 1, or say 'Wait' if you need a moment.`;
-
-        requestProcedureConfirmation({
-          verbalPrompt: prompt,
-          stepText: firstStep
-        });
-        return;
-      }
-    }
 
     // Deliver complete spoken message from reply_text or full structured data:
     if (structured.reply_text) {
@@ -4973,29 +5149,15 @@
     if (!replyText) return;
 
     // 1. If the reply delivers Step 1, Step 2, or any procedure step:
-    // READ IT DIRECTLY out loud! Clear any leftover confirmation banners.
+    // Clear any leftover confirmation banners
     const isStepDelivery = /\b(step\s*\d+|hakbang\s*\d+|tikang\s*\d+|first inspection)\b/i.test(replyText);
     if (isStepDelivery) {
       isAwaitingConfirmation = false;
       const banners = document.querySelectorAll('.jarvis-confirmation-banner');
       banners.forEach(b => b.remove());
-      speakText(replyText);
-      return;
     }
 
-    // 2. Only show confirmation when the verdict proposes starting the procedure
-    const isVerdictProposal = /\b(verdict|likely cause|probable cause|begin procedure|pagsusuri sa malamang na sanhi)\b/i.test(replyText)
-      && /\b(begin procedure|free fixes?|action checklist|start procedure|simulan)\b/i.test(replyText);
-
-    if (isVerdictProposal && !isAwaitingConfirmation) {
-      requestProcedureConfirmation({
-        verbalPrompt: "I have prepared the step-by-step diagnostic plan for your motorcycle. Before we start what we have to do, please ensure the bike is parked securely on its center stand. Are you ready to begin Step 1? Say 'Yes' or 'Ready' to proceed, or say 'Wait'.",
-        stepText: "Step 1 inspection"
-      });
-      return;
-    }
-
-    // 3. For narrowing questions, checks, and general replies: speak the text directly
+    // 2. Always speak the actual reply text so the user hears every sentence JARVIS speaks!
     speakText(replyText);
   }
 
@@ -5032,9 +5194,34 @@
     // Initial boot
   initAssistantControls();
   setupMotorcycleMenu();
+  // Clear any vehicle saved from a previous page session so the card
+  // starts as null until the user mentions their motorcycle this session.
+  try { localStorage.removeItem('jarvis_active_vehicle'); } catch (e) {}
   const initialHistory = loadHistory();
   renderAll(initialHistory);
   fetchQuotaStatus();
+
+  // Expose history drawer API globally so sidebar + other pages can open it
+  window.jarvisHistoryAPI = {
+    open:   () => toggleHistoryDrawer(true),
+    close:  () => toggleHistoryDrawer(false),
+    toggle: () => toggleHistoryDrawer(),
+    getHistory: () => loadHistory(),
+  };
+
+  // Notify sidebar to populate recent-sessions list from real localStorage
+  document.dispatchEvent(new CustomEvent('jarvis:historyReady', { detail: { history: initialHistory } }));
+
+  // Auto-open history drawer if URL param ?open_history=1 is present
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('open_history') === '1') {
+      setTimeout(function() { toggleHistoryDrawer(true); }, 400);
+      // Clean URL without reloading
+      var cleanUrl = window.location.pathname + window.location.hash;
+      history.replaceState(null, '', cleanUrl);
+    }
+  })();
 
 })();
 </script>

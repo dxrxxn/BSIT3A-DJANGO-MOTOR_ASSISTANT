@@ -255,6 +255,44 @@ def missing_vehicle_questions(profile, language='english', asked_questions=None)
             'hiligaynon': 'Ano nga tuig ang modelo? Kon indi sigurado, hambala ang “indi sigurado” kag likawan ko ang year-specific nga specs.',
         }[lang]
         questions.append({'question': text, 'why': 'Model year changes parts and procedures on many vehicles.', 'options': ['Not sure']})
+
+    fuel = (profile.get('fuel_system') or profile.get('engine_fuel') or '').strip()
+    disp = (profile.get('engine_displacement') or profile.get('displacement') or '').strip()
+
+    if not fuel and len(questions) < 2:
+        text = {
+            'english': 'Is your motorcycle carbureted (Carb) or fuel-injected (FI)?',
+            'tagalog': 'Ang motor mo ba ay de-karburador (Carb) o fuel-injected (FI)?',
+            'hiligaynon': 'Ang imo motor bala de-karburador (Carb) ukon fuel-injected (FI)?',
+        }[lang]
+        why = {
+            'english': 'Working on or fixing a carbureted motorcycle is very different from a fuel-injected motorcycle, especially for tools, diagnostics, and what goes wrong.',
+            'tagalog': 'Magkaiba ang tools, diagnostics, at karaniwang nagiging sira ng de-karburador kumpara sa fuel-injected na motor.',
+            'hiligaynon': 'Lain gid ang mga galamiton, diagnostics, kag diperensya sang de-karburador ikumpara sa fuel-injected nga motor.',
+        }[lang]
+        questions.append({
+            'question': text,
+            'why': why,
+            'options': ['Carburetor (Carb)', 'Fuel-Injected (FI)', 'Not sure'],
+        })
+
+    if not disp and len(questions) < 2:
+        text = {
+            'english': 'What is your engine displacement / size (e.g. 125cc, 150cc, 250cc)?',
+            'tagalog': 'Ano ang engine displacement o sukat ng makina (hal. 125cc, 150cc, 250cc)?',
+            'hiligaynon': 'Ano ang engine displacement ukon kadakuon sang makina (hal. 125cc, 150cc, 250cc)?',
+        }[lang]
+        why = {
+            'english': 'Engine displacement determines compression specifications, part sizing, and diagnostic benchmarks.',
+            'tagalog': 'Ang displacement ng makina ang batayan ng compression specs, sukat ng piyesa, at diagnostic benchmarks.',
+            'hiligaynon': 'Ang displacement sang makina ang basihan sang compression specs, parte, kag diagnostic benchmarks.',
+        }[lang]
+        questions.append({
+            'question': text,
+            'why': why,
+            'options': ['125cc', '150cc', '250cc', 'Not sure'],
+        })
+
     return questions[:2]
 
 

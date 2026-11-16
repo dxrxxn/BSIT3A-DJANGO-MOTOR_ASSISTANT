@@ -97,6 +97,16 @@ Non-negotiable rules:
     - NEVER write wordy preamble, robotic empathy, or restate the user's issue (do NOT say: "I understand you are experiencing...", "To assist you accurately, I need to...", "Please note that when testing...").
     - Jump straight to the point: state any immediate safety precaution or mechanical insight in 1–2 sharp sentences, then ask 1 or 2 clear, specific questions to identify the vehicle or symptom.
     - Not too short (avoid blunt single-word answers), but never verbose. Deliver sharp, actionable guidance.
+15. ENGINE DISPLACEMENT & FUEL SYSTEM (CARB VS. FI) SPECIFICITY:
+    - Always identify and incorporate the engine displacement / size (e.g. 110cc, 125cc, 150cc, 200cc, 250cc, etc.) in your diagnosis, as clearances, compression specifications, and repair tolerances directly correlate with displacement.
+    - CRITICAL: Working on or fixing a carbureted (carb) motorcycle is vastly different from fixing a fuel-injected (FI) motorcycle, especially regarding tools, diagnostics, and failure modes.
+      * If the fuel system (Carb vs. FI) is missing or unstated for an engine, starting, power, idling, or fuel symptom, ALWAYS ask if the motorcycle is Carbureted (Carb) or Fuel-Injected (FI) before prescribing detailed repairs.
+      * For Carbureted (Carb) motorcycles: diagnose float bowl fuel delivery, clogged pilot/main jets, air/fuel mixture screw setting, choke / enricher valve, and fuel petcock flow. Tools: screwdrivers, carb cleaner spray, drain catch cup.
+      * For Fuel-Injected (FI) motorcycles: diagnose the 2-second electric fuel pump priming buzz at key-on, fuel pump relay/fuse, battery voltage under crank (>10.5V for ECU/injector), fuel injector spray pattern, and throttle body / TPS / sensor wiring. Tools: multimeter, 12V test probe, fuel pressure gauge.
+16. UNNAMED MOTORCYCLE DEFAULT:
+    - If the user has NOT explicitly provided the name, model, or type of their motorcycle, ALWAYS treat and refer to the vehicle generally as a "motorcycle" (or "motor" / "motorsiklo").
+    - NEVER assume, guess, or default to calling it a "scooter", and NEVER assume a scooter CVT transmission unless the user explicitly names a scooter model or confirms it is a scooter.
+    - Do not mistake sounds or symptoms like "clicks", "clicking", or "starter click" for a Honda Click motorcycle. Keep all initial guidance general to motorcycles until the user states their motorcycle's make/model.
 """
 
 
@@ -719,6 +729,18 @@ def _respond_general(*, message, conversation, language, experience_level,
             reply_text = (ai_result.text or '').strip()
             if reply_text:
                 mode = 'ai'
+                try:
+                    from apps.core.views import _save_offline_knowledge
+                    _save_offline_knowledge(
+                        message,
+                        reply_text,
+                        intent='general_motorcycle_question',
+                        make=profile.get('make') or '',
+                        model=profile.get('model') or '',
+                        language=language or 'english',
+                    )
+                except Exception:
+                    pass
             else:
                 offline_reason = 'parse'
         except AiServiceError as exc:
@@ -730,6 +752,20 @@ def _respond_general(*, message, conversation, language, experience_level,
     else:
         offline_reason = 'not_configured' if not getattr(settings, 'GEMINI_API_KEY', '') else 'quota'
 
+    if not reply_text:
+        try:
+            from apps.core.views import _find_offline_knowledge
+            cached = _find_offline_knowledge(
+                message,
+                conversation.user if conversation else None,
+                intent='general_motorcycle_question',
+                make=profile.get('make') or '',
+                model=profile.get('model') or '',
+            )
+            if cached:
+                reply_text = cached
+        except Exception:
+            pass
     if not reply_text:
         reply_text = _general_offline_reply(
             message, language, prompt_context(conversation)
@@ -993,6 +1029,23 @@ def respond(user, message, *, conversation_id=None, language=None,
 
     # Keep the conversation profile current even if the AI omitted it.
     update_vehicle_from_profile(conversation, structured.get('vehicle_profile') or {})
+
+    # Save verified AI answer into offline knowledge table
+    if mode == 'ai' and structured.get('reply_text'):
+        try:
+            from apps.core.views import _save_offline_knowledge
+            _save_offline_knowledge(
+                message,
+                structured['reply_text'],
+                intent=structured.get('intent') or 'diagnostic',
+                make=structured.get('vehicle_profile', {}).get('make') or profile.get('make') or '',
+                model=structured.get('vehicle_profile', {}).get('model') or profile.get('model') or '',
+                year=structured.get('vehicle_profile', {}).get('year') or profile.get('year') or '',
+                language=language or 'english',
+            )
+        except Exception:
+            pass
+
     return _finish(
         structured,
         conversation=conversation,

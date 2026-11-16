@@ -13,6 +13,7 @@ Implements Phases 2, 4, 5, 6, and 7:
 import json
 import logging
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -192,6 +193,21 @@ class DiagnosticSession:
                     break
             if not is_answered:
                 return q
+
+        # If primary questions are answered but fuel system is still unknown on an engine/starting fault:
+        cat = str(primary.get('category', '')).lower()
+        if cat in ('starting', 'engine', 'fuel', 'power', 'acceleration') and not self.vehicle_info.get('engine_fuel') and 'efi' not in self.answered_questions and 'carb' not in self.answered_questions:
+            return {
+                'text': 'Is your motorcycle carbureted (Carb) or fuel-injected (FI)?',
+                'text_tl': 'Ang motor mo ba ay de-karburador (Carb) o fuel-injected (FI)?',
+                'text_hil': 'Ang imo motor bala de-karburador (Carb) ukon fuel-injected (FI)?',
+                'options': [
+                    {'label': 'A. Carburetor (Carb)', 'value': 'carb'},
+                    {'label': 'B. Fuel-Injected (FI)', 'value': 'efi'},
+                    {'label': 'C. Not sure', 'value': 'not_sure'},
+                ],
+                'why': 'Working on or fixing a carbureted motorcycle is very different from fixing a fuel-injected motorcycle, especially for tools, diagnostics, and failure modes.',
+            }
         return None
 
     def has_sufficient_diagnostic_data(self):
@@ -545,27 +561,39 @@ def call_configured_ai(prompt, system_instruction=None):
         if not model:
             raise RuntimeError('No Gemini model configured (set GEMINI_MODEL).')
         clean_model = model.replace('models/', '')
-        from .services.ai import fallback_model_name
-        try:
-            response = client.models.generate_content(
-                model=clean_model,
-                contents=combined_prompt,
-            )
-        except Exception as api_err:
-            fallback = fallback_model_name()
-            if fallback and fallback != clean_model:
-                # Log only the failure type.  Provider messages may contain
-                # request details that should not be written to application logs.
-                logger.info(
-                    'Primary Gemini model failed (%s); trying the configured fallback.',
-                    type(api_err).__name__,
-                )
-                response = client.models.generate_content(
-                    model=fallback,
-                    contents=combined_prompt,
-                )
-            else:
-                raise
+        from .services.ai import fallback_model_name, is_poor_connection_error
+        models_to_try = [clean_model]
+        fallback = fallback_model_name()
+        if fallback and fallback != clean_model:
+            models_to_try.append(fallback)
+
+        response = None
+        last_exc = None
+        for m in models_to_try:
+            max_attempts = 2 if len(models_to_try) > 1 else 3
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    response = client.models.generate_content(
+                        model=m,
+                        contents=combined_prompt,
+                    )
+                    if response:
+                        break
+                except Exception as api_err:
+                    last_exc = api_err
+                    if is_poor_connection_error(api_err) and attempt < max_attempts:
+                        logger.info(
+                            'Weak connection on diagnostic model %s (attempt %d/%d): %s. Retrying online...',
+                            m, attempt, max_attempts, type(api_err).__name__,
+                        )
+                        time.sleep(0.5 * attempt)
+                        continue
+                    break
+            if response:
+                break
+
+        if not response and last_exc:
+            raise last_exc
         # Record tokens
         try:
             from apps.core.models import GeminiUsageTracker
@@ -623,6 +651,48 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
     if session.safety_hazard and session.safety_hazard['urgency'] == 'critical_stop':
         safety_header = f"> [!CAUTION]\n> **SAFETY ALERT:** {session.safety_hazard['alert_text']}\n\n"
 
+    def _save_and_return(reply):
+        if reply and len(reply.strip()) > 20:
+            if session.safety_hazard and session.safety_hazard['alert_text'] not in reply:
+                reply = safety_header + reply
+            try:
+                from .views import _save_offline_knowledge
+                v_info = getattr(session, 'vehicle_info', {}) or {}
+                _save_offline_knowledge(
+                    message,
+                    reply,
+                    intent='diagnostic',
+                    make=v_info.get('make') or '',
+                    model=v_info.get('model') or '',
+                    year=v_info.get('year') or '',
+                    language=language or 'english',
+                )
+            except Exception:
+                pass
+        return reply
+
+    def _check_cached():
+        try:
+            from .views import _find_offline_knowledge
+            v_info = getattr(session, 'vehicle_info', {}) or {}
+            cached = _find_offline_knowledge(
+                message,
+                user,
+                intent='diagnostic',
+                make=v_info.get('make') or '',
+                model=v_info.get('model') or '',
+                year=v_info.get('year') or '',
+            )
+            if cached:
+                fallback_notice = (
+                    "> [!NOTE]\n"
+                    "> ⚡ *Generated from J.A.R.V.I.S. Stored Offline Knowledge (Connection Unavailable)*\n\n"
+                )
+                return fallback_notice + cached
+        except Exception:
+            pass
+        return None
+
     # 1a. User confirmed to COMMENCE or CONTINUE step-by-step procedure: Deliver requested Step!
     if session.is_procedure_continuation and session.active_symptom:
         step_num = session._extract_requested_step()
@@ -644,11 +714,11 @@ MANDATE:
         try:
             ai_reply = call_configured_ai(ai_step_prompt, system_instruction=ai_step_system_prompt)
             if ai_reply and len(ai_reply.strip()) > 30:
-                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
-                    ai_reply = safety_header + ai_reply
-                return ai_reply
+                return _save_and_return(ai_reply)
         except Exception:
-            pass
+            cached = _check_cached()
+            if cached:
+                return safety_header + cached
 
         local_step = LocalTutorFormatter.format_step(session, step_num=step_num)
         if local_step:
@@ -672,11 +742,11 @@ MANDATE:
         try:
             ai_reply = call_configured_ai(unsuccess_prompt, system_instruction=unsuccess_system_prompt)
             if ai_reply and len(ai_reply.strip()) > 30:
-                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
-                    ai_reply = safety_header + ai_reply
-                return ai_reply
+                return _save_and_return(ai_reply)
         except Exception:
-            pass
+            cached = _check_cached()
+            if cached:
+                return safety_header + cached
 
         local_step = LocalTutorFormatter.format_step(session, step_num=step_num)
         if local_step:
@@ -703,11 +773,12 @@ Strict Rules:
         try:
             ai_reply = call_configured_ai(prompt, system_instruction=no_symptom_system_prompt)
             if ai_reply and len(ai_reply.strip()) > 20:
-                if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
-                    ai_reply = safety_header + ai_reply
-                return ai_reply
+                return _save_and_return(ai_reply)
         except Exception as exc:
             logger.warning('AI call for vehicle inquiry failed (%s); using local reply.', type(exc).__name__)
+            cached = _check_cached()
+            if cached:
+                return safety_header + cached
 
         lang = session.language
         if lang == 'tagalog':
@@ -796,6 +867,12 @@ Strict Rules:
 3. Language: Respond in {session.language.upper()}. Preserve technical part names (caliper, master cylinder, stator, carb, spark plug) while explaining them naturally.
 4. {exp_instruction}
 5. Conclude with 3-5 action chips: `[chips: Option 1 | Option 2 | Option 3]`.
+6. ENGINE DISPLACEMENT & FUEL SYSTEM (CARB VS. FI) MANDATE:
+   - Identify and incorporate the engine displacement / size (e.g., 110cc, 125cc, 150cc, 200cc, 250cc, 400cc) in locating the problem and specifying accurate engine tolerances.
+   - Working on or fixing a carbureted motorcycle is vastly different from fixing a fuel-injected (FI) motorcycle in tools, diagnostics, and failure modes:
+     * If the fuel system (Carb vs FI) is missing when diagnosing an engine, starting, power, or fuel fault, ask whether the motorcycle is Carb or FI before giving detailed repair procedures.
+     * For Carbureted (Carb) engines: troubleshoot float bowl fuel flow, clogged pilot/main jets, air/fuel mixture screw setting, choke mechanism, and fuel petcock. Tools: screwdrivers, carb cleaner spray, drain container.
+     * For Fuel-Injected (FI) engines: troubleshoot 2-second electric fuel pump priming whine, battery voltage under cranking (>10.5V required for ECU/injector trigger), injector spray pattern, and throttle body / TPS / sensor wiring. Tools: digital multimeter, fuel pressure gauge (30-45 PSI), 12V test light.
 
 ## VERIFIED WORKSHOP KNOWLEDGE DATABASE:
 {knowledge_text}
@@ -807,14 +884,17 @@ Strict Rules:
     try:
         ai_reply = call_configured_ai(prompt, system_instruction=system_prompt)
         if ai_reply and len(ai_reply.strip()) > 30:
-            if session.safety_hazard and session.safety_hazard['alert_text'] not in ai_reply:
-                ai_reply = safety_header + ai_reply
-            return ai_reply
+            return _save_and_return(ai_reply)
     except Exception as exc:
         logger.warning(
             'Configured AI provider call failed (%s); using local knowledge.',
             type(exc).__name__,
         )
+
+    # 5.5 Try previously saved offline knowledge before database fallback
+    cached_reply = _check_cached()
+    if cached_reply:
+        return cached_reply
 
     # 6. Reliable Local Database Fallback (Explicitly Disclosed)
     local_reply = LocalTutorFormatter.format_tutor(

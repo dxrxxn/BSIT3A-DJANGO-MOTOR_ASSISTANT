@@ -72,19 +72,11 @@
     <span>RECENT SESSIONS</span>
   </div>
 
-  <div class="jarvis-recent-sessions-list">
-    <button type="button" class="jarvis-recent-session-item active-session" data-session-prompt="Engine won't start: my engine won't start but the dash lights turn on">
-      <span class="jarvis-recent-title">Engine won't start</span>
-      <span class="jarvis-recent-time is-active">Active diagnosis</span>
-    </button>
-    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Front brake inspection: lever feels spongy when braking">
-      <span class="jarvis-recent-title">Front brake inspection</span>
-      <span class="jarvis-recent-time">Yesterday</span>
-    </button>
-    <button type="button" class="jarvis-recent-session-item" data-session-prompt="Tire pressure check: what should I inspect before a ride?">
-      <span class="jarvis-recent-title">Tire pressure check</span>
-      <span class="jarvis-recent-time">Oct 19</span>
-    </button>
+  <div class="jarvis-recent-sessions-list" id="sidebar-recent-sessions-list">
+    <!-- Populated dynamically by JavaScript from localStorage -->
+    <div class="jarvis-sidebar-empty-hint" id="sidebar-recent-empty" style="display:none;">
+      No sessions yet.
+    </div>
   </div>
 
   <div class="jarvis-sidebar-spacer"></div>
@@ -107,11 +99,13 @@
     <div class="ma-sidebar-mechanic-hint">Know when to stop DIY.</div>
   </div>
 
-  <!-- Account settings / Help -->
+  <!-- Account settings / Help / Logout -->
   <div class="ma-sidebar-footer-links">
     <a href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSettings">Account settings</a>
     <span class="ma-footer-divider">/</span>
     <a href="#" id="sidebar-help-link">Help</a>
+    <span class="ma-footer-divider">/</span>
+    <a href="{% url 'logout' %}" title="Sign out">Log out</a>
   </div>
 
 </aside>
@@ -119,7 +113,8 @@
 <script>
 /* Wire sidebar navigation, new diagnosis, recent sessions, history and help links */
 (function() {
-  // New Diagnosis Button
+
+  // ── New Diagnosis Button ──────────────────────────────────────────────────
   var newDiagBtn = document.getElementById('sidebar-btn-new-diagnosis');
   if (newDiagBtn) {
     newDiagBtn.addEventListener('click', function(e) {
@@ -133,39 +128,133 @@
     });
   }
 
-  // Recent Sessions clickable items
-  document.querySelectorAll('.jarvis-recent-session-item').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      document.querySelectorAll('.jarvis-recent-session-item').forEach(function(b) {
-        b.classList.remove('active-session');
-        var badge = b.querySelector('.jarvis-recent-time');
-        if (badge && badge.classList.contains('is-active')) {
-          badge.classList.remove('is-active');
+  // ── Populate Recent Sessions from localStorage ───────────────────────────
+  function getUserKey() {
+    // Match the key used in home.html: 'jarvis_ui_history_' + USER_KEY
+    var userPk = '{{ request.user.pk|default:"default" }}';
+    return userPk;
+  }
+
+  function truncate(str, n) {
+    if (!str) return '';
+    return str.length > n ? str.slice(0, n) + '…' : str;
+  }
+
+  function escSidebar(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function populateSidebarSessions(historyArr) {
+    var list = document.getElementById('sidebar-recent-sessions-list');
+    var emptyHint = document.getElementById('sidebar-recent-empty');
+    if (!list) return;
+
+    // Remove all existing session items
+    list.querySelectorAll('.jarvis-recent-session-item').forEach(function(el){ el.remove(); });
+
+    // Filter: only user messages (non-bot), not the default init message
+    var userMsgs = (historyArr || []).filter(function(item) {
+      return item.role !== 'bot' && item.id !== 'init-1' && item.id !== 'cleared-1' && (item.text || '').trim().length > 2;
+    });
+
+    // De-duplicate by text, keeping last occurrence, max 5 items
+    var seen = {};
+    var unique = [];
+    for (var i = userMsgs.length - 1; i >= 0; i--) {
+      var key = (userMsgs[i].text || '').trim().toLowerCase().slice(0, 60);
+      if (!seen[key]) {
+        seen[key] = true;
+        unique.unshift(userMsgs[i]);
+      }
+    }
+    unique = unique.slice(-5);
+
+    if (unique.length === 0) {
+      if (emptyHint) emptyHint.style.display = '';
+      return;
+    }
+    if (emptyHint) emptyHint.style.display = 'none';
+
+    unique.reverse().forEach(function(item, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'jarvis-recent-session-item' + (idx === 0 ? ' active-session' : '');
+      btn.innerHTML = '<span class="jarvis-recent-title">' + escSidebar(truncate(item.text, 42)) + '</span>' +
+        '<span class="jarvis-recent-time' + (idx === 0 ? ' is-active' : '') + '">' +
+        escSidebar(item.time || '') + '</span>';
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        list.querySelectorAll('.jarvis-recent-session-item').forEach(function(b) {
+          b.classList.remove('active-session');
+          var badge = b.querySelector('.jarvis-recent-time');
+          if (badge) badge.classList.remove('is-active');
+        });
+        btn.classList.add('active-session');
+        var badge = btn.querySelector('.jarvis-recent-time');
+        if (badge) badge.classList.add('is-active');
+        // If the history API is available use it; otherwise navigate to dashboard
+        if (window.jarvisHistoryAPI) {
+          window.jarvisHistoryAPI.open();
+        } else {
+          window.location.href = "{% url 'dashboard' %}";
         }
       });
-      btn.classList.add('active-session');
-      var prompt = btn.getAttribute('data-session-prompt') || btn.querySelector('.jarvis-recent-title')?.textContent?.trim();
-      var input = document.getElementById('jarvis-user-input') || document.getElementById('jarvis-widget-input');
-      var send = document.getElementById('jarvis-btn-send') || document.getElementById('jarvis-widget-send');
-      if (input && send && prompt) {
-        input.value = prompt;
-        send.click();
-      }
+      list.appendChild(btn);
     });
+  }
+
+  // Try to load on page load from localStorage
+  function tryPopulateFromStorage() {
+    var userKey = getUserKey();
+    var storageKey = 'jarvis_ui_history_' + userKey;
+    var fallbackKey = 'jarvis_shared_chat_' + userKey;
+    var saved = null;
+    try {
+      saved = localStorage.getItem(storageKey) || localStorage.getItem(fallbackKey);
+    } catch(e) {}
+    if (saved) {
+      try {
+        var parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          populateSidebarSessions(parsed);
+        }
+      } catch(e) {}
+    } else {
+      var emptyHint = document.getElementById('sidebar-recent-empty');
+      if (emptyHint) emptyHint.style.display = '';
+    }
+  }
+
+  // Also listen for the event dispatched by home.html after IIFE runs
+  document.addEventListener('jarvis:historyReady', function(e) {
+    if (e.detail && Array.isArray(e.detail.history)) {
+      populateSidebarSessions(e.detail.history);
+    }
   });
 
-  // History link
+  // Initial population from localStorage
+  tryPopulateFromStorage();
+
+  // ── History link (opens history drawer or navigates to dashboard) ─────────
   var histLink = document.getElementById('sidebar-history-link');
   if (histLink) {
     histLink.addEventListener('click', function(e) {
       e.preventDefault();
-      var histBtn = document.getElementById('btn-chat-history');
-      if (histBtn) histBtn.click();
+      if (window.jarvisHistoryAPI) {
+        window.jarvisHistoryAPI.toggle();
+      } else {
+        // On another page: open the drawer button if present, else navigate
+        var histBtn = document.getElementById('btn-chat-history');
+        if (histBtn) {
+          histBtn.click();
+        } else {
+          window.location.href = "{% url 'dashboard' %}?open_history=1";
+        }
+      }
     });
   }
 
-  // Help link
+  // ── Help link ─────────────────────────────────────────────────────────────
   var helpLink = document.getElementById('sidebar-help-link');
   if (helpLink) {
     helpLink.addEventListener('click', function(e) {
@@ -178,5 +267,6 @@
       }
     });
   }
+
 })();
 </script>

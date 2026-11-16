@@ -222,6 +222,22 @@ def build_offline_response(message, conversation, profile, evidence, safety,
 
     subtype = classify_no_start(message) if is_no_start_topic(message) else None
     if not evidence:
+        try:
+            from apps.core.views import _find_offline_knowledge
+            cached = _find_offline_knowledge(
+                message,
+                conversation.user if conversation else None,
+                intent='diagnostic',
+                make=profile.get('make') or '',
+                model=profile.get('model') or '',
+                year=profile.get('year') or '',
+            )
+            if cached:
+                structured['reply_text'] = cached
+                structured['offline_cached'] = True
+                return structured
+        except Exception:
+            pass
         structured['limitations'] = [
             LABELS.get(language, LABELS['english'])['no_record'],
         ]

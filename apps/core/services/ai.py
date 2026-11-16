@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -127,6 +128,21 @@ def _make_client():
     return genai.Client(api_key=api_key, http_options=http_options), types
 
 
+def is_poor_connection_error(exc):
+    """Detect if an exception is likely caused by poor signal, high latency, socket timeout, or temporary network drops."""
+    import socket
+    if isinstance(exc, (socket.timeout, TimeoutError, ConnectionResetError, ConnectionError)):
+        return True
+    status = getattr(exc, 'status_code', None) or getattr(exc, 'code', None)
+    if status in (429, 500, 502, 503, 504):
+        return True
+    text = f'{type(exc).__name__} {exc}'.lower()
+    return any(marker in text for marker in (
+        'timeout', 'timed out', 'deadline', 'connection', 'network',
+        'dns', 'reset by peer', 'temporary failure', 'try again', 'remote disconnected'
+    ))
+
+
 def _classify_exception(exc):
     """Map SDK/network failures to a small set of safe public categories."""
     status = getattr(exc, 'status_code', None) or getattr(exc, 'code', None)
@@ -237,16 +253,42 @@ def generate(prompt, *, system_instruction=None, images=None, response_schema=No
     except Exception as exc:
         raise AiInvalidRequest('Could not construct the AI request.') from exc
 
-    try:
-        response = client.models.generate_content(model=model, contents=contents, config=config)
-    except Exception as exc:
-        classified = _classify_exception(exc)
-        # Log only safe metadata: never prompt text, key material, or raw body.
+    models_to_try = [model]
+    fallback = fallback_model_name()
+    if fallback and fallback != model:
+        models_to_try.append(fallback)
+
+    response = None
+    last_exc = None
+
+    for m in models_to_try:
+        max_attempts = 2 if len(models_to_try) > 1 else 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = client.models.generate_content(model=m, contents=contents, config=config)
+                if response:
+                    model = m
+                    break
+            except Exception as exc:
+                last_exc = exc
+                if is_poor_connection_error(exc) and attempt < max_attempts:
+                    logger.info(
+                        'Weak connection / transient error on model %s (attempt %d/%d): %s. Re-trying online...',
+                        m, attempt, max_attempts, type(exc).__name__,
+                    )
+                    time.sleep(0.5 * attempt)
+                    continue
+                break
+        if response:
+            break
+
+    if not response and last_exc:
+        classified = _classify_exception(last_exc)
         logger.warning(
-            'Gemini request failed: category=%s status=%s exception=%s',
-            classified.category, classified.status_code, type(exc).__name__,
+            'All online attempts exhausted: category=%s status=%s exception=%s',
+            classified.category, classified.status_code, type(last_exc).__name__,
         )
-        raise classified from exc
+        raise classified from last_exc
 
     text = getattr(response, 'text', '') or ''
     parsed = getattr(response, 'parsed', None)

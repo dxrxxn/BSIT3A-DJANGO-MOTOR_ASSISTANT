@@ -1,0 +1,546 @@
+/*
+ * ============================================================
+ *  JARVIS UI ENHANCEMENTS  –  v2.0
+ *  1. Dynamic Theme Adaptation (Accent colors, Custom BG & Light/Dark mode)
+ *  2. Card Layout Spacing (Fix "Your Motorcycle" card touching header line)
+ *  3. Visual Polish, Depth & Responsive Refinement
+ * ============================================================
+ */
+
+/* ── 1. DYNAMIC ACCENT COLORS (Linked to Theme Settings) ───── */
+:root {
+  --ma-accent: var(--jarvis-cyan, #52e3b6);
+  --ma-accent-glow: rgba(82, 227, 182, 0.25);
+  --ma-accent-dim: rgba(82, 227, 182, 0.12);
+  --ma-accent-border: rgba(82, 227, 182, 0.35);
+
+  --ma-bg: var(--jarvis-bg-workspace, #091118);
+  --ma-sidebar-bg: var(--jarvis-bg-sidebar, #0e151e);
+  --ma-card-bg: var(--jarvis-bg-card, #111d27);
+  --ma-card-hover: var(--jarvis-bg-card-hover, #172635);
+  --ma-border: var(--jarvis-border-subtle, rgba(255, 255, 255, 0.08));
+  --ma-text: var(--jarvis-text-primary, #ffffff);
+  --ma-text-sec: var(--jarvis-text-secondary, #94a3b8);
+}
+
+[data-bs-theme-primary="cyan"] {
+  --jarvis-cyan: #00f0ff;
+  --ma-accent: #00f0ff;
+  --ma-accent-glow: rgba(0, 240, 255, 0.35);
+  --ma-accent-dim: rgba(0, 240, 255, 0.12);
+  --ma-accent-border: rgba(0, 240, 255, 0.35);
+}
+[data-bs-theme-primary="teal"] {
+  --jarvis-cyan: #2dd4bf;
+  --ma-accent: #2dd4bf;
+  --ma-accent-glow: rgba(45, 212, 191, 0.35);
+  --ma-accent-dim: rgba(45, 212, 191, 0.12);
+  --ma-accent-border: rgba(45, 212, 191, 0.35);
+}
+[data-bs-theme-primary="azure"] {
+  --jarvis-cyan: #38bdf8;
+  --ma-accent: #38bdf8;
+  --ma-accent-glow: rgba(56, 189, 248, 0.35);
+  --ma-accent-dim: rgba(56, 189, 248, 0.12);
+  --ma-accent-border: rgba(56, 189, 248, 0.35);
+}
+[data-bs-theme-primary="blue"] {
+  --jarvis-cyan: #60a5fa;
+  --ma-accent: #60a5fa;
+  --ma-accent-glow: rgba(96, 165, 250, 0.35);
+  --ma-accent-dim: rgba(96, 165, 250, 0.12);
+  --ma-accent-border: rgba(96, 165, 250, 0.35);
+}
+[data-bs-theme-primary="indigo"] {
+  --jarvis-cyan: #818cf8;
+  --ma-accent: #818cf8;
+  --ma-accent-glow: rgba(129, 140, 248, 0.35);
+  --ma-accent-dim: rgba(129, 140, 248, 0.12);
+  --ma-accent-border: rgba(129, 140, 248, 0.35);
+}
+[data-bs-theme-primary="purple"] {
+  --jarvis-cyan: #c084fc;
+  --ma-accent: #c084fc;
+  --ma-accent-glow: rgba(192, 132, 252, 0.35);
+  --ma-accent-dim: rgba(192, 132, 252, 0.12);
+  --ma-accent-border: rgba(192, 132, 252, 0.35);
+}
+[data-bs-theme-primary="pink"] {
+  --jarvis-cyan: #f472b6;
+  --ma-accent: #f472b6;
+  --ma-accent-glow: rgba(244, 114, 182, 0.35);
+  --ma-accent-dim: rgba(244, 114, 182, 0.12);
+  --ma-accent-border: rgba(244, 114, 182, 0.35);
+}
+[data-bs-theme-primary="red"] {
+  --jarvis-cyan: #f87171;
+  --ma-accent: #f87171;
+  --ma-accent-glow: rgba(248, 113, 113, 0.35);
+  --ma-accent-dim: rgba(248, 113, 113, 0.12);
+  --ma-accent-border: rgba(248, 113, 113, 0.35);
+}
+[data-bs-theme-primary="orange"] {
+  --jarvis-cyan: #fb923c;
+  --ma-accent: #fb923c;
+  --ma-accent-glow: rgba(251, 146, 60, 0.35);
+  --ma-accent-dim: rgba(251, 146, 60, 0.12);
+  --ma-accent-border: rgba(251, 146, 60, 0.35);
+}
+[data-bs-theme-primary="yellow"] {
+  --jarvis-cyan: #facc15;
+  --ma-accent: #facc15;
+  --ma-accent-glow: rgba(250, 204, 21, 0.35);
+  --ma-accent-dim: rgba(250, 204, 21, 0.12);
+  --ma-accent-border: rgba(250, 204, 21, 0.35);
+}
+[data-bs-theme-primary="lime"] {
+  --jarvis-cyan: #a3e635;
+  --ma-accent: #a3e635;
+  --ma-accent-glow: rgba(163, 230, 53, 0.35);
+  --ma-accent-dim: rgba(163, 230, 53, 0.12);
+  --ma-accent-border: rgba(163, 230, 53, 0.35);
+}
+[data-bs-theme-primary="green"] {
+  --jarvis-cyan: #4ade80;
+  --ma-accent: #4ade80;
+  --ma-accent-glow: rgba(74, 222, 128, 0.35);
+  --ma-accent-dim: rgba(74, 222, 128, 0.12);
+  --ma-accent-border: rgba(74, 222, 128, 0.35);
+}
+
+/* ── 2. SEPARATION IN THE MIDDLE & RIGHT CARDS SPACING ───────
+   Separates the diagnostic workspace from the right cards column
+   with a clean vertical divider, generous middle gap, and sleek scrollbars */
+.jarvis-dashboard-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+  column-gap: 24px !important; /* Generous separation in the middle */
+  row-gap: 14px !important;
+  padding: 14px 24px 12px !important; /* Clean breathing room from top/sides */
+  overflow: hidden !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+}
+
+/* Middle separation: Left Diagnostic Workspace Column */
+.jarvis-copilot-card {
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid var(--ma-border, rgba(255, 255, 255, 0.08)) !important; /* Sleek vertical divider in the middle */
+  padding-right: 20px !important; /* Insets scrollbar & content away from the middle divider */
+  box-shadow: none !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Chat scroll area: breathing room for scrollbar */
+.jarvis-copilot-scroll {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 4px 8px 12px 0 !important;
+  min-height: 0 !important;
+}
+
+/* Right Side Column (Cards) */
+.jarvis-right-column {
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  padding-top: 2px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
+
+.jarvis-card-box.jarvis-moto-card {
+  margin-top: 0 !important;
+}
+
+/* ── SLEEK JARVIS SCROLLBARS (Cross-Browser: Firefox, Chrome, Edge) ──
+   Removes ugly OS/browser default scrollbars & arrows, replacing with
+   subtle, modern HUD scrollbars that never collide with cards. */
+.jarvis-copilot-scroll,
+.jarvis-right-column,
+.jarvis-chat-messages {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent !important;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar,
+.jarvis-right-column::-webkit-scrollbar,
+.jarvis-chat-messages::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar-button,
+.jarvis-right-column::-webkit-scrollbar-button,
+.jarvis-chat-messages::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar-track,
+.jarvis-right-column::-webkit-scrollbar-track,
+.jarvis-chat-messages::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar-thumb,
+.jarvis-right-column::-webkit-scrollbar-thumb,
+.jarvis-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-radius: 999px !important;
+}
+
+.jarvis-copilot-scroll::-webkit-scrollbar-thumb:hover,
+.jarvis-right-column::-webkit-scrollbar-thumb:hover,
+.jarvis-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--ma-accent, #52e3b6) !important;
+}
+
+@media (max-width: 1024px) {
+  .jarvis-dashboard-grid {
+    grid-template-columns: 1fr !important;
+    column-gap: 0 !important;
+    padding: 10px 14px !important;
+  }
+  .jarvis-copilot-card {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+  .jarvis-right-column {
+    display: none !important;
+  }
+}
+
+/* ── 3. WORKSPACE & SURFACES (Dynamic Background Responsive) ── */
+.jarvis-workspace,
+.jarvis-app-workspace {
+  background: var(--ma-bg) !important;
+}
+
+.jarvis-dashboard-header {
+  background: var(--ma-sidebar-bg) !important;
+  border-bottom: 1px solid var(--ma-border) !important;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.jarvis-header-title {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ma-text) !important;
+}
+
+/* ── 4. CONTROL BAR (Guided / Smart / Language / Hands-free) ── */
+.jarvis-mode-toggle {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-border) !important;
+  border-radius: 10px !important;
+  padding: 2px !important;
+}
+
+.jarvis-mode-btn.active {
+  background: var(--ma-accent-dim) !important;
+  color: var(--ma-accent) !important;
+  box-shadow: inset 0 0 0 1px var(--ma-accent-border), 0 0 8px var(--ma-accent-glow) !important;
+}
+
+.jarvis-lang-wrap {
+  border: 1px solid var(--ma-border) !important;
+  background: var(--ma-card-bg) !important;
+  border-radius: 10px !important;
+}
+
+.jarvis-pill-btn {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-accent) !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.jarvis-pill-btn:hover {
+  background: var(--ma-accent-glow) !important;
+  box-shadow: 0 0 10px var(--ma-accent-glow) !important;
+  transform: translateY(-1px) !important;
+}
+
+.jarvis-handsfree-btn {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-border) !important;
+  border-radius: 10px !important;
+}
+
+.jarvis-handsfree-btn:hover {
+  border-color: var(--ma-accent) !important;
+  color: var(--ma-text) !important;
+}
+
+/* ── 5. HERO BADGE & HEADLINE ─────────────────────────────── */
+.ma-hero-eyebrow {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-accent) !important;
+  box-shadow: 0 0 8px var(--ma-accent-glow) !important;
+}
+
+.ma-workspace-headline {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: var(--ma-text) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.ma-workspace-subtext {
+  font-size: 12px !important;
+  color: var(--ma-text-sec) !important;
+}
+
+/* ── 6. PROBLEM CARDS (Dynamic Accent Glow & Theming) ──────── */
+.ma-problem-card {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-border) !important;
+  border-radius: 12px !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.ma-problem-card:hover {
+  background: var(--ma-card-hover) !important;
+  border-color: var(--ma-accent) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), 0 0 14px var(--ma-accent-glow) !important;
+}
+
+.ma-problem-icon {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-accent) !important;
+}
+
+.ma-problem-title {
+  color: var(--ma-text) !important;
+}
+
+.ma-problem-desc {
+  color: var(--ma-text-sec) !important;
+}
+
+.ma-problem-action {
+  color: var(--ma-accent) !important;
+}
+
+/* ── 7. SAFE GUIDANCE CARD ────────────────────────────────── */
+.ma-safe-guidance-card {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  border-radius: 11px !important;
+}
+
+.ma-safe-guidance-header {
+  color: var(--ma-text) !important;
+}
+
+.ma-safe-guidance-p {
+  color: var(--ma-text-sec) !important;
+}
+
+.ma-safe-tip-pill {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-text) !important;
+}
+
+.ma-safe-tip-num {
+  color: var(--ma-accent) !important;
+  background: var(--ma-accent-dim) !important;
+}
+
+/* ── 8. RIGHT COLUMN CARDS (Your Motorcycle, Safety, etc.) ─── */
+.jarvis-card-box {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.jarvis-card-box:hover {
+  border-color: var(--ma-accent-border) !important;
+}
+
+.jarvis-card-eyebrow {
+  color: var(--ma-accent) !important;
+  opacity: 0.85 !important;
+}
+
+.jarvis-moto-title {
+  color: var(--ma-text) !important;
+}
+
+.jarvis-moto-specs {
+  color: var(--ma-text-sec) !important;
+}
+
+.jarvis-explore-btn {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-text) !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.jarvis-explore-btn:hover {
+  background: var(--ma-accent-glow) !important;
+  border-color: var(--ma-accent) !important;
+  color: var(--ma-text) !important;
+  box-shadow: 0 0 12px var(--ma-accent-glow) !important;
+  transform: translateY(-1px) !important;
+}
+
+.jarvis-safety-card {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+}
+
+.jarvis-safety-title {
+  color: var(--ma-text) !important;
+}
+
+.jarvis-safety-text {
+  color: var(--ma-text-sec) !important;
+}
+
+.jarvis-safety-icon-wrap svg {
+  color: var(--ma-accent) !important;
+}
+
+.ma-known-card {
+  background: var(--ma-card-bg) !important;
+}
+
+.ma-known-title {
+  color: var(--ma-text) !important;
+}
+
+.ma-known-label {
+  color: var(--ma-accent) !important;
+}
+
+.ma-known-value {
+  color: var(--ma-text) !important;
+}
+
+/* ── 9. BOTTOM INPUT BAR ──────────────────────────────────── */
+.jarvis-bottom-dock {
+  background: var(--ma-bg) !important;
+  border-top: 1px solid var(--ma-border) !important;
+}
+
+.ma-input-container {
+  background: var(--ma-card-bg) !important;
+  border: 1px solid var(--ma-border) !important;
+  border-radius: 12px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.ma-input-container:focus-within {
+  border-color: var(--ma-accent) !important;
+  box-shadow: 0 0 0 2px var(--ma-accent-dim), 0 2px 14px var(--ma-accent-glow) !important;
+}
+
+.ma-input-textarea {
+  color: var(--ma-text) !important;
+  caret-color: var(--ma-accent) !important;
+}
+
+.ma-send-btn {
+  background: var(--ma-accent) !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  transition: all 0.18s ease !important;
+}
+
+.ma-send-btn:hover {
+  filter: brightness(1.15) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px var(--ma-accent-glow) !important;
+}
+
+.ma-send-btn svg {
+  stroke: #000000 !important;
+}
+
+/* ── 10. SIDEBAR ACCENT STATES ────────────────────────────── */
+.jarvis-sidebar {
+  background: var(--ma-sidebar-bg) !important;
+  border-right: 1px solid var(--ma-border) !important;
+}
+
+.jarvis-new-diagnosis-btn {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-accent) !important;
+}
+
+.jarvis-new-diagnosis-btn:hover {
+  background: var(--ma-accent-glow) !important;
+  border-color: var(--ma-accent) !important;
+  box-shadow: 0 0 12px var(--ma-accent-glow) !important;
+}
+
+.jarvis-nav-link.active {
+  background: var(--ma-accent-dim) !important;
+  color: var(--ma-accent) !important;
+  box-shadow: inset 2px 0 0 var(--ma-accent) !important;
+}
+
+.ma-private-saved-pill {
+  background: var(--ma-accent-dim) !important;
+  border: 1px solid var(--ma-accent-border) !important;
+  color: var(--ma-accent) !important;
+}
+
+/* ── 11. LIGHT MODE SPECIFIC POLISH ───────────────────────── */
+[data-bs-theme="light"], [data-theme="light"] {
+  --ma-bg: var(--jarvis-bg-workspace, #f4f6fa);
+  --ma-sidebar-bg: var(--jarvis-bg-sidebar, #ffffff);
+  --ma-card-bg: var(--jarvis-bg-card, #ffffff);
+  --ma-card-hover: var(--jarvis-bg-card-hover, #f1f5f9);
+  --ma-border: var(--jarvis-border-subtle, #e2e8f0);
+  --ma-text: var(--jarvis-text-primary, #0f172a);
+  --ma-text-sec: var(--jarvis-text-secondary, #475569);
+}
+
+[data-bs-theme="light"] .jarvis-header-title,
+[data-theme="light"] .jarvis-header-title,
+[data-bs-theme="light"] .ma-workspace-headline,
+[data-theme="light"] .ma-workspace-headline {
+  color: #0f172a !important;
+}
+
+[data-bs-theme="light"] .ma-input-container,
+[data-theme="light"] .ma-input-container {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-bs-theme="light"] .ma-input-textarea,
+[data-theme="light"] .ma-input-textarea {
+  color: #0f172a !important;
+}
+
+[data-bs-theme="light"] .ma-input-textarea::placeholder,
+[data-theme="light"] .ma-input-textarea::placeholder {
+  color: #94a3b8 !important;
+}

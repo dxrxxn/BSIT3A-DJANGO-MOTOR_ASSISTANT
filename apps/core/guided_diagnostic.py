@@ -29,6 +29,7 @@ import re
 BIKE_LIBRARY = {
         'mt-09': {
         'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'displacement': '890cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
         'brakes': 'dual front disc / rear disc',
         'focus': [
@@ -39,6 +40,7 @@ BIKE_LIBRARY = {
     },
     'mt09': {
         'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'displacement': '890cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
         'brakes': 'dual front disc / rear disc',
         'focus': [
@@ -49,6 +51,7 @@ BIKE_LIBRARY = {
     },
     'mt 09': {
         'make': 'Yamaha', 'model': 'MT-09 SP', 'type': 'motorcycle',
+        'displacement': '890cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
         'brakes': 'dual front disc / rear disc',
         'focus': [
@@ -59,6 +62,7 @@ BIKE_LIBRARY = {
     },
     'click 125i': {
         'make': 'Honda', 'model': 'Click 125i', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear drum',
         'focus': [
@@ -69,6 +73,7 @@ BIKE_LIBRARY = {
     },
     'click 150i': {
         'make': 'Honda', 'model': 'Click 150i', 'type': 'scooter',
+        'displacement': '150cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear disc',
         'focus': [
@@ -77,14 +82,16 @@ BIKE_LIBRARY = {
             'Check both disc brakes for pad thickness and fluid level.',
         ],
     },
-    'click': {
+    'honda click': {
         'make': 'Honda', 'model': 'Click', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear drum',
         'focus': ['Battery, FI pump, and CVT belt are the usual checks.'],
     },
     'mio': {
         'make': 'Yamaha', 'model': 'Mio', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Carburetor or FI (depends on year)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear drum',
         'focus': [
@@ -94,6 +101,7 @@ BIKE_LIBRARY = {
     },
     'aerox': {
         'make': 'Yamaha', 'model': 'Aerox 155', 'type': 'scooter',
+        'displacement': '155cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front and rear disc',
         'focus': [
@@ -103,36 +111,42 @@ BIKE_LIBRARY = {
     },
     'nmax': {
         'make': 'Yamaha', 'model': 'NMAX 155', 'type': 'scooter',
+        'displacement': '155cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front and rear disc',
         'focus': ['FI pump prime, battery health, and CVT belt wear.'],
     },
     'beat': {
         'make': 'Honda', 'model': 'Beat', 'type': 'scooter',
+        'displacement': '110cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc or drum / rear drum',
         'focus': ['Battery, FI pump, and CVT belt are the usual checks.'],
     },
     'pcx': {
         'make': 'Honda', 'model': 'PCX', 'type': 'scooter',
+        'displacement': '160cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front and rear disc',
         'focus': ['FI pump, battery, CVT belt, and coolant level (liquid-cooled).'],
     },
     'adv': {
         'make': 'Honda', 'model': 'ADV', 'type': 'scooter',
+        'displacement': '160cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front and rear disc',
         'focus': ['FI pump, battery, CVT belt, and coolant level.'],
     },
     'fazzio': {
         'make': 'Yamaha', 'model': 'Fazzio', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear drum',
         'focus': ['Battery, FI pump, and CVT belt.'],
     },
     'wave': {
         'make': 'Honda', 'model': 'Wave', 'type': 'underbone',
+        'displacement': '125cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front disc or drum / rear drum',
         'focus': [
@@ -142,42 +156,49 @@ BIKE_LIBRARY = {
     },
     'xrm': {
         'make': 'Honda', 'model': 'XRM 125', 'type': 'underbone',
+        'displacement': '125cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front disc / rear drum',
         'focus': ['Chain and sprocket wear, carburetor cleanliness, and battery.'],
     },
     'raider': {
         'make': 'Suzuki', 'model': 'Raider 150', 'type': 'underbone',
+        'displacement': '150cc',
         'fuel': 'Carburetor or FI (depends on year)', 'drive': 'Chain',
         'brakes': 'front and rear disc',
         'focus': ['Chain slack, clutch adjustment, and battery are common checks.'],
     },
     'sniper': {
         'make': 'Yamaha', 'model': 'Sniper', 'type': 'underbone',
+        'displacement': '155cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'Chain',
         'brakes': 'front disc / rear drum',
         'focus': ['FI pump, battery, chain slack, and clutch cable free play.'],
     },
     'smash': {
         'make': 'Suzuki', 'model': 'Smash', 'type': 'underbone',
+        'displacement': '115cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': ['Carburetor, chain, and drum brake adjustment.'],
     },
     'tmx': {
         'make': 'Honda', 'model': 'TMX 125', 'type': 'backbone',
+        'displacement': '125cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front disc / rear drum',
         'focus': ['Chain, carburetor, valve noise, and battery.'],
     },
     'barako': {
         'make': 'Kawasaki', 'model': 'Barako 175', 'type': 'backbone',
+        'displacement': '175cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front disc / rear drum',
         'focus': ['Chain, carburetor, and valve clearance checks.'],
     },
     'bajaj ct 100': {
         'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'displacement': '100cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': [
@@ -188,6 +209,7 @@ BIKE_LIBRARY = {
     },
     'bajaj ct100': {
         'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'displacement': '100cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': [
@@ -198,6 +220,7 @@ BIKE_LIBRARY = {
     },
     'ct 100': {
         'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'displacement': '100cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': [
@@ -208,26 +231,209 @@ BIKE_LIBRARY = {
     },
     'ct100': {
         'make': 'Bajaj', 'model': 'CT 100', 'type': 'motorcycle',
+        'displacement': '100cc',
         'fuel': 'Carburetor', 'drive': 'Chain',
         'brakes': 'front drum / rear drum',
         'focus': ['Carburetor, chain, and drum brakes.'],
     },
     'burgman': {
         'make': 'Suzuki', 'model': 'Burgman Street', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front and rear disc',
         'focus': ['FI pump, battery, and CVT belt.'],
     },
     'gravis': {
         'make': 'Yamaha', 'model': 'Gravis', 'type': 'scooter',
+        'displacement': '125cc',
         'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
         'brakes': 'front disc / rear drum',
         'focus': ['Battery, FI pump, and CVT belt.'],
+    },
+    'crf 150l': {
+        'make': 'Honda', 'model': 'CRF 150L', 'type': 'dual-sport',
+        'displacement': '149cc',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'hydraulic front and rear wave disc',
+        'focus': [
+            'Off-road / trail dual-sport; inspect spoke tension, rim trueness, and tire pressure.',
+            'Drive chain slack (target 25-35mm), chain slider wear, and sprocket teeth condition.',
+            'Long-travel suspension: check front inverted fork seals for weeping oil and rear Pro-Link shock.',
+            'Air filter box and snorkel: clean filter after dusty trail rides.',
+        ],
+    },
+    'crf 300l': {
+        'make': 'Honda', 'model': 'CRF 300L', 'type': 'dual-sport',
+        'displacement': '286cc',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'hydraulic front and rear wave disc',
+        'focus': [
+            'Liquid-cooled 286cc DOHC single: check coolant level, radiator fins, and cooling fan.',
+            'Drive chain slack (target 25-35mm), chain guide block wear, and sprocket teeth.',
+            'Check inverted front fork seals for oil leaks and inspect brake fluid level.',
+        ],
+    },
+    'crf 250': {
+        'make': 'Honda', 'model': 'CRF 250L', 'type': 'dual-sport',
+        'displacement': '249cc',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': [
+            'Dual-sport dual disc brakes, drive chain slack, and fork seal checks.',
+            'Coolant level, air filter, and battery voltage.',
+        ],
+    },
+    'crf': {
+        'make': 'Honda', 'model': 'CRF', 'type': 'dual-sport',
+        'displacement': '250cc',
+        'fuel': 'Fuel-injected (FI) or Carburetor', 'drive': 'Chain drive',
+        'brakes': 'front and rear hydraulic disc',
+        'focus': [
+            'Dual-sport / trail bike: check chain slack, chain guide, and wheel spoke tightness.',
+            'Inspect front fork seals and rear shock for oil leakage.',
+            'Check air filter cleanliness, spark plug, and battery health.',
+        ],
+    },
+    'ninja 400': {
+        'make': 'Kawasaki', 'model': 'Ninja 400', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear petal disc with ABS',
+        'focus': [
+            'Parallel-twin 399cc: check clutch cable free play (slippage can occur if too tight).',
+            'Drive chain slack (target 20-30mm), sprocket wear, and radiator coolant level.',
+            'Check brake pad thickness and brake fluid level front/rear.',
+        ],
+    },
+    'ninja': {
+        'make': 'Kawasaki', 'model': 'Ninja', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Check clutch cable free play, chain tension, battery, and coolant level.'],
+    },
+    'duke 390': {
+        'make': 'KTM', 'model': 'Duke 390', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear ByBre disc with ABS',
+        'focus': [
+            '373cc high-compression single: check radiator coolant level and radiator fan operation.',
+            'WP suspension: inspect inverted fork seals for weeping oil.',
+            'Battery voltage, chain tension (target 25-30mm), and oil inspection window.',
+        ],
+    },
+    'duke': {
+        'make': 'KTM', 'model': 'Duke', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Radiator fan and coolant level, battery voltage, and chain slack.'],
+    },
+    'klx 150': {
+        'make': 'Kawasaki', 'model': 'KLX 150', 'type': 'dual-sport',
+        'fuel': 'Carburetor', 'drive': 'Chain drive',
+        'brakes': 'front and rear petal disc',
+        'focus': [
+            'Dual-sport / trail bike: check carburetor idle mixture, fuel petcock flow, and spark plug.',
+            'Drive chain slack, chain slider, and wheel spoke tension.',
+            'Inspect inverted fork seals and air filter foam cleanliness.',
+        ],
+    },
+    'klx': {
+        'make': 'Kawasaki', 'model': 'KLX', 'type': 'dual-sport',
+        'fuel': 'Carburetor or FI', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Chain slack, fork seals, air filter, and carburetor/fuel flow.'],
+    },
+    'wr 155r': {
+        'make': 'Yamaha', 'model': 'WR 155R', 'type': 'dual-sport',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear wave disc',
+        'focus': [
+            '155cc VVA liquid-cooled engine: check radiator coolant level and cooling fan.',
+            'Drive chain slack (trail setting), sprockets, and spoke tightness.',
+            'Front fork seals, brake pads, and battery voltage.',
+        ],
+    },
+    'wr 155': {
+        'make': 'Yamaha', 'model': 'WR 155R', 'type': 'dual-sport',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear wave disc',
+        'focus': [
+            '155cc VVA liquid-cooled engine: check radiator coolant level and cooling fan.',
+            'Drive chain slack (trail setting), sprockets, and spoke tightness.',
+            'Front fork seals, brake pads, and battery voltage.',
+        ],
+    },
+    'gixxer 150': {
+        'make': 'Suzuki', 'model': 'Gixxer 150', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Check spark plug, chain slack, battery voltage, and brake pad wear.'],
+    },
+    'gixxer': {
+        'make': 'Suzuki', 'model': 'Gixxer', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI) or Carburetor', 'drive': 'Chain drive',
+        'brakes': 'front disc / rear disc or drum',
+        'focus': ['Chain slack, battery, spark plug, and brake pads.'],
+    },
+    'cbr 150r': {
+        'make': 'Honda', 'model': 'CBR 150R', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Liquid-cooled DOHC: check coolant level, chain slack, clutch cable, and brake pads.'],
+    },
+    'cbr': {
+        'make': 'Honda', 'model': 'CBR', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Coolant level, drive chain slack, brake pads, and battery voltage.'],
+    },
+    'rouser 200': {
+        'make': 'Bajaj', 'model': 'Rouser NS200', 'type': 'motorcycle',
+        'fuel': 'Carburetor or FI', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc',
+        'focus': ['Triple-spark ignition: check 3 spark plugs, coolant level, and chain tension.'],
+    },
+    'rouser': {
+        'make': 'Bajaj', 'model': 'Rouser', 'type': 'motorcycle',
+        'fuel': 'Carburetor or FI', 'drive': 'Chain drive',
+        'brakes': 'front disc / rear drum or disc',
+        'focus': ['Spark plug condition, chain tension, clutch free play, and battery health.'],
+    },
+    'dominar 400': {
+        'make': 'Bajaj', 'model': 'Dominar 400', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc with dual-channel ABS',
+        'focus': ['373cc touring single: verify coolant level, battery health, and chain lubrication.'],
+    },
+    'dominar': {
+        'make': 'Bajaj', 'model': 'Dominar', 'type': 'motorcycle',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'Chain drive',
+        'brakes': 'front and rear disc with ABS',
+        'focus': ['Coolant level, battery health, chain lubrication, and brake pads.'],
+    },
+    'primavera': {
+        'make': 'Vespa', 'model': 'Primavera 150', 'type': 'scooter',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
+        'brakes': 'front disc / rear drum',
+        'focus': ['Steel unibody: check battery voltage, CVT rollers/belt, and front single-arm suspension.'],
+    },
+    'sprint': {
+        'make': 'Vespa', 'model': 'Sprint 150', 'type': 'scooter',
+        'fuel': 'Fuel-injected (FI)', 'drive': 'CVT belt',
+        'brakes': 'front disc / rear drum',
+        'focus': ['Battery health, CVT belt and rollers, front suspension link, and brake fluid.'],
     },
 }
 
 # Fallback profiles by motorcycle type.
 TYPE_LIBRARY = {
+    'motorcycle': {
+        'type': 'motorcycle', 'drive': 'Chain or belt',
+        'fuel': 'Carburetor or fuel-injected',
+        'brakes': 'disc or drum',
+        'focus': [
+            'General motorcycle checks: battery, spark plug, fuel supply, and safety switches.',
+        ],
+    },
     'scooter': {
         'type': 'scooter', 'drive': 'CVT belt',
         'fuel': 'Usually fuel-injected on newer units',
@@ -1289,10 +1495,10 @@ VERDICTS = {
 
 T = {
     'english': {
-        'identify': "Which motorcycle are we working on?\n\nModel and year is enough (example: *Click 125i 2022*).",
-        'identify_chips': "Click 125i | Mio | Wave 125 | Not sure",
+        'identify': "Which motorcycle are we working on?\n\nModel and year is enough — you can enter any motorcycle brand or model (example: *Honda CRF 150L, Click 125i 2022, Yamaha NMAX, Sniper, Kawasaki Ninja, Barako, Suzuki Raider, Bajaj CT 100*).",
+        'identify_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Not sure",
         'type_ask': "No problem. What type of motorcycle is it?",
-        'type_chips': "Scooter | Underbone | Standard | Big bike | Not sure",
+        'type_chips': "Scooter | Underbone | Standard | Dual-sport / Trail | Big bike | Not sure",
         'year_ask': "What year is your **{bike}**?",
         'year_chips': "2024 | 2023 | 2022 | Not sure",
         'focus': "Focus vehicle",
@@ -1306,18 +1512,18 @@ T = {
         'free_fix': "Try first (free)",
         'parts': "Parts only if needed",
         'stop': "Stop if",
-        'reset': "Fresh diagnostic, sir. Which motorcycle are we working on?",
-        'reset_chips': "Click 125i | Mio | Wave 125 | Not sure",
+        'reset': "Fresh diagnostic, sir. Which motorcycle are we working on? You can enter any brand or model.",
+        'reset_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Not sure",
         'safe_stop': "If you are unsure or the bike feels unsafe, stop and have a qualified mechanic check it. Do not test faulty brakes or a knocking engine on the road.",
         'again': "Let us narrow it further. Choose the closest answer:",
         'verdict_chips': "Begin procedure | It worked | Still not fixed | Another check | Start over",
         'checks_repeat': "Here are the free checks again. Tell me what you find:",
     },
     'tagalog': {
-        'identify': "Anong motor ang aayusin natin?\n\nModelo at taon lang (halimbawa: *Click 125i 2022*).",
-        'identify_chips': "Click 125i | Mio | Wave 125 | Hindi sigurado",
+        'identify': "Anong motor ang aayusin natin?\n\nModelo at taon lang — kahit anong brand o modelo ng motor ay pwede (halimbawa: *Honda CRF 150L, Click 125i 2022, Yamaha NMAX, Sniper, Kawasaki Ninja, Barako, Suzuki Raider, Bajaj CT 100*).",
+        'identify_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Hindi sigurado",
         'type_ask': "Sige. Anong klaseng motor ito?",
-        'type_chips': "Scooter | Underbone | Standard | Big bike | Hindi sigurado",
+        'type_chips': "Scooter | Underbone | Standard | Dual-sport / Trail | Big bike | Hindi sigurado",
         'year_ask': "Anong taon ang **{bike}** mo?",
         'year_chips': "2024 | 2023 | 2022 | Hindi sigurado",
         'focus': "Pokus na motor",
@@ -1331,18 +1537,18 @@ T = {
         'free_fix': "Gawin muna (libre)",
         'parts': "Parts lang kung kailangan",
         'stop': "Huminto kung",
-        'reset': "Bagong diagnosis, sir. Anong motor ang aayusin natin?",
-        'reset_chips': "Click 125i | Mio | Wave 125 | Hindi sigurado",
+        'reset': "Bagong diagnosis, sir. Anong motor ang aayusin natin? Kahit anong brand o modelo ay pwede.",
+        'reset_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Hindi sigurado",
         'safe_stop': "Kung hindi ka sigurado o parang delikado ang motor, huminto at ipatingin sa kwalipikadong mekaniko. Huwag subukan ang sira na preno o kumatok na makina sa kalsada.",
         'again': "Paliitin pa natin. Piliin ang pinakamalapit na sagot:",
         'verdict_chips': "Simulan ang procedure | Nagana na | Hindi pa | Ibang check | Simula ulit",
         'checks_repeat': "Ito ulit ang libreng checks. Sabihin kung ano ang nakita mo.",
     },
     'hiligaynon': {
-        'identify': "Ano nga motor ang aayusin naton?\n\nModelo kag tuig lang (halimbawa: *Click 125i 2022*).",
-        'identify_chips': "Click 125i | Mio | Wave 125 | Indi sigurado",
+        'identify': "Ano nga motor ang aayuhon naton?\n\nModelo kag tuig lang — bisan ano nga brand ukon modelo sang motor pwede gid (halimbawa: *Honda CRF 150L, Click 125i 2022, Yamaha NMAX, Sniper, Kawasaki Ninja, Barako, Suzuki Raider, Bajaj CT 100*).",
+        'identify_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Indi sigurado",
         'type_ask': "Sige. Ano nga klase sang motor ini?",
-        'type_chips': "Scooter | Underbone | Standard | Big bike | Indi sigurado",
+        'type_chips': "Scooter | Underbone | Standard | Dual-sport / Trail | Big bike | Indi sigurado",
         'year_ask': "Ano nga tuig ang **{bike}** mo?",
         'year_chips': "2024 | 2023 | 2022 | Indi sigurado",
         'focus': "Pokus nga motor",
@@ -1356,14 +1562,128 @@ T = {
         'free_fix': "Himuaon una (libre)",
         'parts': "Parts lang kon kinahanglan",
         'stop': "Magpundo kon",
-        'reset': "Bag-o nga diagnosis, sir. Ano nga motor ang aayuhon naton?",
-        'reset_chips': "Click 125i | Mio | Wave 125 | Indi sigurado",
+        'reset': "Bag-o nga diagnosis, sir. Ano nga motor ang aayuhon naton? Bisan ano nga brand ukon modelo sang motor pwede gid.",
+        'reset_chips': "Honda Click / CRF | Yamaha NMAX / Mio | Suzuki Raider | Kawasaki Ninja / Barako | Bajaj CT 100 | Indi sigurado",
         'safe_stop': "Kon indi ka sigurado ukon mabudlay ang motor, magpundo kag ipatan-aw sa kwalipikado nga mekaniko. Indi pagtestingi ang guba nga preno ukon nagakatok nga makina sa dalan.",
         'again': "Paliiton pa naton. Pilia ang pinakamalapit nga sabat:",
         'verdict_chips': "Suguran ang procedure | Nagana na | Indi gihapon | Iban nga check | Sugod liwat",
         'checks_repeat': "Ari liwat ang libre nga checks. Sabta ako kon ano ang nakita mo.",
     },
 }
+
+BRAND_MODEL_EXAMPLES = {
+    'honda': {
+        'examples': 'Click 125i, Beat, PCX 160, CRF 150L, Wave 125',
+        'chips': 'Click 125i | Beat | PCX 160 | CRF 150L | Wave 125 | Not sure',
+    },
+    'yamaha': {
+        'examples': 'NMAX 155, Aerox 155, Mio, Sniper 155, MT-09 SP',
+        'chips': 'NMAX 155 | Aerox 155 | Mio | Sniper 155 | MT-09 SP | Not sure',
+    },
+    'suzuki': {
+        'examples': 'Raider 150 Fi, Smash 115, GSX-R150',
+        'chips': 'Raider 150 | Smash 115 | GSX-R150 | Burgman Street | Not sure',
+    },
+    'kawasaki': {
+        'examples': 'Barako 175, Ninja 400, KLX 150',
+        'chips': 'Barako 175 | Ninja 400 | KLX 150 | W175 | Not sure',
+    },
+    'bajaj': {
+        'examples': 'CT 100, Pulsar NS200, Dominar 400',
+        'chips': 'CT 100 | Pulsar NS200 | Dominar 400 | Rouser 200 | Not sure',
+    },
+    'ktm': {
+        'examples': 'Duke 390, RC 390, 390 Adventure',
+        'chips': 'Duke 200 | Duke 390 | RC 390 | 390 Adventure | Not sure',
+    },
+    'tvs': {
+        'examples': 'Apache RTR 200, Ntorq 125, Ronin',
+        'chips': 'Apache RTR 200 | Ntorq 125 | Ronin | Not sure',
+    },
+    'vespa': {
+        'examples': 'Primavera 150, Sprint 150, GTS 300',
+        'chips': 'Primavera 150 | Sprint 150 | GTS 300 | Not sure',
+    },
+    'royal enfield': {
+        'examples': 'Classic 350, Hunter 350, Himalayan',
+        'chips': 'Classic 350 | Hunter 350 | Himalayan | Interceptor 650 | Not sure',
+    },
+    'bmw': {
+        'examples': 'G310GS, G310R, R1250GS',
+        'chips': 'G310GS | G310R | F850GS | R1250GS | Not sure',
+    },
+    'ducati': {
+        'examples': 'Monster, Panigale V4, Scrambler',
+        'chips': 'Monster | Panigale V4 | Scrambler | Multistrada | Not sure',
+    },
+    'kymco': {
+        'examples': 'Like 125, KRV 180, AK550',
+        'chips': 'Like 125 | Like 150i | KRV 180 | AK550 | Not sure',
+    },
+    'cfmoto': {
+        'examples': '450SR, 400NK, 700CL-X',
+        'chips': '450SR | 300NK | 400NK | 700CL-X | Not sure',
+    },
+    'harley-davidson': {
+        'examples': 'Iron 883, Street Glide, Fat Boy',
+        'chips': 'Iron 883 | Street Glide | Fat Boy | Sportster S | Not sure',
+    },
+    'harley': {
+        'examples': 'Iron 883, Street Glide, Fat Boy',
+        'chips': 'Iron 883 | Street Glide | Fat Boy | Sportster S | Not sure',
+    },
+    'triumph': {
+        'examples': 'Street Triple, Bonneville T100, Tiger 900',
+        'chips': 'Street Triple | Bonneville T100 | Tiger 900 | Not sure',
+    },
+    'aprilia': {
+        'examples': 'RS 660, Tuono 660, Dorsoduro 900',
+        'chips': 'RS 660 | Tuono 660 | Dorsoduro 900 | Not sure',
+    },
+    'benelli': {
+        'examples': 'TNT 135, TNT 300, Leoncino 500',
+        'chips': 'TNT 135 | TNT 300 | Leoncino 500 | Not sure',
+    },
+    'rusi': {
+        'examples': 'GS 125, FB 100, Alpha 125',
+        'chips': 'GS 125 | FB 100 | Alpha 125 | Not sure',
+    },
+    'motorstar': {
+        'examples': 'MSX 250, Mio 125, Knight 125',
+        'chips': 'MSX 250 | Mio 125 | Knight 125 | Not sure',
+    },
+    'keeway': {
+        'examples': 'Cafe Racer 152, Superlight 200, K-Light 202',
+        'chips': 'Cafe Racer 152 | Superlight 200 | K-Light 202 | Not sure',
+    },
+    'sym': {
+        'examples': 'VF3 185i, Mio 110, Jet 14',
+        'chips': 'VF3 185i | Mio 110 | Jet 14 | Not sure',
+    },
+    'husqvarna': {
+        'examples': 'Svartpilen 401, Vitpilen 401, Norden 901',
+        'chips': 'Svartpilen 401 | Vitpilen 401 | Norden 901 | Not sure',
+    },
+    'gasgas': {
+        'examples': 'EC 250, EC 300, MC 125',
+        'chips': 'EC 250 | EC 300 | MC 125 | Not sure',
+    },
+    'beta': {
+        'examples': 'RR 300, RR 125, Xtrainer 300',
+        'chips': 'RR 300 | RR 125 | Xtrainer 300 | Not sure',
+    },
+    'zontes': {
+        'examples': 'ZT310-R, ZT350-S, ZT125-G',
+        'chips': 'ZT310-R | ZT350-S | ZT125-G | Not sure',
+    },
+    'voge': {
+        'examples': '300AC, 300RR, 525DSX',
+        'chips': '300AC | 300RR | 525DSX | Not sure',
+    },
+}
+
+# Neutral fallback chips for brands NOT in BRAND_MODEL_EXAMPLES
+_GENERIC_TYPE_CHIPS = 'Cruiser | Sport | Standard | Scooter | Dual-Sport | Not sure'
 
 
 # ---------------------------------------------------------------------------
@@ -1661,10 +1981,20 @@ def resolve_profile(vehicle_info, message='', history=None):
             break
 
     if profile is None:
-        v_type = (vehicle_info or {}).get('type') or ''
-        if 'scooter' in v_type:
+        v_type = ((vehicle_info or {}).get('type') or '').lower()
+        v_mdl = ((vehicle_info or {}).get('model') or '').lower()
+        if 'scooter' in v_type and v_type != 'motorcycle':
             profile = dict(TYPE_LIBRARY['scooter'])
             profile['key'] = 'generic-scooter'
+        elif 'dual-sport' in v_type or 'trail' in v_type or 'crf' in v_mdl or 'klx' in v_mdl or 'wr' in v_mdl:
+            profile = dict(TYPE_LIBRARY['dual-sport'])
+            profile['key'] = 'generic-dual-sport'
+        elif 'big bike' in v_type or 'sport' in v_type or any(k in v_mdl for k in ['ninja', 'cbr', 'r3', 'r15', 'duke', 'gsx']):
+            profile = dict(TYPE_LIBRARY['big bike'])
+            profile['key'] = 'generic-sport'
+        elif 'underbone' in v_type:
+            profile = dict(TYPE_LIBRARY['underbone'])
+            profile['key'] = 'generic-underbone'
         elif 'tricycle' in v_type:
             profile = dict(TYPE_LIBRARY['underbone'])
             profile['key'] = 'generic-tricycle'
@@ -1676,13 +2006,32 @@ def resolve_profile(vehicle_info, message='', history=None):
                 'key': 'generic-car',
             }
         else:
-            profile = dict(TYPE_LIBRARY['underbone'])
-            profile['key'] = 'generic-underbone'
+            profile = dict(TYPE_LIBRARY.get('motorcycle', TYPE_LIBRARY['underbone']))
+            profile['key'] = 'generic-motorcycle'
 
     # Fill in extracted details.
-    for field in ('make', 'model', 'year'):
+    for field in ('make', 'model', 'year', 'displacement', 'fuel'):
         if (vehicle_info or {}).get(field):
             profile[field] = vehicle_info[field]
+    if (vehicle_info or {}).get('engine_displacement') and not profile.get('displacement'):
+        profile['displacement'] = vehicle_info['engine_displacement']
+    if (vehicle_info or {}).get('engine_fuel') and not profile.get('fuel'):
+        f_val = vehicle_info['engine_fuel']
+        profile['fuel'] = 'Fuel-injected (FI)' if f_val == 'FI' else ('Carburetor' if f_val == 'Carburetor' else f_val)
+
+    # Check corpus for displacement if still missing
+    if not profile.get('displacement'):
+        disp_m = re.search(r'\b(50|70|100|110|115|125|135|150|155|160|175|180|200|220|230|250|286|300|321|350|373|390|400|450|500|600|650|689|700|750|790|800|850|883|890|900|937|1000|1100|1200|1250|1290|1300)\s*(?:cc)?\b', corpus, re.I)
+        if disp_m:
+            profile['displacement'] = f"{disp_m.group(1)}cc"
+
+    # Check corpus for fuel if still missing
+    if not profile.get('fuel'):
+        if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject', corpus, re.I):
+            profile['fuel'] = 'Fuel-injected (FI)'
+        elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', corpus, re.I):
+            profile['fuel'] = 'Carburetor'
+
     profile.setdefault('make', '')
     profile.setdefault('model', '')
     profile.setdefault('year', '')
@@ -1690,9 +2039,20 @@ def resolve_profile(vehicle_info, message='', history=None):
 
 
 def bike_label(profile):
-    return " ".join(filter(None, [
+    base = " ".join(filter(None, [
         profile.get('year'), profile.get('make'), profile.get('model')
     ])).strip() or "your motorcycle"
+    disp = profile.get('displacement') or profile.get('engine_displacement')
+    fuel = profile.get('fuel') or profile.get('fuel_system')
+    details = []
+    if disp and str(disp).lower() not in base.lower():
+        details.append(str(disp))
+    if fuel and str(fuel).lower() not in base.lower() and 'depends' not in str(fuel).lower() and 'varies' not in str(fuel).lower() and 'or' not in str(fuel).lower():
+        f_str = 'FI' if ('fi' in str(fuel).lower() or 'inject' in str(fuel).lower()) else ('Carb' if 'carb' in str(fuel).lower() else str(fuel))
+        details.append(f_str)
+    if details and base != "your motorcycle":
+        return f"{base} ({', '.join(details)})"
+    return base
 
 
 YEAR_RE = re.compile(r'\b(19[5-9]\d|20[0-2]\d)\b')
@@ -1716,6 +2076,41 @@ def _needs_year(profile, state):
 def year_prompt(profile, lang):
     ask = _tr(lang, 'year_ask').format(bike=bike_label(profile))
     return f"{ask}\n\n[chips: {_tr(lang, 'year_chips')}]"
+
+
+def _needs_fuel(profile, state, area=None):
+    """Ask if carb or FI when diagnosing engine/starting/power issues and fuel system is unconfirmed."""
+    if state.get('fuel_confirmed') or state.get('fuel_skipped'):
+        return False
+    fuel = (profile.get('fuel') or '').lower()
+    if fuel and ('or' not in fuel and 'depends' not in fuel and 'varies' not in fuel):
+        return False
+    target_area = area or state.get('area')
+    if target_area in ('starting', 'power', 'smoke', 'noise', 'maintenance', 'starts_then_dies', 'oil_leak', 'fuel_leak'):
+        return True
+    return False
+
+
+def fuel_prompt(profile, lang):
+    bike = bike_label(profile)
+    if lang == 'tagalog':
+        return (
+            f"Bago tayo magpatuloy sa pagsusuri ng makina sa iyong **{bike}**: **De-karburador (Carb) ba o Fuel-Injected (FI) ito?**\n\n"
+            "*(Napakahalaga nito dahil magkaiba ang tools, diagnostics, at karaniwang nagiging sira ng de-karburador kumpara sa fuel-injected na motor.)*\n\n"
+            "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Hindi sigurado]"
+        )
+    elif lang == 'hiligaynon':
+        return (
+            f"Antes kita magpadayon sa pagsusuri sang makina sang imo **{bike}**: **De-karburador (Carb) bala ukon Fuel-Injected (FI) ini?**\n\n"
+            "*(Importante gid ini bangod lain ang mga gamit, diagnostics, kag diperensya sang de-karburador ikumpara sa fuel-injected nga motor.)*\n\n"
+            "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Indi sigurado]"
+        )
+    else:
+        return (
+            f"Before we isolate the engine issue on your **{bike}**: **Is your motorcycle Carbureted (Carb) or Fuel-Injected (FI)?**\n\n"
+            "*(Working on or fixing a carbureted motorcycle is very different from fixing a fuel-injected motorcycle, especially for tools, diagnostics, and what goes wrong.)*\n\n"
+            "[chips: Carburetor (Carb) | Fuel-Injected (FI) | Not sure]"
+        )
 
 
 def focus_block(profile, lang):
@@ -1863,25 +2258,25 @@ def _get_part_image_for_verdict(area, verdict):
     combined = f"{title} {why} {parts}"
 
     if 'battery' in combined or 'terminal' in combined or 'voltage' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Yuasa_YTX12-BS.jpg/480px-Yuasa_YTX12-BS.jpg | Motorcycle 12V Battery]"
+        return "[part-image: /static/img/parts/battery.svg | Motorcycle 12V Battery]"
     if 'relay' in combined or 'starter' in combined or 'solenoid' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg | Starter Motor & Relay]"
+        return "[part-image: /static/img/parts/starter_motor.svg | Starter Motor & Relay]"
     if 'spark' in combined or 'plug' in combined or 'ignition' in combined or 'coil' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Spark_plug_comparison.jpg/480px-Spark_plug_comparison.jpg | Spark Plug & Ignition]"
+        return "[part-image: /static/img/parts/spark_plug.svg | Spark Plug & Ignition]"
     if 'carb' in combined or 'jet' in combined or 'fuel' in combined or 'petcock' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Carburetor_of_a_scooter.jpg/480px-Carburetor_of_a_scooter.jpg | Carburetor & Fuel Delivery]"
+        return "[part-image: /static/img/parts/carburetor.svg | Carburetor & Fuel Delivery]"
     if 'caliper' in combined or 'pad' in combined or 'disc' in combined or 'brake' in combined or area == 'brakes':
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Brake_disc_and_pads.jpg/480px-Brake_disc_and_pads.jpg | Brake Pads & Disc Caliper]"
+        return "[part-image: /static/img/parts/brake_caliper.svg | Brake Pads & Disc Caliper]"
     if 'radiator' in combined or 'coolant' in combined or 'fan' in combined or area == 'overheat':
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Radiator-overflow.jpg/480px-Radiator-overflow.jpg | Radiator & Cooling System]"
+        return "[part-image: /static/img/parts/radiator.svg | Radiator & Cooling System]"
     if 'cvt' in combined or 'belt' in combined or 'roller' in combined or 'variator' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Variator_and_belt.jpg/480px-Variator_and_belt.jpg | CVT Variator & Belt]"
+        return "[part-image: /static/img/parts/cvt.svg | CVT Variator & Belt]"
     if 'chain' in combined or 'sprocket' in combined or area == 'chassis':
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/A_drive_chain.jpg/480px-A_drive_chain.jpg | Motorcycle Drive Chain]"
+        return "[part-image: /static/img/parts/drive_chain.svg | Motorcycle Drive Chain]"
     if 'air filter' in combined:
-        return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Air_filter_element.jpg/480px-Air_filter_element.jpg | Air Filter Element]"
+        return "[part-image: /static/img/parts/air_filter.svg | Air Filter Element]"
 
-    return "[part-image: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Starter_motor.jpg/480px-Starter_motor.jpg | Motorcycle Component]"
+    return "[part-image: /static/img/parts/starter_motor.svg | Motorcycle Component]"
 
 
 def pick_verdict(area, answers):
@@ -1925,10 +2320,14 @@ def _is_greeting(msg):
 
 
 def _mentions_bike_name(msg):
-    """True when the message names a known model (word-boundary match)."""
+    """True when the message names a known model or motorcycle brand."""
     for key in BIKE_LIBRARY:
         if re.search(r'\b' + re.escape(key) + r'\b', msg):
             return True
+    from .views import _extract_vehicle_info
+    info = _extract_vehicle_info(msg)
+    if info.get('make') or info.get('model'):
+        return True
     return False
 
 
@@ -2200,6 +2599,8 @@ FAULT_PATTERNS = [
         r"\b(?:umuusok|tumutulo|lumulubog|malambot|humok)\b",
         r"\b(?:maingay|kumatok|nagapiti|nagagrind|umaalingawngaw)\b",
         r"\b(?:walang|wala)\s+(?:kuryente|ilaw|power)\b",
+        r"\b(?:how\s+to\s+)?(?:fix|repair|troubleshoot|diagnose|ayusin|kay-uhon)\b.{0,40}\b(?:engine|makina|motor|carb|fi|carburetor|injector)\b",
+        r"\b(?:engine|makina)\s+(?:problem|issue|trouble|fault|damage|sira|guba|sputters?|bogging|dies)\b",
     )
 ]
 
@@ -2470,8 +2871,8 @@ def is_guided_intent(message, history=None, state=None):
         return True
     if detect_area(msg):
         return True
-    # A bare vehicle answer while waiting for identification.
-    if state and state.get('stage') == 'identify':
+    # A bare vehicle or model answer while waiting for identification or model selection.
+    if state and state.get('stage') in ('identify', 'bike'):
         return True
     return False
 
@@ -3173,21 +3574,40 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             state['bike'] = cur_prof
             state['fresh'] = False
             
-            # If user specified make only without a model (e.g. 'Yamaha'), ask for the model!
+            # If user specified make only without a model (e.g. 'Honda', 'Yamaha', 'Kawasaki'), ask for the model!
             if cur_prof.get('make') and not cur_prof.get('model'):
                 make_name = cur_prof['make']
                 state['stage'] = 'bike'
-                if make_name.lower() == 'yamaha':
-                    chips = "MT-09 SP | NMAX 155 | Aerox 155 | Mio | Sniper 155 | Not sure"
-                elif make_name.lower() == 'honda':
-                    chips = "Click 125i | Beat | PCX 160 | ADV 160 | Wave 125 | Not sure"
+                state['pending_make'] = make_name
+                brand_info = BRAND_MODEL_EXAMPLES.get(make_name.lower())
+                if brand_info:
+                    eg_str = brand_info['examples']
+                    chips = brand_info['chips']
                 else:
-                    chips = _tr(lang, 'identify_chips')
-                return (
-                    f"Understood, {sir}. You are working on a **{make_name}**.\n\n"
-                    f"Which specific **{make_name}** model do you have? (e.g. *MT-09, NMAX, Aerox, Mio*)\n\n"
-                    f"[chips: {chips}]"
-                )
+                    eg_str = f"any {make_name} motorcycle model"
+                    chips = _GENERIC_TYPE_CHIPS
+
+                if lang == 'tagalog':
+                    return (
+                        f"Naiintindihan ko, {sir}. **{make_name}** ang motor mo.\n\n"
+                        f"Anong partikular na modelo ng **{make_name}** ang meron ka? (halimbawa: *{eg_str}*)\n\n"
+                        f"Pwede kang maglagay ng kahit anong modelo ng {make_name}.\n\n"
+                        f"[chips: {chips}]"
+                    )
+                elif lang == 'hiligaynon':
+                    return (
+                        f"Naintindihan ko, {sir}. **{make_name}** ang motor mo.\n\n"
+                        f"Ano nga partikular nga modelo sang **{make_name}** ang ara sa imo? (halimbawa: *{eg_str}*)\n\n"
+                        f"Bisan ano nga modelo sang {make_name} pwede mo isulat.\n\n"
+                        f"[chips: {chips}]"
+                    )
+                else:
+                    return (
+                        f"Understood, {sir}. You are working on a **{make_name}**.\n\n"
+                        f"Which specific **{make_name}** model do you have? (e.g. *{eg_str}*)\n\n"
+                        f"You can enter any {make_name} motorcycle model.\n\n"
+                        f"[chips: {chips}]"
+                    )
 
             new_area = detect_area(message) or prev_area
             if new_area:
@@ -3337,6 +3757,13 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 )
 
             if area:
+                if _needs_fuel(profile, state, area):
+                    state['stage'] = 'fuel'
+                    state['fuel_context_area'] = area
+                    return (
+                        f"{_safety_prefix(message, lang, force_brake=(area == 'brakes'))}"
+                        f"{fuel_prompt(profile, lang)}"
+                    )
                 return _enter_checks(state, profile, area, lang, message)
             state['stage'] = 'area'
             return (
@@ -3356,10 +3783,80 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             f"[chips: {_tr(lang, 'identify_chips')}]"
         )
 
+    # --- Stage: specific model after brand was asked ----------------------
+    if stage == 'bike':
+        from .views import _extract_vehicle_info
+        current_vehicle = _extract_vehicle_info(message)
+        pending_make = state.get('pending_make') or (state.get('bike') or {}).get('make')
+        if pending_make and not current_vehicle.get('make'):
+            current_vehicle['make'] = pending_make
+
+        # If user answered with a bare model or model phrase not in regex (e.g. "CRF", "CRF 150L", "Ninja 400")
+        if not current_vehicle.get('model') and not _has_any(msg, SKIP_PHRASES):
+            clean_mdl = re.sub(r'[?!.,;:]', ' ', message).strip()
+            if pending_make and clean_mdl.lower().startswith(pending_make.lower()):
+                clean_mdl = clean_mdl[len(pending_make):].strip()
+            words = [w for w in clean_mdl.split() if w.lower() not in ('motor', 'motorcycle', 'bike', 'ko', 'ang', 'sang', 'my', 'is', 'na')]
+            if words and len(words) <= 6:
+                extracted_mdl = " ".join(words).title()
+                for acr in ['Crf', 'Mt', 'Cbr', 'Cb', 'Gsx', 'Klx', 'Adv', 'Pcx', 'Tmx', 'Ct', 'Xrm', 'Rc', 'Gs', 'Trk', 'Nk', 'Sr', 'Wr']:
+                    extracted_mdl = re.sub(r'\b' + acr + r'\b', acr.upper(), extracted_mdl)
+                current_vehicle['model'] = extracted_mdl
+
+        # User clicked or typed "Not sure"
+        if _has_any(msg, SKIP_PHRASES) and not current_vehicle.get('model'):
+            profile = resolve_profile(current_vehicle, message, history)
+            state['bike'] = profile
+            state['fresh'] = False
+            state.pop('pending_make', None)
+            area = state.get('area') or detect_area(message) or detect_area_from_history(history)
+            if area:
+                state['area'] = area
+                return _enter_checks(state, profile, area, lang, message)
+            state['stage'] = 'area'
+            return (
+                f"{focus_block(profile, lang)}\n\n"
+                f"{_tr(lang, 'area_ask')}\n\n"
+                f"[chips: {_tr(lang, 'area_chips')}]"
+            )
+
+        if current_vehicle.get('model') or current_vehicle.get('make'):
+            profile = resolve_profile(current_vehicle, message, history)
+            state['bike'] = profile
+            state['fresh'] = False
+            state.pop('pending_make', None)
+            area = state.get('area') or detect_area(message) or detect_area_from_history(history)
+            if area:
+                state['area'] = area
+
+            if _needs_year(profile, state):
+                state['stage'] = 'year'
+                state['year_context'] = message
+                return (
+                    f"{_safety_prefix(message, lang, force_brake=(area == 'brakes'))}"
+                    f"{year_prompt(profile, lang)}"
+                )
+
+            if area:
+                if _needs_fuel(profile, state, area):
+                    state['stage'] = 'fuel'
+                    state['fuel_context_area'] = area
+                    return (
+                        f"{_safety_prefix(message, lang, force_brake=(area == 'brakes'))}"
+                        f"{fuel_prompt(profile, lang)}"
+                    )
+                return _enter_checks(state, profile, area, lang, message)
+            state['stage'] = 'area'
+            return (
+                f"{focus_block(profile, lang)}\n\n"
+                f"{_tr(lang, 'area_ask')}\n\n"
+                f"[chips: {_tr(lang, 'area_chips')}]"
+            )
+
     # --- Stage: ask motorcycle type ---------------------------------------
     if stage == 'type':
         profile = resolve_profile({}, message, history)
-        if _has_any(msg, ['scooter', 'cvt', 'click', 'mio', 'aerox', 'nmax', 'beat', 'pcx', 'adv']):
+        if re.search(r'\b(?:scooter|cvt|mio|aerox|nmax|pcx|adv|honda\s+click|click\s+\d+|beat\s+fi)\b', msg, re.I):
             profile = dict(TYPE_LIBRARY['scooter']); profile['key'] = 'generic-scooter'
         elif _has_any(msg, ['underbone', 'chain', 'wave', 'xrm', 'raider', 'sniper', 'smash']):
             profile = dict(TYPE_LIBRARY['underbone']); profile['key'] = 'generic-underbone'
@@ -3369,6 +3866,8 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             profile = dict(TYPE_LIBRARY['dual-sport']); profile['key'] = 'generic-dual-sport'
         elif _has_any(msg, ['big bike', 'bigbike', 'sport', 'cruiser']):
             profile = dict(TYPE_LIBRARY['big bike']); profile['key'] = 'generic-big-bike'
+        else:
+            profile = dict(TYPE_LIBRARY.get('motorcycle', TYPE_LIBRARY['underbone'])); profile['key'] = 'generic-motorcycle'
         state['bike'] = profile
         state['stage'] = 'area'
 
@@ -3401,6 +3900,45 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
             state['area'] = area
 
         if area:
+            if _needs_fuel(profile, state, area):
+                state['stage'] = 'fuel'
+                state['fuel_context_area'] = area
+                return fuel_prompt(profile, lang)
+            return _enter_checks(
+                state, profile, area, lang,
+                safety_message=message if new_area else '',
+                suppress_safety=not new_area,
+            )
+
+        state['stage'] = 'area'
+        return (
+            f"{focus_block(profile, lang)}\n\n"
+            f"{_tr(lang, 'area_ask')}\n\n"
+            f"[chips: {_tr(lang, 'area_chips')}]"
+        )
+
+    # --- Stage: confirm fuel system (Carburetor vs Fuel-Injected) ---------
+    if stage == 'fuel':
+        profile = state.get('bike') or resolve_profile({}, message, history)
+        if re.search(r'\b(carb|karburador|carburetor|carburador)\b', msg):
+            profile['fuel'] = 'Carburetor'
+            state['fuel_confirmed'] = True
+        elif re.search(r'\b(fi|fuel[- ]?inject(?:ed|ion)?|pgm[- ]?fi|efi)\b', msg):
+            profile['fuel'] = 'Fuel-injected (FI)'
+            state['fuel_confirmed'] = True
+        else:
+            state['fuel_skipped'] = True
+
+        disp_m = re.search(r'\b(50|70|100|110|115|125|135|150|155|160|175|180|200|220|230|250|286|300|321|350|373|390|400|450|500|600|650|689|700|750|790|800|850|883|890|900|937|1000|1100|1200|1250|1290|1300)\s*(?:cc)?\b', msg, re.I)
+        if disp_m and not profile.get('displacement'):
+            profile['displacement'] = f"{disp_m.group(1)}cc"
+
+        state['bike'] = profile
+
+        new_area = detect_area(message)
+        area = new_area or state.pop('fuel_context_area', None) or state.get('area') or detect_area_from_history(history)
+        if area:
+            state['area'] = area
             return _enter_checks(
                 state, profile, area, lang,
                 safety_message=message if new_area else '',
@@ -3445,6 +3983,10 @@ def handle_guided_turn(message, user, history, state, lang='english', sir='sir')
                 f"I can help with that, {sir}, but I need the system. Which one matches best?\n\n"
                 f"[chips: {_tr(lang, 'area_chips')}]"
             )
+        if _needs_fuel(profile, state, area):
+            state['stage'] = 'fuel'
+            state['fuel_context_area'] = area
+            return fuel_prompt(profile, lang)
         return _enter_checks(state, profile, area, lang, message)
 
     area = state.get('area')

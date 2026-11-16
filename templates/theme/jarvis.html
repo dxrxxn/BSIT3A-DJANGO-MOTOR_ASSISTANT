@@ -1231,10 +1231,16 @@
           const make = (card.querySelector('.w-vf-make')?.value || '').trim();
           const model = (card.querySelector('.w-vf-model')?.value || '').trim();
           const year = (card.querySelector('.w-vf-year')?.value || '').trim();
+          const disp = (card.querySelector('.w-vf-disp')?.value || '').trim();
           const fuel = card.querySelector('.w-vf-fuel')?.value || 'Not sure';
           const symptom = card.querySelector('.w-vf-symptom')?.value || '';
-          const veh = [year, make, model].filter(Boolean).join(' ') || 'Vehicle';
-          const msg = `Vehicle: ${veh} (${fuel}). Symptom: ${symptom}`;
+          const vehParts = [year, make, model].filter(Boolean);
+          const veh = vehParts.join(' ') || 'Vehicle';
+          const details = [];
+          if (disp) details.push(disp);
+          if (fuel) details.push(fuel);
+          const detailStr = details.length ? ` (${details.join(', ')})` : '';
+          const msg = `Vehicle: ${veh}${detailStr}. Symptom: ${symptom}`;
           chipBtn.disabled = true;
           chipBtn.innerHTML = '<i class="fa-solid fa-check"></i> Submitted';
           chipBtn.style.background = '#15803d';
@@ -1438,8 +1444,8 @@
       var safeAlt = alt.trim();
       return '<div class="jarvis-part-img-card">'
         + '<div class="jarvis-part-img-badge"><i class="fa-solid fa-image"></i> Visual Reference</div>'
-        + '<img src="' + safeUrl + '" alt="' + safeAlt + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Image unavailable</span></div>'
+        + '<img src="' + safeUrl + '" alt="' + safeAlt + '" loading="eager" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        + '<div class="jarvis-part-img-fallback"><i class="fa-solid fa-image-slash"></i><span>Diagram unavailable — please refresh</span></div>'
         + '<div class="jarvis-part-img-caption"><i class="fa-solid fa-tag" style="font-size:0.6rem;opacity:0.6;margin-right:3px;"></i>' + safeAlt + '</div>'
         + '</div>';
     });
@@ -1533,13 +1539,17 @@
               <input type="text" class="jarvis-form-input w-vf-year" placeholder="e.g. 2022" value="${escapeHtml(preYear)}" style="padding: 4px 8px; font-size: 0.75rem;">
             </div>
             <div>
-              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Fuel</label>
-              <select class="jarvis-form-input w-vf-fuel" style="padding: 4px 8px; font-size: 0.75rem;">
-                <option value="Fuel-injected (FI)">Fuel-injected (FI)</option>
-                <option value="Carburetor">Carburetor</option>
-                <option value="Not sure" selected>Not sure</option>
-              </select>
+              <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Engine Size</label>
+              <input type="text" class="jarvis-form-input w-vf-disp" placeholder="e.g. 150cc, 125cc, 250cc" style="padding: 4px 8px; font-size: 0.75rem;">
             </div>
+          </div>
+          <div style="margin-bottom: 6px;">
+            <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Fuel Delivery System</label>
+            <select class="jarvis-form-input w-vf-fuel" style="padding: 4px 8px; font-size: 0.75rem;">
+              <option value="Fuel-injected (FI)">Fuel-injected (FI)</option>
+              <option value="Carburetor (Carb)">Carburetor (Carb)</option>
+              <option value="Not sure" selected>Not sure (Ask me)</option>
+            </select>
           </div>
           <div style="margin-bottom: 8px;">
             <label style="font-size: 0.68rem; color: #8ba2bc; text-transform: uppercase;">Symptom</label>
@@ -1550,6 +1560,13 @@
                 <option value="Hard brake lever but weak stopping power">Hard lever but weak stopping</option>
                 <option value="Fluid leak near caliper or squealing noise">Fluid leak or unusual noise</option>
                 <option value="Other brake problem">Other brake problem</option>
+              ` : cat === 'engine' ? `
+                <option value="Engine problem - needs diagnostic and repair steps">Engine problem / needs troubleshooting</option>
+                <option value="Engine hesitating, bogging, or stalling">Hesitating, bogging, or stalling</option>
+                <option value="Engine idling roughly or high idle">Rough or erratic idle</option>
+                <option value="Engine losing power under load">Loss of power under load</option>
+                <option value="Engine won't start / fuel delivery issue">Engine won't start / fuel delivery issue</option>
+                <option value="Other engine problem">Other engine problem</option>
               ` : `
                 <option value="Rapid clicking sound when pressing starter">Rapid clicking sound when starting</option>
                 <option value="Engine cranks normally but will not start">Engine cranks normally but won't start</option>
@@ -1688,37 +1705,64 @@
     await new Promise(r => setTimeout(r, 250));
 
     let res = null;
-    try {
+    const maxClientAttempts = 3;
+    for (let attempt = 1; attempt <= maxClientAttempts; attempt++) {
       try {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          break; // Signal not available
+        }
         res = await fetch(CHAT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
           body: JSON.stringify({ message: text, history: recentHistory }),
         });
+        if (res && res.ok) {
+          break;
+        }
+        if (res && (res.status === 502 || res.status === 503 || res.status === 504) && attempt < maxClientAttempts) {
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+          continue;
+        }
+        break;
       } catch (netErr) {
-        // Slow internet automatic retry attempt
-        await new Promise(r => setTimeout(r, 1500));
-        res = await fetch(CHAT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-          body: JSON.stringify({ message: text, history: recentHistory }),
-        });
-      }
-      removeTyping();
-      let data = {};
-      if (res && res.ok) {
-        data = await res.json();
-      } else {
-        if (res) {
-          try { data = await res.json(); } catch(e) {}
+        if (attempt < maxClientAttempts) {
+          const typingEl = document.getElementById('jarvis-typing');
+          if (typingEl) {
+            typingEl.innerHTML = '<span style="font-size:0.75rem; color:#f59e0b;"><i class="fa-solid fa-wifi text-warning"></i> Weak signal detected — retrying online (' + attempt + '/' + maxClientAttempts + ')...</span>';
+          }
+          await new Promise(r => setTimeout(r, 1200 * attempt));
         }
       }
-      if (data.quota) updateQuotaUI(data.quota);
-      const replyText = data.reply || (
-        "I experienced a slight delay reaching the online diagnostic service, sir. " +
-        "Please check your connection and tap retry below.\n\n" +
-        "[chips: Retry last question | Help & capabilities | Engine won't start]"
-      );
+    }
+    removeTyping();
+    let data = {};
+    if (res && res.ok) {
+      data = await res.json();
+    } else {
+      if (res) {
+        try { data = await res.json(); } catch(e) {}
+      }
+    }
+    if (data.quota) updateQuotaUI(data.quota);
+    let replyText = data.reply;
+    if (!replyText) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        replyText = (
+          "> [!WARNING]\n" +
+          "> **Offline Mode:** No internet connection detected on your device, sir.\n\n" +
+          "Online AI diagnostics are currently unreachable. When you are back within network coverage, online analysis will automatically resume.\n\n" +
+          "In the meantime, you can ask common motorcycle specs and troubleshooting (e.g., Click 125i, Beat, TMX 125, NMAX, Aerox, oil change, tire pressure, spark plug gap, valve clearances).\n\n" +
+          "[chips: Valve clearance specs | Spark plug gap | Oil change interval | Tire pressure]"
+        );
+      } else {
+        replyText = (
+          "> [!NOTE]\n" +
+          "> **Connection Unavailable:** J.A.R.V.I.S. could not establish a stable connection with the online diagnostic service after multiple retry attempts.\n\n" +
+          "Please verify your mobile data / Wi-Fi signal, or tap **Retry** below to reconnect.\n\n" +
+          "[chips: Retry last question | Help & capabilities | Common maintenance specs]"
+        );
+      }
+    }
       const botMsgId = appendBotMessage(replyText);
       scrollToTurnResponse(userMsgId, botMsgId, 50);
 
@@ -1784,16 +1828,33 @@
   let widgetSpeechIndex = 0;
   let widgetKeepAliveTimer = null;
 
+  let widgetChunkTimeout = null;
+  let isWidgetSpeaking = false;
+
   function stopWidgetSpeech() {
+    isWidgetSpeaking = false;
     widgetSpeechQueue = [];
     widgetSpeechIndex = 0;
+    if (widgetChunkTimeout) {
+      clearTimeout(widgetChunkTimeout);
+      widgetChunkTimeout = null;
+    }
     if (widgetKeepAliveTimer) {
       clearInterval(widgetKeepAliveTimer);
       widgetKeepAliveTimer = null;
     }
-    window._widgetUtterances = [];
+    if (window._widgetUtterances && window._widgetUtterances.length) {
+      window._widgetUtterances.forEach(u => {
+        try { u.onend = null; u.onerror = null; u.onstart = null; } catch(e) {}
+      });
+      window._widgetUtterances = [];
+    }
     try {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        window.speechSynthesis.cancel();
+      }
     } catch(e) {}
   }
 
@@ -1821,11 +1882,18 @@
   function speakBotWidget(raw) {
     if (!('speechSynthesis' in window) || !raw) return;
     const clean = raw
-      .replace(/\[chips:.*?\]/gi, '')
-      .replace(/\[vehicle-form.*?\]/gi, '')
-      .replace(/\[part-image:.*?\]/gi, '')
+      .replace(/\[chips:[\s\S]*?\]/gi, '')
+      .replace(/\[stage:\s*[1-4]\]/gi, '')
+      .replace(/\[vehicle-form[\s\S]*?\]/gi, '')
+      .replace(/\[part-image:[\s\S]*?\]/gi, '')
+      .replace(/\be\.g\.\s*/gi, 'for example, ')
+      .replace(/\bi\.e\.\s*/gi, 'that is, ')
+      .replace(/\bhal\.\s*/gi, 'halimbawa, ')
+      .replace(/\bvs\.\s*/gi, 'versus ')
+      .replace(/\betc\.\s*/gi, 'and so on. ')
       .replace(/<[^>]+>/g, '')
-      .replace(/-\s*\[\s*\]/g, '')
+      .replace(/-\s*\[\s*[xX]?\s*\]/g, '')
+      .replace(/^[\s*•\-]+(?=\w)/gm, '')
       .replace(/[*_#`~>]/g, '')
       .replace(/https?:\/\/\S+/g, '')
       .replace(/\s+/g, ' ')
@@ -1839,43 +1907,48 @@
     if (widgetKeepAliveTimer) clearInterval(widgetKeepAliveTimer);
     widgetKeepAliveTimer = setInterval(() => {
       try {
-        if ('speechSynthesis' in window && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-          window.speechSynthesis.pause();
+        if ('speechSynthesis' in window && window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
       } catch(e) {}
-    }, 9000);
+    }, 2500);
 
     function playNextWidgetChunk() {
-      if (widgetSpeechIndex >= widgetSpeechQueue.length) {
+      if (!isWidgetSpeaking || widgetSpeechIndex >= widgetSpeechQueue.length) {
         stopWidgetSpeech();
         return;
       }
       const chunk = widgetSpeechQueue[widgetSpeechIndex++];
       try {
-        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
         const utter = new SpeechSynthesisUtterance(chunk);
         utter.volume = 1.0;
-        utter.rate = 1.02;
+        utter.rate = 1.0;
         utter.pitch = 1.0;
         window._widgetUtterances.push(utter);
         utter.onend = () => {
           window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
-          playNextWidgetChunk();
+          if (isWidgetSpeaking) playNextWidgetChunk();
         };
-        utter.onerror = () => {
+        utter.onerror = (err) => {
           window._widgetUtterances = window._widgetUtterances.filter(u => u !== utter);
-          playNextWidgetChunk();
+          if (isWidgetSpeaking) {
+            setTimeout(() => { if (isWidgetSpeaking) playNextWidgetChunk(); }, 40);
+          }
         };
         window.speechSynthesis.speak(utter);
       } catch(e) {
-        playNextWidgetChunk();
+        if (isWidgetSpeaking) playNextWidgetChunk();
       }
     }
 
-    setTimeout(() => {
-      playNextWidgetChunk();
-    }, 45);
+    isWidgetSpeaking = true;
+    if (widgetChunkTimeout) clearTimeout(widgetChunkTimeout);
+    widgetChunkTimeout = setTimeout(() => {
+      if (isWidgetSpeaking) playNextWidgetChunk();
+    }, 60);
   }
 
   if (widgetMic && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {

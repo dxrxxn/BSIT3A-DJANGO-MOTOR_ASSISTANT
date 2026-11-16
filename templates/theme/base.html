@@ -16,6 +16,8 @@
     <!-- J.A.R.V.I.S. Theme -->
     <link href="{% static 'css/jarvis-theme.css' %}?v={% now 'U' %}" rel="stylesheet"/>
     <link href="{% static 'css/motor-assistant-theme.css' %}?v={% now 'U' %}" rel="stylesheet"/>
+    <!-- Jarvis UI Enhancements -->
+    <link href="{% static 'css/jarvis-ui-enhancements.css' %}?v={% now 'U' %}" rel="stylesheet"/>
     {% block extra_css %}{% endblock %}
     <style>
       @import url("https://rsms.me/inter/inter.css");
@@ -46,35 +48,33 @@
       if (typeof window.bootstrap === 'undefined' && window.tabler) {
         window.bootstrap = window.tabler.bootstrap || window.tabler;
       }
-      // Resilient offcanvas handler for slow connections & mobile browsers
+      // Prevent '#' scroll jump on offcanvas toggles & provide fallback only if Bootstrap is missing
       document.addEventListener('click', function(e) {
         var toggle = e.target.closest('[data-bs-toggle="offcanvas"]');
         if (toggle) {
-          var targetId = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
-          if (targetId && targetId.startsWith('#')) {
-            var drawer = document.querySelector(targetId);
-            if (drawer) {
-              e.preventDefault();
-              if (window.bootstrap && window.bootstrap.Offcanvas) {
-                var instance = window.bootstrap.Offcanvas.getOrCreateInstance(drawer);
-                instance.toggle();
-              } else {
+          if (toggle.getAttribute('href') === '#' || (toggle.tagName === 'A' && !toggle.getAttribute('href'))) {
+            e.preventDefault();
+          }
+          // Only execute manual toggle if Bootstrap Offcanvas data-api is unavailable
+          if (!window.bootstrap || !window.bootstrap.Offcanvas) {
+            var targetId = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
+            if (targetId && targetId.startsWith('#')) {
+              var drawer = document.querySelector(targetId);
+              if (drawer) {
+                e.preventDefault();
                 drawer.classList.toggle('show');
                 drawer.style.visibility = drawer.classList.contains('show') ? 'visible' : 'hidden';
               }
             }
           }
         }
-        var dismiss = e.target.closest('[data-bs-dismiss="offcanvas"]');
-        if (dismiss) {
-          var drawer = dismiss.closest('.offcanvas');
-          if (drawer) {
-            e.preventDefault();
-            if (window.bootstrap && window.bootstrap.Offcanvas) {
-              var instance = window.bootstrap.Offcanvas.getInstance(drawer);
-              if (instance) instance.hide();
-              else drawer.classList.remove('show');
-            } else {
+        // Fallback for dismiss only if Bootstrap Offcanvas is unavailable
+        if (!window.bootstrap || !window.bootstrap.Offcanvas) {
+          var dismiss = e.target.closest('[data-bs-dismiss="offcanvas"]');
+          if (dismiss) {
+            var drawer = dismiss.closest('.offcanvas');
+            if (drawer) {
+              e.preventDefault();
               drawer.classList.remove('show');
               drawer.style.visibility = 'hidden';
             }
