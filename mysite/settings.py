@@ -30,6 +30,7 @@ AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()  # 'gemini', 'openai_co
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.1-flash-lite')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL', AI_MODEL)
 GEMINI_FALLBACK_MODEL = os.getenv('GEMINI_FALLBACK_MODEL', '')
+GEMINI_SEARCH_GROUNDING = os.getenv('GEMINI_SEARCH_GROUNDING', '1') == '1'
 GEMINI_TIMEOUT_SECONDS = int(os.getenv('GEMINI_TIMEOUT_SECONDS', '45'))
 GEMINI_MAX_RETRIES = int(os.getenv('GEMINI_MAX_RETRIES', '3'))
 # This is an application-side spending guard, not a claim about Google's

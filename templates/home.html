@@ -3013,7 +3013,24 @@
       card.innerHTML += structuredSection('How to verify the repair', 'fa-circle-check', structuredList(verification));
     }
 
-// [Removed Approved local sources per user request]
+    const webSources = asArray(structured.sources).filter(source => {
+      if (!source || source.source_type !== 'web') return false;
+      try {
+        return new URL(String(source.reference || '')).protocol === 'https:';
+      } catch (_) {
+        return false;
+      }
+    }).slice(0, 8);
+    if (webSources.length) {
+      card.innerHTML += structuredSection('Web sources — not independently verified', 'fa-globe',
+        '<ul class="jarvis-structured-sources">'
+        + webSources.map(source => {
+          const href = new URL(String(source.reference)).href;
+          return '<li><a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">'
+            + esc(source.title || href) + '</a></li>';
+        }).join('')
+        + '</ul><div class="jarvis-structured-source-ref">Confirm specifications and repair procedures in the exact model’s official service manual.</div>');
+    }
 
     if (structured.next_action) {
       card.innerHTML += structuredSection('Next safe action', 'fa-arrow-right',

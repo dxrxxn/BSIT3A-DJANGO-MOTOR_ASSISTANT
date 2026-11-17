@@ -8,6 +8,7 @@ ahead of model-generated warnings.
 from __future__ import annotations
 
 import re
+from urllib.parse import urlsplit
 
 from .safety import merge_safety_into_structured
 
@@ -276,9 +277,9 @@ def normalise_structured(data, *, language='english', safety=None, evidence_sour
                          allowed_parts=None, offline=False):
     """Return a bounded, frontend-safe structured response.
 
-    ``evidence_sources`` is the only allowed source list.  Model-provided
-    references that do not appear in the local evidence are discarded so the
-    UI cannot present an invented service-manual citation.
+    ``evidence_sources`` is the only allowed source list. Model-provided
+    references that do not appear in local evidence or provider grounding
+    metadata are discarded.
 
     ``allowed_parts`` maps normalised part names to locally retrieved records.
     A model-supplied part number or compatibility claim is never trusted on
@@ -401,16 +402,21 @@ def normalise_structured(data, *, language='english', safety=None, evidence_sour
         reference = _text(source.get('reference') or source.get('source_reference'), 500)
         if not title and not reference:
             continue
-        allowed.append({
+        item = {
             'title': title or reference,
             'reference': reference,
             'reviewed': bool(source.get('reviewed', True)),
             'date': _text(source.get('date') or source.get('source_date'), 40),
-        })
+        }
+        if source.get('source_type') == 'web':
+            parsed = urlsplit(reference)
+            if parsed.scheme != 'https' or not parsed.netloc:
+                continue
+            item['reviewed'] = False
+            item['source_type'] = 'web'
+        allowed.append(item)
 
-    # Only local evidence references are shown.  This is intentionally strict:
-    # a plausible-looking manual citation must not be displayed unless it came
-    # from the reviewed local knowledge base.
+    # Never trust a source supplied only in model-generated JSON.
     if allowed:
         base['sources'] = allowed[:8]
     else:

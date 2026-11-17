@@ -31,6 +31,7 @@ from .services.adaptive import (
 from .services.ai import fallback_model_name, is_ai_available, is_ai_configured, model_name
 from .services.images import InvalidImageError, attach_to_conversation, save_uploaded_image
 from .services.memory import get_or_create_conversation
+from .services.moderation import contains_profanity
 from .services.rate_limit import check_rate_limit
 
 User = get_user_model()
@@ -1048,6 +1049,10 @@ def _extract_vehicle_info(text, history=None):
 def _jarvis_gemini_general(message, user, history=None, language=None,
                            explanation_style='auto', experience_level='beginner'):
     """Broad motorcycle-assistant call for maintenance/how-to/info questions."""
+    if contains_profanity(message):
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        return assistant_service.profanity_blocked_result(message, language=lang)['reply']
+
     client = _get_gemini_client()
     if client is None:
         return None
@@ -1177,7 +1182,10 @@ Your response as J.A.R.V.I.S.:"""
         response = client.models.generate_content(
             model=primary_model,
             contents=full_prompt,
-            config=types.GenerateContentConfig(temperature=0.7),
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+                system_instruction=assistant_service.MOTORCYCLE_SCOPE_INSTRUCTION,
+            ),
         )
         reply_text = response.text
         if reply_text:
@@ -1199,7 +1207,10 @@ Your response as J.A.R.V.I.S.:"""
                 response = client.models.generate_content(
                     model=fallback,
                     contents=full_prompt,
-                    config=types.GenerateContentConfig(temperature=0.7),
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        system_instruction=assistant_service.MOTORCYCLE_SCOPE_INSTRUCTION,
+                    ),
                 )
                 reply_text = response.text
                 if reply_text:
@@ -1215,6 +1226,10 @@ def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None
     """
     Calls Gemini AI with full multi-turn conversational vehicle diagnostic mechanic system.
     """
+    if contains_profanity(message):
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        return assistant_service.profanity_blocked_result(message, language=lang)['reply']
+
     if mode == 'general':
         return _jarvis_gemini_general(
             message, user, history=history, language=language,
@@ -1445,7 +1460,14 @@ Your response as J.A.R.V.I.S.:"""
         return None
 
     try:
-        response = client.models.generate_content(model=model, contents=full_prompt)
+        from google.genai import types
+        response = client.models.generate_content(
+            model=model,
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=assistant_service.MOTORCYCLE_SCOPE_INSTRUCTION,
+            ),
+        )
     except Exception as exc:
         # Do not log provider text: it can contain request details or clues
         # about server credentials.  The exception type is enough for support.
@@ -1454,7 +1476,13 @@ Your response as J.A.R.V.I.S.:"""
         if not fallback or fallback == model:
             return None
         try:
-            response = client.models.generate_content(model=fallback, contents=full_prompt)
+            response = client.models.generate_content(
+                model=fallback,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=assistant_service.MOTORCYCLE_SCOPE_INSTRUCTION,
+                ),
+            )
         except Exception as fallback_exc:
             logger.warning('Legacy AI fallback failed (%s).', type(fallback_exc).__name__)
             return None
@@ -2110,10 +2138,63 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
     `guided_state` is only passed by the HTTP endpoint (it lives in the user's
     session). Internal/direct callers pass None and keep the previous behaviour.
     """
+    if contains_profanity(message):
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+        return assistant_service.profanity_blocked_result(message, language=lang)['reply']
+
     from .guided_diagnostic import is_general_motorcycle_query
     from .services.intent import classify_intent
 
     msg = message.lower().strip()
+    vehicle_profile = (
+        guided_state.get('bike')
+        if isinstance(guided_state, dict)
+        else None
+    )
+    if not isinstance(vehicle_profile, dict):
+        vehicle_profile = {}
+    c_intent = classify_intent(
+        message,
+        history=history,
+        vehicle_profile=vehicle_profile,
+    )
+
+    lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
+    bike_name = " ".join(filter(None, [
+        str(vehicle_profile.get('make') or '').strip(),
+        str(vehicle_profile.get('model') or '').strip(),
+    ]))
+    bike_subject = f'your {bike_name}' if bike_name else 'your motorcycle'
+    chips = {
+        'english': "Engine won't start | Brake problem | Strange noise",
+        'tagalog': 'Ayaw mag-start | Problema sa preno | Kakaibang ingay',
+        'hiligaynon': 'Indi mag-start | Problema sa preno | Katingalahan nga gahod',
+    }.get(lang, "Engine won't start | Brake problem | Strange noise")
+
+    if c_intent == 'off_topic':
+        sub = getattr(c_intent, 'sub_intent', '')
+        fictional = (getattr(c_intent, 'details', None) or {}).get('fictional_part')
+        if sub == 'fictional_part' and fictional:
+            return (
+                f'"{fictional.title()}" is not a real motorcycle part. '
+                "Tell me the actual motorcycle problem and I'll help troubleshoot it."
+            )
+        if sub == 'prompt_injection':
+            return "I can't change my safety rules, but I can help with motorcycle diagnosis and repair."
+
+        replies = {
+            'english': f"I can help with motorcycle diagnosis and repair. What issue are you having with {bike_subject}?",
+            'tagalog': f"Tumutulong ako sa pag-diagnose at pag-aayos ng motorsiklo. Ano ang problema ng {bike_subject}?",
+            'hiligaynon': f"Nagabulig ako sa pag-diagnose kag pagkay-o sang motorsiklo. Ano ang problema sang {bike_subject}?",
+        }
+        return f"{replies.get(lang, replies['english'])}\n\n[chips: {chips}]"
+
+    if c_intent == 'greeting':
+        return f"Hi! What issue are you having with {bike_subject}?"
+    if c_intent == 'identity':
+        return "I'm J.A.R.V.I.S., a motorcycle diagnostic assistant. Tell me your motorcycle's issue and I'll help with the next safe check."
+    if c_intent == 'help':
+        return "I can help diagnose motorcycle symptoms, suggest safe checks, and explain repair guidance. What problem are you working on?"
 
     # Guided narrowing flow (identify the bike first, then narrow the fault).
     if guided_state is not None:
@@ -2124,50 +2205,6 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
             return handle_guided_turn(
                 message, user, history, guided_state, lang=lang, sir=sir
             )
-
-    # ── Off-topic / prompt injection gate ──────────────────────────────────
-    c_intent = classify_intent(message, history=history)
-    if c_intent == 'off_topic':
-        lang = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(message, history)
-        sir = _jarvis_address(user)
-        sub = getattr(c_intent, 'sub_intent', '')
-        fictional = (c_intent.details or {}).get('fictional_part') if hasattr(c_intent, 'details') else None
-
-        if sub == 'fictional_part' and fictional:
-            return (
-                f"{sir}, **{fictional.title()}** does not exist on a motorcycle — it is a well-known automotive joke.\n\n"
-                "MotorAssistant is here to help you diagnose and fix genuine motorcycle problems. "
-                "What issue are you experiencing with your motorcycle?\n\n"
-                "[chips: Engine won't start | Front brake check | Oil change | Strange engine noise]"
-            )
-        elif sub == 'prompt_injection':
-            return (
-                f"{sir}, this is MotorAssistant. I cannot alter my core diagnostic instructions or safety guidelines. "
-                "I am here exclusively to help you diagnose and repair motorcycles.\n\n"
-                "[chips: Help with my motorcycle | Engine won't start | Brake check | Oil change]"
-            )
-        else:
-            off_topic_replies = {
-                'english': (
-                    f"Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle, scooter, or underbone.\n\n"
-                    "Is this inquiry regarding a motorcycle?\n\n"
-                    "If you have a motorcycle problem or question, please let me know your motorcycle's make, model, and what issue you need help fixing, and I will be glad to assist you.\n\n"
-                    "[chips: Help with my motorcycle | Engine won't start | Front brake check | Oil change | Strange engine noise]"
-                ),
-                'tagalog': (
-                    f"Sir, ito po ang MotorAssistant, nakalaan para tulungan kayong mag-diagnose, mag-maintain, at mag-ayos ng mga problema sa inyong motorsiklo, scooter, o underbone.\n\n"
-                    "Tungkol po ba ito sa isang motorsiklo?\n\n"
-                    "Kung may problema po kayo sa inyong motor, pakisabi po ang brand, modelo, at ang partikular na isyu o sira para matulungan ko kayong ayusin ito.\n\n"
-                    "[chips: Tulong sa aking motor | Ayaw mag-start | Suriin ang preno | Palit langis | Kakaibang ingay sa makina]"
-                ),
-                'hiligaynon': (
-                    f"Sir, ini ang MotorAssistant, gintuyo gid agud magbulig diagnose, maintain, kag magkay-o sang mga problema sa imo motorsiklo, scooter, ukon underbone.\n\n"
-                    "Parte bala ini sa isa ka motorsiklo?\n\n"
-                    "Kon may problema ka sa imo motor, palihog sugiri ako sang brand, modelo, kag ang problema sang imo salakyan agud mabuligan ko ikaw kay-o sini.\n\n"
-                    "[chips: Bulig sa aking motor | Indi mag-start | Tuluka ang preno | Ilis langis | Gahod sa makina]"
-                ),
-            }
-            return off_topic_replies.get(lang, off_topic_replies['english'])
 
     # ── Resolution detection ("thanks, that worked") ───────────────────────
     if c_intent == 'resolution':
@@ -3387,6 +3424,17 @@ def jarvis_chat(request):
     language = data.get('language')
     if language in ('auto', '', None):
         language = None
+    if contains_profanity(message):
+        response_language = language if language in ('english', 'tagalog', 'hiligaynon') else _detect_language(
+            message, data.get('history', [])
+        )
+        return JsonResponse(assistant_service.profanity_blocked_result(
+            message,
+            language=response_language,
+            experience_level=data.get('experience_level'),
+            explanation_style=data.get('explanation_style', 'auto'),
+        ))
+
     experience_level = data.get('experience_level')
     if experience_level:
         experience_level = normalize_experience_level(experience_level)
