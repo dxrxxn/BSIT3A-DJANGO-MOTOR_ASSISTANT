@@ -2,11 +2,11 @@
 
 # A Web-Based Motorcycle Diagnostic Assistant with Guided Troubleshooting and AI-Supported Repair Guidance
 
-> 📄 **[Download Full Concept Paper (.docx)](./docs/Concept_Paper.docx)**
+>  **[Download Full Concept Paper (.docx)](./docs/Concept_Paper.docx)**
 
 ---
 
-## 📌 Introduction
+## Introduction
 
 ### Background of the Project
 Motorcycle owners frequently encounter mechanical problems that are difficult to identify without professional mechanical knowledge or access to a qualified mechanic. Common symptoms such as difficulty starting, unusual engine sounds, overheating, brake failures, and electrical irregularities may have multiple potential causes, and misdiagnosis can lead to further motorcycle damage or, in critical cases, personal injury. In many communities, particularly those in rural or semi-urban areas in the Philippines, affordable and readily available motorcycle repair expertise remains limited.
@@ -42,7 +42,7 @@ Specifically, the project will accomplish the following technical objectives:
 
 ---
 
-## 🧭 Scope and Limitations
+## Scope and Limitations
 
 ### System Scope and Technical Architecture
 
