@@ -46,14 +46,49 @@
           <i class="fa-solid fa-graduation-cap me-1"></i> Explanation Level
         </label>
         <p class="form-hint mb-2">Tailor the depth and technical complexity of repairs.</p>
-        <div class="d-flex flex-column gap-1">
+        <div class="d-flex flex-column gap-1 mb-3">
           <label class="form-check">
             <input type="radio" name="jarvis-pref-level" value="beginner" class="form-check-input" checked>
-            <span class="form-check-label">Beginner (Step-by-step &amp; parts explained)</span>
+            <span class="form-check-label">Beginner (Everyday words &amp; parts explained)</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-level" value="intermediate" class="form-check-input">
+            <span class="form-check-label">Intermediate (Common terms, brief notes)</span>
           </label>
           <label class="form-check">
             <input type="radio" name="jarvis-pref-level" value="mechanic" class="form-check-input">
             <span class="form-check-label">Mechanic (Direct technical specs &amp; tests)</span>
+          </label>
+        </div>
+
+        <label class="form-label text-info fw-bold mb-1">
+          <i class="fa-solid fa-comments me-1"></i> Explanation Style
+        </label>
+        <p class="form-hint mb-2">Auto adapts to the question. You can also ask for a style in chat at any time.</p>
+        <div class="d-flex flex-column gap-1">
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="auto" class="form-check-input" checked>
+            <span class="form-check-label">Auto (short for simple questions, more detail for faults)</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="simple" class="form-check-input">
+            <span class="form-check-label">Simple, plain language</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="detailed" class="form-check-input">
+            <span class="form-check-label">More detail</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="step_by_step" class="form-check-input">
+            <span class="form-check-label">Step by step</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="complete" class="form-check-input">
+            <span class="form-check-label">Complete procedure</span>
+          </label>
+          <label class="form-check">
+            <input type="radio" name="jarvis-pref-style" value="why" class="form-check-input">
+            <span class="form-check-label">Explain why it happens</span>
           </label>
         </div>
       </div>
@@ -557,6 +592,10 @@
         form.querySelectorAll('[name="jarvis-pref-level"]').forEach(r => {
           r.checked = (r.value === savedLevel);
         });
+        const savedStyle = localStorage.getItem('jarvis-pref-style') || 'auto';
+        form.querySelectorAll('[name="jarvis-pref-style"]').forEach(r => {
+          r.checked = (r.value === savedStyle);
+        });
       } catch (e) {}
 
       // Sync Background Color
@@ -574,6 +613,8 @@
         try { localStorage.setItem('jarvis-pref-lang', target.value); } catch(e) {}
       } else if (target.name === 'jarvis-pref-level') {
         try { localStorage.setItem('jarvis-pref-level', target.value); } catch(e) {}
+      } else if (target.name === 'jarvis-pref-style') {
+        try { localStorage.setItem('jarvis-pref-style', target.value); } catch(e) {}
       } else {
         applyConfig(target.name, target.value);
       }
@@ -589,6 +630,7 @@
         try {
           localStorage.removeItem('jarvis-pref-lang');
           localStorage.removeItem('jarvis-pref-level');
+          localStorage.removeItem('jarvis-pref-style');
         } catch(e) {}
         if (window.JarvisBg) {
           window.JarvisBg.reset();

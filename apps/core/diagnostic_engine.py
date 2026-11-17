@@ -5,7 +5,7 @@ Implements Phases 2, 4, 5, 6, and 7:
 - Multi-turn diagnostic session tracking (vehicle details, answered questions).
 - Single most discriminative question selection (no question bombardment).
 - Safety tripwires & mandatory warnings (brakes, overheating scald risk, fuel leaks, rod knock).
-- Strict 9-point Step-by-Step Repair Tutor formatting.
+- Adaptive answer depth and structure (beginner, intermediate, experienced mechanic), with a verified 9-point local tutor fallback.
 - Configurable multi-provider AI gateway (Gemini, OpenAI-compatible).
 - Grounded local knowledge retrieval fallback (explicitly labelled).
 - Multilingual support (English, Tagalog, Hiligaynon).
@@ -20,6 +20,13 @@ import urllib.request
 
 from django.conf import settings
 from apps.motor.knowledge import retrieve_verified_knowledge
+from .services.adaptive import (
+    adaptive_prompt_block,
+    build_response_plan,
+    detect_explanation_style_request,
+    normalize_explanation_style,
+    style_chips,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +80,7 @@ def evaluate_safety_hazards(query, lang='english'):
 class DiagnosticSession:
     """Tracks multi-turn vehicle details, symptom context, and answered questions."""
 
-    def __init__(self, message, history, user=None, language=None, experience_level=None, guided_state=None):
+    def __init__(self, message, history, user=None, language=None, experience_level=None, guided_state=None, explanation_style=None):
         self.message = message or ''
         self.history = history or []
         self.user = user
@@ -91,6 +98,7 @@ class DiagnosticSession:
         self.vehicle_info = _extract_vehicle_info(self.message, self.history)
         self.language = language or _detect_language(self.message, self.history)
         self.experience_level = experience_level or 'beginner'
+        self.explanation_style = normalize_explanation_style(explanation_style)
 
         # Classify vehicle_type ('motorcycle', 'car', or 'all')
         v_type = self.vehicle_info.get('type') or ''
@@ -632,19 +640,37 @@ def call_configured_ai(prompt, system_instruction=None):
         raise ValueError(f"Unsupported AI_PROVIDER: {provider}")
 
 
-def orchestrate_diagnostic_response(message, user, history=None, language=None, experience_level=None, guided_state=None):
+def orchestrate_diagnostic_response(message, user, history=None, language=None, experience_level=None, guided_state=None, explanation_style=None):
     """
     Main entry point for intelligent diagnostic workflow:
     1. Evaluates session state, vehicle info, and safety tripwires.
     2. Retrieves verified database knowledge (RAG).
     3. If diagnostic testing is needed, asks ONE targeted question.
-    4. Formats prompt with strict anti-hallucination guardrails and 9-point tutor format.
+    4. Formats an adaptive prompt from experience level, requested explanation
+       style, question type, and strict anti-hallucination guardrails.
     5. Calls configured AI provider with seamless fallback to verified local database knowledge.
     """
     from .guided_diagnostic import _is_greeting
     if _is_greeting(message):
         return None
-    session = DiagnosticSession(message, history, user=user, language=language, experience_level=experience_level, guided_state=guided_state)
+
+    detected_style = detect_explanation_style_request(message)
+    requested_style = detected_style or normalize_explanation_style(explanation_style)
+    session = DiagnosticSession(
+        message, history, user=user, language=language,
+        experience_level=experience_level, guided_state=guided_state,
+        explanation_style=requested_style,
+    )
+
+    # Build one plan per turn and reuse it in every AI branch.  The local
+    # formatter is intentionally left unchanged so the verified 9-point
+    # fallback remains complete when the AI service is offline.
+    response_plan = build_response_plan(
+        message,
+        safety=session.safety_hazard,
+        experience_level=session.experience_level,
+        style=requested_style,
+    )
 
     # 1. Immediate Critical Safety Notice
     safety_header = ""
@@ -700,15 +726,17 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
         sir = _jarvis_address(user)
         ai_step_system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic assistant. Address user respectfully as '{sir}'.
 The user requested Step {step_num} of the step-by-step diagnostic/repair procedure for active fault: {session.active_symptom}.
+
+{adaptive_prompt_block(response_plan)}
+
 MANDATE:
-1. Immediately present **Step {step_num}** of the diagnostic/repair procedure with complete detail:
-   - Clear, step-by-step instructions.
-   - Required tools & materials.
-   - Expected benchmark reading / normal result.
-   - What to do if the result differs / abnormal.
-2. DO NOT ask what symptom they have or repeat intake questions.
-3. Conclude with action chips: `[chips: Step {step_num} passed (normal) | Step {step_num} failed (abnormal) | Next step | Show all steps | It worked]`.
-4. Language: Respond in {session.language.upper()}.
+1. Immediately present **Step {step_num}** of the relevant procedure. Follow the adaptive plan
+   for depth and terminology: include tools, expected result, or the abnormal-result branch only
+   when they are useful for this step and this rider.
+2. Keep any safety warning first and complete, even if the requested style is short.
+3. DO NOT ask what symptom they have or repeat intake questions.
+4. Conclude with action chips, for example: `[chips: Step {step_num} passed (normal) | Step {step_num} failed (abnormal) | Next step | Show all steps | It worked]`. Include one explanation-style chip when it fits.
+5. Language: Respond in {session.language.upper()}.
 """
         ai_step_prompt = f"User Request: '{message}'. Deliver Step {step_num} for vehicle: {session.vehicle_info}. Active Fault: {session.active_symptom}"
         try:
@@ -731,12 +759,17 @@ MANDATE:
         sir = _jarvis_address(user)
         unsuccess_system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic assistant. Address user respectfully as '{sir}'.
 The user reports that the previous check/step was UNSUCCESSFUL ('{message}').
+
+{adaptive_prompt_block(response_plan)}
+
 MANDATE:
-1. Acknowledge that the previous check did not resolve the {session.active_symptom} problem.
-2. Deliver the next diagnostic check (Step {step_num}) or secondary hypothesis.
+1. Acknowledge briefly that the previous check did not resolve the {session.active_symptom} problem.
+2. Deliver the next diagnostic check (Step {step_num}) or secondary hypothesis at the depth
+   requested by the adaptive plan.
 3. DO NOT ask what symptom they have or start over from scratch!
-4. Conclude with 3-5 action chips.
-5. Language: Respond in {session.language.upper()}.
+4. Keep any safety warning first and complete.
+5. Conclude with 3-5 action chips, including one explanation-style chip when useful.
+6. Language: Respond in {session.language.upper()}.
 """
         unsuccess_prompt = f"User Feedback: '{message}'. Issue: {session.active_symptom}. Vehicle: {session.vehicle_info}. Advance to Step {step_num}."
         try:
@@ -762,12 +795,16 @@ MANDATE:
             veh_name = "your vehicle"
 
         no_symptom_system_prompt = f"""You are J.A.R.V.I.S., the expert automotive & motorcycle diagnostic assistant. Address the user respectfully as '{sir}'.
+
+{adaptive_prompt_block(response_plan)}
+
 Strict Rules:
-1. RELEVANT & ACCURATE ANSWER: Answer the user's inquiry directly, concisely, and courteously.
+1. RELEVANT & ACCURATE ANSWER: Answer the user's inquiry directly and courteously, using the
+   adaptive plan's length and terminology. A simple question gets a short answer.
 2. ABSOLUTELY NO VOLUNTARY / ASSUMED SYMPTOMS: The user has NOT reported a breakdown or mechanical fault. NEVER assume, guess, or invent a symptom (such as 'No-Start', 'won't start', 'dead battery', or 'brake failure'). DO NOT draft a 9-step diagnostic repair protocol or checklist for an unstated condition!
 3. VEHICLE FOCUS: If the user mentioned or switched to {veh_name}, acknowledge this machine courteously, give a brief 1-2 sentence note on its specifications if relevant (e.g. carburetor, commuter motorcycle, chain drive), and politely ask what specific issue, symptom, or service they need help with.
 4. Language: Respond in {session.language.upper()}.
-5. Conclude with 3-5 clickable action chips: `[chips: Engine will not start | Brakes weak or spongy | Overheating | Strange noise | Routine maintenance]`.
+5. Conclude with 3-5 clickable action chips, including one explanation-style chip when useful: `[chips: Engine will not start | Brakes weak or spongy | Overheating | Strange noise | Routine maintenance]`.
 """
         prompt = f"User Inquiry: {message}\nActive Vehicle: {session.vehicle_info}"
         try:
@@ -843,36 +880,39 @@ Strict Rules:
 
     knowledge_text = "\n".join(rag_context_blocks) if rag_context_blocks else "Use standard verified mechanical diagnostic procedures."
 
-    exp_instruction = (
-        "Explanation Level: EXPERIENCED MECHANIC (Concise, technical component values, electrical pinout tests, mechanical tolerances)."
-        if session.experience_level == 'mechanic'
-        else "Explanation Level: BEGINNER-FRIENDLY (Patient, explain unfamiliar parts, describe how components work, emphasize safety)."
+    style_hint_chips = style_chips(
+        requested_style,
+        language=session.language,
+        limit=2,
     )
+    style_hint = ' | '.join(style_hint_chips) if style_hint_chips else 'Explain more simply'
 
-    # 4. Strict System Prompt
-    system_prompt = f"""You are J.A.R.V.I.S., master automotive & motorcycle diagnostic tutor.
+    # 4. Adaptive system prompt.  Gemini still writes the answer dynamically;
+    # the server only selects how deep and in what shape it should be.
+    system_prompt = f"""You are J.A.R.V.I.S., an adaptive automotive & motorcycle diagnostic tutor.
 Strict Rules:
-1. When diagnosing an active symptom or fault, format the response using the 9-part Step-by-Step Repair Tutor:
-   1. Short symptom summary.
-   2. Immediate safety warning (if applicable).
-   3. Most likely causes with explicit confidence ratings (High, Medium, Tentative).
-   4. Tools and preparation required.
-   5. Numbered diagnostic/repair steps with `- [ ] 1. Step` checklist.
-   6. Expected result after each test.
-   7. What to do if the result differs.
-   8. When to stop and consult a qualified mechanic.
-   9. Final question asking whether the problem was resolved.
-   CRITICAL: ONLY troubleshoot the exact symptom reported by the user. NEVER invent or assume unrelated symptoms.
-2. Anti-Hallucination: NEVER invent torque values, electrical specs, or fluid types. Only use specifications in the verified workshop database below or state "check factory service manual stamp".
-3. Language: Respond in {session.language.upper()}. Preserve technical part names (caliper, master cylinder, stator, carb, spark plug) while explaining them naturally.
-4. {exp_instruction}
-5. Conclude with 3-5 action chips: `[chips: Option 1 | Option 2 | Option 3]`.
+1. Answer the rider's exact question using the ADAPTIVE RESPONSE PLAN below. Do not force
+   every answer into a long report or a step-by-step procedure. A simple question gets a
+   short answer; a repair or "how to" question gets organised steps; safety-critical faults
+   always put the warning first.
+2. Safety first: if the local safety assessment has a warning, reflect it at the start and
+   never shorten it away, even when the requested style is short.
+3. Anti-Hallucination: NEVER invent torque values, electrical specs, or fluid types. Only use
+   specifications in the verified workshop database below or state "check factory service
+   manual stamp".
+4. Language: Respond in {session.language.upper()}. Preserve technical part names (caliper,
+   master cylinder, stator, carb, spark plug) while explaining them naturally for the rider's
+   experience level.
+5. Conclude with 3-5 action chips: `[chips: Option 1 | Option 2 | Option 3]`. Include one or
+   two explanation-style chips from: {style_hint}.
 6. ENGINE DISPLACEMENT & FUEL SYSTEM (CARB VS. FI) MANDATE:
    - Identify and incorporate the engine displacement / size (e.g., 110cc, 125cc, 150cc, 200cc, 250cc, 400cc) in locating the problem and specifying accurate engine tolerances.
    - Working on or fixing a carbureted motorcycle is vastly different from fixing a fuel-injected (FI) motorcycle in tools, diagnostics, and failure modes:
      * If the fuel system (Carb vs FI) is missing when diagnosing an engine, starting, power, or fuel fault, ask whether the motorcycle is Carb or FI before giving detailed repair procedures.
      * For Carbureted (Carb) engines: troubleshoot float bowl fuel flow, clogged pilot/main jets, air/fuel mixture screw setting, choke mechanism, and fuel petcock. Tools: screwdrivers, carb cleaner spray, drain container.
      * For Fuel-Injected (FI) engines: troubleshoot 2-second electric fuel pump priming whine, battery voltage under cranking (>10.5V required for ECU/injector trigger), injector spray pattern, and throttle body / TPS / sensor wiring. Tools: digital multimeter, fuel pressure gauge (30-45 PSI), 12V test light.
+
+{adaptive_prompt_block(response_plan)}
 
 ## VERIFIED WORKSHOP KNOWLEDGE DATABASE:
 {knowledge_text}

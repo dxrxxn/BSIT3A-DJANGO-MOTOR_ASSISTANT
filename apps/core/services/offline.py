@@ -33,7 +33,7 @@ LABELS = {
         'verification': 'How to verify',
         'sources': 'Sources in the local library',
         'next': 'Next action',
-        'limitations': 'Limitations',
+        'limitations': 'AI note & limitations',
         'no_record': 'No approved local repair record matched this question closely enough. I will not guess at a repair procedure or specification.',
         'checks_first': 'Complete the checks before replacing parts. The steps below are from the stored record and may not match your exact variant.',
         'source_language': 'Technical procedure text is kept close to its source wording to avoid changing measurements or safety meaning.',
@@ -53,7 +53,7 @@ LABELS = {
         'verification': 'Paano i-verify',
         'sources': 'Pinagkunan sa lokal na library',
         'next': 'Susunod na hakbang',
-        'limitations': 'Limitasyon',
+        'limitations': 'Paalala AI at limitasyon',
         'no_record': 'Walang sapat na tugmang approved local repair record. Hindi ako maghuhula ng procedure o specification.',
         'checks_first': 'Tapusin muna ang checks bago magpalit ng piyesa. Ang mga hakbang sa ibaba ay mula sa naka-store na record at maaaring hindi eksakto sa variant mo.',
         'source_language': 'Ang teknikal na procedure ay pinananatili malapit sa orihinal na salita upang hindi mabago ang sukat o kahulugan ng safety.',
@@ -73,7 +73,7 @@ LABELS = {
         'verification': 'Paano i-verify',
         'sources': 'Ginakuhaan sa lokal nga library',
         'next': 'Sunod nga tikang',
-        'limitations': 'Limitasyon',
+        'limitations': 'Paalala sang AI kag limitasyon',
         'no_record': 'Wala sang husto nga approved local repair record. Indi ako magguwa-guwa sang procedure ukon specification.',
         'checks_first': 'Tapusa anay ang checks antes mag-ilis sang parte. Ang mga tikang sa idalom halin sa naka-store nga record kag mahimo indi eksakto sa imo variant.',
         'source_language': 'Ang teknikal nga procedure ginapabilin malapit sa orihinal nga hambal agud indi magbaylo ang sukod ukon kahulugan sang kaligtasan.',
@@ -82,6 +82,12 @@ LABELS = {
         'if_abnormal': 'Kon abnormal',
     },
 }
+
+
+AI_NOTE = (
+    'AI-assisted answer: this can be wrong or inaccurate. Verify before acting; '
+    'it is not a confirmed diagnosis or a substitute for an in-person inspection.'
+)
 
 
 def _label(language, key):
@@ -106,7 +112,12 @@ def _source_list(evidence):
     return evidence_sources(evidence)
 
 
-def _compose_reply(structured, language):
+def _compose_reply(structured, language, explanation_style='auto'):
+    from .adaptive import normalize_explanation_style
+
+    style = normalize_explanation_style(explanation_style)
+    compact = style in ('simple', 'why')
+    medium = style == 'detailed'
     labels = LABELS.get(language, LABELS['english'])
     lines = []
     vehicle = ' '.join(filter(None, [
@@ -131,7 +142,8 @@ def _compose_reply(structured, language):
                 lines.append(f"  - {option}")
     if structured.get('possible_causes'):
         lines.append(f"**{labels['causes']}:**")
-        for cause in structured['possible_causes'][:5]:
+        cause_limit = 2 if compact else (3 if medium else 5)
+        for cause in structured['possible_causes'][:cause_limit]:
             suffix = f" — {labels['confidence']}: {cause['confidence']}"
             lines.append(f"- {cause['cause']}{suffix}")
             if cause.get('evidence'):
@@ -140,7 +152,8 @@ def _compose_reply(structured, language):
                 lines.append(f"  - {cause['uncertainty']}")
     if structured.get('diagnostic_tests'):
         lines.append(f"**{labels['tests']}:**")
-        for test in structured['diagnostic_tests'][:5]:
+        test_limit = 2 if compact else (3 if medium else 5)
+        for test in structured['diagnostic_tests'][:test_limit]:
             lines.append(f"- {test['name']}")
             if test.get('expected'):
                 lines.append(f"  - {labels['expected']}: {test['expected']}")
@@ -148,37 +161,45 @@ def _compose_reply(structured, language):
                 lines.append(f"  - {labels['if_abnormal']}: {test['if_abnormal']}")
             if test.get('safety'):
                 lines.append(f"  - {labels['safety']}: {test['safety']}")
-    if structured.get('required_tools'):
+    if not compact and structured.get('required_tools'):
         lines.append(f"**{labels['tools']}:**")
         lines.extend(f"- {tool}" for tool in structured['required_tools'][:12])
-    if structured.get('required_parts'):
+    if not compact and structured.get('required_parts'):
         lines.append(f"**Parts:**")
         for part in structured['required_parts'][:10]:
             verified = 'verified compatibility' if part.get('compatibility_verified') else 'compatibility NOT verified'
             number = f" [{part['part_number']}]" if part.get('part_number') else ''
             lines.append(f"- {part['name']}{number} — {verified}")
-    if structured.get('repair_steps'):
+    if not compact and structured.get('repair_steps'):
         lines.append(f"**{labels['steps']}:**")
         lines.append(f"_{labels['checks_first']}_")
-        for step in structured['repair_steps'][:20]:
+        step_limit = 8 if medium else 20
+        for step in structured['repair_steps'][:step_limit]:
             lines.append(f"- [ ] {step['step']}. {step['instruction']}")
             if step.get('safety'):
                 lines.append(f"  - {labels['safety']}: {step['safety']}")
-    if structured.get('verification'):
+    if not compact and structured.get('verification'):
         lines.append(f"**{labels['verification']}:**")
         lines.extend(f"- {item}" for item in structured['verification'][:8])
-    if structured.get('sources'):
+    if not compact and structured.get('sources'):
         lines.append(f"**{labels['sources']}:**")
         for source in structured['sources'][:6]:
             reviewed = 'reviewed' if source.get('reviewed') else 'unreviewed'
             date = f" ({source['date']})" if source.get('date') else ''
             lines.append(f"- {source.get('title') or source.get('reference')}{date} — {reviewed}")
         lines.append(f"_{labels['source_language']}_")
-    if structured.get('limitations'):
-        lines.append(f"**{labels['limitations']}:**")
-        lines.extend(f"- {item}" for item in structured['limitations'][:6])
     if structured.get('next_action'):
         lines.append(f"**{labels['next']}:** {structured['next_action']}")
+    notes = list(structured.get('limitations') or [])
+    if not any(
+        'wrong or inaccurate' in str(item).lower()
+        or 'automated assistant' in str(item).lower()
+        for item in notes
+    ):
+        notes.append(AI_NOTE)
+    if notes:
+        lines.append(f"**{labels['limitations']}:**")
+        lines.extend(f"- {item}" for item in notes[:6])
 
     chips = []
     for question in structured.get('missing_questions', []):
@@ -192,7 +213,8 @@ def _compose_reply(structured, language):
 
 
 def build_offline_response(message, conversation, profile, evidence, safety,
-                           language='english', experience_level='beginner'):
+                           language='english', experience_level='beginner',
+                           explanation_style='auto'):
     structured = empty_structured(language)
     structured['offline'] = True
     structured['language'] = language
@@ -252,7 +274,9 @@ def build_offline_response(message, conversation, profile, evidence, safety,
                 'tagalog': 'Sabihin kung kailan nangyayari ang sintomas, kung nagbabago ito sa temperatura o load, at anumang bagong repair o fluid change.',
                 'hiligaynon': 'Hambala kon san-o nagakatabo ang sintomas, kon nagabaylo ini sa temperatura ukon load, kag bisan ano nga bag-o nga repair ukon fluid change.',
             }[language]
-        structured['reply_text'] = _compose_reply(structured, language)
+        structured['reply_text'] = _compose_reply(
+            structured, language, explanation_style=explanation_style,
+        )
         return structured
 
     # Build from the best approved records.
@@ -348,5 +372,7 @@ def build_offline_response(message, conversation, profile, evidence, safety,
         'This is offline guidance from stored records, not a confirmed diagnosis.',
         'The stored record may not cover your exact model, year, or variant. Verify part numbers and specifications against the manufacturer information for your vehicle.',
     ]
-    structured['reply_text'] = _compose_reply(structured, language)
+    structured['reply_text'] = _compose_reply(
+        structured, language, explanation_style=explanation_style,
+    )
     return structured

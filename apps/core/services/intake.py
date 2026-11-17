@@ -158,14 +158,20 @@ def extract_vehicle_profile(message, conversation=None, client_history=None):
             profile[key] = extracted[key]
 
     vehicle_type = (profile.get('vehicle_type') or profile.get('type') or '').lower()
-    if vehicle_type in ('scooter', 'underbone', 'motorcycle', 'trike', 'tricycle'):
-        vehicle_type = 'motorcycle' if vehicle_type != 'tricycle' else 'tricycle'
+    motorcycle_types = (
+        'scooter', 'underbone', 'motorcycle', 'trike', 'tricycle',
+        'dual-sport', 'dual sport', 'dirt bike', 'dirtbike', 'enduro',
+        'cruiser', 'sport bike', 'naked / sport', 'big bike / naked',
+    )
+    if vehicle_type in motorcycle_types:
+        vehicle_type = 'tricycle' if vehicle_type == 'tricycle' else 'motorcycle'
     elif vehicle_type in ('car', 'sedan', 'suv', 'van', 'pickup', 'truck', 'kotse'):
         vehicle_type = 'car'
     else:
         text = (message + ' ' + _history_text(conversation)).lower()
         for candidate, words in VEHICLE_TYPE_WORDS.items():
-            if any(re.search(r'\b' + re.escape(word), text) for word in words):
+            # Both boundaries are required: "carbureted" must not match "car".
+            if any(re.search(r'\b' + re.escape(word) + r'\b', text) for word in words):
                 vehicle_type = candidate
                 if candidate == 'motorcycle':
                     break

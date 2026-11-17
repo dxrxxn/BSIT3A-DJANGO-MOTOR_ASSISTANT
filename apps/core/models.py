@@ -127,6 +127,19 @@ class Conversation(models.Model):
         ('verification', 'Verification'),
         ('closed', 'Closed'),
     ]
+    EXPERIENCE_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('mechanic', 'Experienced mechanic'),
+    ]
+    EXPLANATION_STYLE_CHOICES = [
+        ('auto', 'Adapt automatically'),
+        ('simple', 'Simple, plain language'),
+        ('detailed', 'More detail'),
+        ('step_by_step', 'Step by step'),
+        ('complete', 'Complete procedure'),
+        ('why', 'Explain why it happens'),
+    ]
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -135,6 +148,14 @@ class Conversation(models.Model):
     )
     title = models.CharField(max_length=160, blank=True)
     language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default='auto')
+    experience_level = models.CharField(
+        max_length=20, choices=EXPERIENCE_CHOICES, default='beginner',
+        help_text='Remembered explanation depth for this conversation.',
+    )
+    explanation_style = models.CharField(
+        max_length=20, choices=EXPLANATION_STYLE_CHOICES, default='auto',
+        help_text='Remembered explanation style requested by the user.',
+    )
     vehicle_type = models.CharField(max_length=20, blank=True)
     vehicle_make = models.CharField(max_length=80, blank=True)
     vehicle_model = models.CharField(max_length=120, blank=True)

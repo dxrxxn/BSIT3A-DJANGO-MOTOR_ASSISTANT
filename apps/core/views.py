@@ -21,6 +21,13 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from .jarvis_translations import BRANCH_TEXTS
 from .part_locations import location_hint
 from .services import assistant as assistant_service
+from .services.adaptive import (
+    adaptive_prompt_block,
+    build_response_plan,
+    detect_explanation_style_request,
+    normalize_explanation_style,
+    normalize_experience_level,
+)
 from .services.ai import fallback_model_name, is_ai_available, is_ai_configured, model_name
 from .services.images import InvalidImageError, attach_to_conversation, save_uploaded_image
 from .services.memory import get_or_create_conversation
@@ -943,7 +950,10 @@ def _extract_vehicle_info(text, history=None):
     # Fuel system detection
     if re.search(r'\b(?:fi|efi|pgm-fi)\b|fuel inject|inject(?:ed|ion)', active_attr_text, re.I):
         info['engine_fuel'] = 'FI'
-    elif re.search(r'\bcarbs?\b|\bcarburetor\b|karburador', active_attr_text, re.I):
+    elif re.search(
+        r'\bcarbs?\b|\bcarburetor\b|\bcarburett?ed\b|karburador',
+        active_attr_text, re.I,
+    ):
         info['engine_fuel'] = 'Carburetor'
     elif info['model']:
         mdl_lower = info['model'].lower()
@@ -1035,11 +1045,18 @@ def _extract_vehicle_info(text, history=None):
     return info
 
 
-def _jarvis_gemini_general(message, user, history=None, language=None):
+def _jarvis_gemini_general(message, user, history=None, language=None,
+                           explanation_style='auto', experience_level='beginner'):
     """Broad motorcycle-assistant call for maintenance/how-to/info questions."""
     client = _get_gemini_client()
     if client is None:
         return None
+
+    response_plan = build_response_plan(
+        message,
+        experience_level=experience_level or 'beginner',
+        style=explanation_style,
+    )
 
     sir = _jarvis_address(user)
     # Detect/normalise language
@@ -1073,6 +1090,9 @@ def _jarvis_gemini_general(message, user, history=None, language=None):
 ## MANDATORY LANGUAGE INSTRUCTION
 DETECTED LANGUAGE: {lang_label} ({language})
 YOU MUST RESPOND ENTIRELY IN {lang_label.upper()}. This is non-negotiable. Keep technical part names (e.g. brake caliper, CVT, spark plug, ECU) in their original English form and explain them simply in the response language.
+
+## ADAPTIVE RESPONSE PLAN (server-selected; overrides generic verbosity)
+{adaptive_prompt_block(response_plan)}
 
 
 The user is asking a GENERAL motorcycle question — maintenance, how-to, service intervals, pre-ride/pre-repair checks, tools, parts, riding technique, buying advice, comparisons between models, riding gear/safety equipment, or general information about a motorcycle model. They are not necessarily reporting a breakdown.
@@ -1190,12 +1210,23 @@ Your response as J.A.R.V.I.S.:"""
         return None
 
 
-def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None):
+def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None,
+                   explanation_style='auto', experience_level='beginner'):
     """
     Calls Gemini AI with full multi-turn conversational vehicle diagnostic mechanic system.
     """
     if mode == 'general':
-        return _jarvis_gemini_general(message, user, history=history, language=language)
+        return _jarvis_gemini_general(
+            message, user, history=history, language=language,
+            explanation_style=explanation_style,
+            experience_level=experience_level,
+        )
+
+    response_plan = build_response_plan(
+        message,
+        experience_level=experience_level or 'beginner',
+        style=explanation_style,
+    )
 
     client = _get_gemini_client()
     if client is None:
@@ -1265,6 +1296,10 @@ def _jarvis_gemini(message, user, history=None, mode='diagnostic', language=None
 ## MANDATORY LANGUAGE INSTRUCTION
 DETECTED LANGUAGE: {dlang_label} ({language})
 YOU MUST RESPOND ENTIRELY IN {dlang_label.upper()}. This is non-negotiable. Keep technical part names (caliper, CVT, spark plug, ECU) in their original English form.
+
+## ADAPTIVE RESPONSE PLAN (server-selected; overrides generic verbosity)
+{adaptive_prompt_block(response_plan)}
+- The 4-stage workflow below is the diagnostic progression, not a demand to emit a long nine-part report every turn. Match the length and format above. Give a full repair checklist only when the rider asks for it or the fault has reached the repair stage.
 
 You have access to the workshop diagnostic database:
 
@@ -2056,7 +2091,8 @@ def _fix_vehicle_form_category(reply, message):
     return reply
 
 
-def _jarvis_response(message, user, history=None, language=None, experience_level=None, guided_state=None):
+def _jarvis_response(message, user, history=None, language=None, experience_level=None,
+                     guided_state=None, explanation_style='auto'):
     """
     Intelligent J.A.R.V.I.S. Multi-Turn Diagnostic Mechanic:
     1. Guided intake (web client only): identify motorcycle -> focus on it ->
@@ -2066,7 +2102,7 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
        - Critical safety alerts & stop-riding directives
        - Verified database knowledge retrieval (RAG)
        - Single targeted question selection (no bombardment)
-       - Strict 9-point Step-by-Step Repair Tutor format
+       - Adaptive answer depth and structure (beginner, intermediate, experienced mechanic)
        - Multi-provider AI (Gemini, OpenAI-compatible)
        - Grounded local knowledge fallback (explicitly disclosed)
     4. Fallbacks: Offline Knowledge Cache & rule-based engine.
@@ -2179,25 +2215,40 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
 
     reply = None
 
-    def _safe_call_gemini(fn, message, user, history=None, mode=None, language=None):
-        try:
-            kwargs = {}
-            if mode is not None:
-                kwargs['mode'] = mode
-            if language is not None:
-                kwargs['language'] = language
-            return fn(message, user, history=history, **kwargs)
-        except TypeError:
+    def _safe_call_gemini(fn, message, user, history=None, mode=None, language=None,
+                          explanation_style=None, experience_level=None):
+        kwargs = {}
+        if mode is not None:
+            kwargs['mode'] = mode
+        if language is not None:
+            kwargs['language'] = language
+        if explanation_style and explanation_style != 'auto':
+            kwargs['explanation_style'] = explanation_style
+        if experience_level:
+            kwargs['experience_level'] = experience_level
+
+        # Older tests and integrations may have narrower signatures.  Drop
+        # optional keyword arguments only when the callable rejects them.
+        for removable in (None, 'explanation_style', 'experience_level', 'language'):
+            if removable:
+                kwargs.pop(removable, None)
             try:
-                if mode is not None:
-                    return fn(message, user, history=history, mode=mode)
-                return fn(message, user, history=history)
+                return fn(message, user, history=history, **kwargs)
             except TypeError:
-                return fn(message, user)
+                continue
+        try:
+            return fn(message, user, history=history)
+        except TypeError:
+            return fn(message, user)
 
     if is_general_query:
         # Maintenance/how-to/service question: answer directly, no intake form.
-        reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, mode='general', language=language or _detect_language(message, history))
+        reply = _safe_call_gemini(
+            _jarvis_gemini, message, user, history=history, mode='general',
+            language=language or _detect_language(message, history),
+            explanation_style=explanation_style,
+            experience_level=experience_level,
+        )
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:
@@ -2206,7 +2257,12 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
             )
     elif is_visual_query:
         # Visual reference or "what is" query
-        reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, language=language or _detect_language(message, history))
+        reply = _safe_call_gemini(
+            _jarvis_gemini, message, user, history=history,
+            language=language or _detect_language(message, history),
+            explanation_style=explanation_style,
+            experience_level=experience_level,
+        )
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:
@@ -2216,14 +2272,21 @@ def _jarvis_response(message, user, history=None, language=None, experience_leve
         try:
             from .diagnostic_engine import orchestrate_diagnostic_response
             reply = orchestrate_diagnostic_response(
-                message, user, history=history, language=language, experience_level=experience_level,
-                guided_state=guided_state
+                message, user, history=history, language=language,
+                experience_level=experience_level,
+                explanation_style=explanation_style,
+                guided_state=guided_state,
             )
         except Exception as e:
             reply = None
 
         if not reply:
-            reply = _safe_call_gemini(_jarvis_gemini, message, user, history=history, language=language or _detect_language(message, history))
+            reply = _safe_call_gemini(
+                _jarvis_gemini, message, user, history=history,
+                language=language or _detect_language(message, history),
+                explanation_style=explanation_style,
+                experience_level=experience_level,
+            )
         if not reply:
             reply = _find_offline_knowledge(message, user)
         if not reply:
@@ -3325,8 +3388,25 @@ def jarvis_chat(request):
     if language in ('auto', '', None):
         language = None
     experience_level = data.get('experience_level')
-    if experience_level not in ('beginner', 'mechanic'):
-        experience_level = 'beginner'
+    if experience_level:
+        experience_level = normalize_experience_level(experience_level)
+    else:
+        # The assistant remembers the level from the conversation when the
+        # client does not send one.
+        experience_level = None
+
+    explanation_style = normalize_explanation_style(data.get('explanation_style'))
+    detected_style = detect_explanation_style_request(message)
+    session_style = normalize_explanation_style(
+        request.session.get('jarvis_explanation_style')
+    )
+    if explanation_style != 'auto':
+        session_style = explanation_style
+    if detected_style:
+        session_style = detected_style
+    if session_style != 'auto':
+        request.session['jarvis_explanation_style'] = session_style
+        request.session.modified = True
 
     quota = None
     if structured_mode:
@@ -3359,6 +3439,7 @@ def jarvis_chat(request):
                 conversation_id=conversation.pk,
                 language=language,
                 experience_level=experience_level,
+                explanation_style=session_style,
                 image=image,
             )
         except ValueError as exc:
@@ -3390,6 +3471,7 @@ def jarvis_chat(request):
         reply = _jarvis_response(
             message, request.user, history=data.get('history', []), language=language,
             experience_level=experience_level, guided_state=guided_state,
+            explanation_style=session_style,
         )
     except Exception as exc:
         logger.exception("Error in _jarvis_response, falling back to offline answer: %s", exc)
@@ -3423,6 +3505,8 @@ def jarvis_chat(request):
         'reply': reply,
         'quota': quota,
         'vehicle': veh,
+        'explanation_style': session_style,
+        'experience_level': experience_level or 'beginner',
     })
 
 

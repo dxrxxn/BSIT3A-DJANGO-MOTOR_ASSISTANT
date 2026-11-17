@@ -1763,6 +1763,8 @@
         );
       }
     }
+
+    try {
       const botMsgId = appendBotMessage(replyText);
       scrollToTurnResponse(userMsgId, botMsgId, 50);
 
@@ -1881,6 +1883,16 @@
 
   function speakBotWidget(raw) {
     if (!('speechSynthesis' in window) || !raw) return;
+
+    // Stop the mic before Jarvis speaks so his own voice is never auto-sent back.
+    if (widgetRecognition && widgetIsListening) {
+      try { widgetRecognition.stop(); } catch(e) {}
+    }
+    if (widgetSilenceTimer) {
+      clearTimeout(widgetSilenceTimer);
+      widgetSilenceTimer = null;
+    }
+
     const clean = raw
       .replace(/\[chips:[\s\S]*?\]/gi, '')
       .replace(/\[stage:\s*[1-4]\]/gi, '')
@@ -1967,6 +1979,7 @@
     };
 
     widgetRecognition.onresult = (event) => {
+      if (isWidgetSpeaking) return; // Ignore audio while Jarvis is talking.
       let interim = '';
       let final = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {

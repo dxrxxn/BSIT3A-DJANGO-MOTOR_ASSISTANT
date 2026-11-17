@@ -171,6 +171,8 @@ def empty_structured(language='english'):
         'offline': False,
         'offline_reason': '',
         'chips': [],
+        'experience_level': 'beginner',
+        'explanation_style': 'auto',
     }
 
 
@@ -214,6 +216,60 @@ def _string_list(value, limit=12, item_limit=500):
         if text and text not in result:
             result.append(text)
     return result[:limit]
+
+
+_META_TARGET = (
+    r'(?:the\s+|a\s+)?(?:user|rider|customer|person|owner|client)(?:s)?(?:[\'\u2019]s)?'
+)
+# Matches the many ways a model directs the instruction at itself instead of
+# the rider: "Ask the user to...", "Wait for user to...", "Await the rider's...",
+# "Need to ask the user for...", "Request that the user...", etc.
+_META_NEXT_ACTION = re.compile(
+    r'^\s*'
+    r'(?:(?:need|have)\s+to\s+|should\s+|must\s+)?'
+    r'(?:ask|tell|request|inquire|prompt|question|wait|await|expect|'
+    r'get|gather|collect|obtain)\s+'
+    r'(?:for\s+|from\s+|with\s+|that\s+)?'
+    + _META_TARGET + r'\s+'
+    r'(?:to\s+|for\s+|about\s+|on\s+|if\s+|whether\s+|that\s+)?',
+    re.IGNORECASE,
+)
+_META_NEXT_ACTION_PASSIVE = re.compile(
+    r'^\s*(?:the\s+)?(?:user|rider|customer|owner|person)\s+'
+    r'(?:should|needs?\s+to|must|will)\s+',
+    re.IGNORECASE,
+)
+_META_NEXT_ACTION_SHORT = re.compile(
+    r'^\s*(?:ask|request|inquire)\s+(?:for\s+|about\s+)?', re.IGNORECASE,
+)
+_GENERIC_META_NEXT_ACTION = re.compile(
+    r'^\s*(?:answer|respond\s+to|provide\s+(?:the\s+)?answer)\b',
+    re.IGNORECASE,
+)
+_VAGUE_NEXT_ACTION = re.compile(
+    r'^(?:response|reply|answer|confirmation|information|feedback)\b',
+    re.IGNORECASE,
+)
+
+
+def rider_facing_next_action(value):
+    """Turn a model instruction aimed at the assistant into a rider-facing action."""
+    text = _text(value, 1200)
+    if not text:
+        return ''
+    if _GENERIC_META_NEXT_ACTION.match(text):
+        return ''
+    cleaned = _META_NEXT_ACTION.sub('', text)
+    if cleaned == text:
+        cleaned = _META_NEXT_ACTION_PASSIVE.sub('', text)
+    if cleaned == text:
+        cleaned = _META_NEXT_ACTION_SHORT.sub('', text)
+    cleaned = cleaned.strip()
+    if not cleaned or _VAGUE_NEXT_ACTION.match(cleaned):
+        return ''
+    if cleaned.lower().startswith('the '):
+        cleaned = 'Provide ' + cleaned
+    return cleaned[0].upper() + cleaned[1:]
 
 
 def normalise_structured(data, *, language='english', safety=None, evidence_sources=None,
@@ -333,7 +389,7 @@ def normalise_structured(data, *, language='english', safety=None, evidence_sour
         })
 
     base['verification'] = _string_list(data.get('verification'), limit=12, item_limit=700)
-    base['next_action'] = _text(data.get('next_action'), 1200)
+    base['next_action'] = rider_facing_next_action(data.get('next_action'))
     base['limitations'] = _string_list(data.get('limitations'), limit=8, item_limit=500)
     base['offline'] = bool(offline)
 

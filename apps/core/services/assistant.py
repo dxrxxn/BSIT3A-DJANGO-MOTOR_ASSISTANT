@@ -22,13 +22,25 @@ from django.conf import settings
 from django.utils import timezone
 
 from ..part_locations import location_hint
+from .adaptive import (
+    adaptive_prompt_block,
+    build_response_plan,
+    detect_explanation_style_request,
+    is_style_only_message,
+    normalize_experience_level,
+    normalize_explanation_style,
+    resolve_explanation_style,
+    style_chips,
+)
 from .ai import AiInvalidRequest, AiResult, AiServiceError, generate, is_ai_available
 from .intake import (
     detect_language,
     extract_vehicle_profile,
+    has_symptom_signal,
     missing_symptom_questions,
     missing_vehicle_questions,
     stage_for,
+    vehicle_label,
 )
 from .knowledge import (
     evidence_prompt,
@@ -49,6 +61,7 @@ from .structured import (
     RESPONSE_SCHEMA,
     empty_structured,
     normalise_structured,
+    rider_facing_next_action,
     validate_structured,
 )
 
@@ -59,6 +72,14 @@ LANGUAGE_LABELS = {
     'tagalog': 'Filipino / Tagalog',
     'hiligaynon': 'Hiligaynon / Ilonggo',
 }
+
+AI_LIMITATION = (
+    'AI-assisted answer: this can be wrong or inaccurate. It is guidance from '
+    'an automated assistant, not a confirmed diagnosis or a substitute for an '
+    'in-person inspection. Verify before acting.'
+)
+
+_OFFTOPIC_QUESTION = 'is this inquiry regarding a motorcycle?'
 
 SYSTEM_INSTRUCTION = """You are J.A.R.V.I.S., a cautious motorcycle diagnostic assistant for MotorAssistant.
 Your job is to help a rider understand a motorcycle symptom and decide on safe next checks. Focus strictly on motorcycles, scooters, underbones, and mopeds.
@@ -83,20 +104,28 @@ Non-negotiable rules:
 7. If a photo is attached, report only what is clearly visible. Do not identify
    an exact part, model, or internal failure from a photo alone.
 8. Answer in the requested language. Keep technical names needed for a safe
-   repair in their original form, then explain them simply.
-9. For a beginner, explain what each check proves. For a mechanic, be concise
-   but keep every safety warning.
+   repair in their original form, then explain them when the rider's level
+   requires it.
+9. ADAPT TO THE RIDER. A beginner needs plain words and brief explanations of
+   what each check proves. An intermediate rider knows basic components and
+   needs the relevant checks without a basic lecture. An experienced mechanic
+   wants concise technical language, specifications, and test values. Never
+   assume every rider has mechanical knowledge, and never bore a mechanic with
+   definitions of basic parts.
 10. Return only the requested JSON object. The reply_text field may use short
     Markdown headings and bullet points; do not wrap the whole answer in a
     code fence.
 11. NO VOLUNTARY SYMPTOMS: Never assume, invent, or voluntarily draft troubleshooting for an unstated symptom (such as assuming "No-Start") when the user has not described a fault. If the user mentions or switches vehicles without stating a problem, acknowledge the vehicle and ask what symptom or question they have.
-13. MOTORCYCLE-EXCLUSIVE SCOPE: MotorAssistant is strictly and exclusively dedicated to motorcycles, scooters, underbones, and mopeds. If the user query is unrelated to motorcycles (home appliances, cars, general trivia, math homework, cooking, programming, pets, etc.), politely decline and ask: 'Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle. Is this inquiry regarding a motorcycle?' and prompt them to describe their motorcycle problem.
+13. MOTORCYCLE-EXCLUSIVE SCOPE: MotorAssistant is dedicated to motorcycles, scooters, underbones, and mopeds. Use the "Is this inquiry regarding a motorcycle?" clarification ONLY for a genuinely non-motorcycle topic (home appliances, cars, general trivia, homework, cooking, pets, etc.). A message that names a motorcycle, a brand/model, an engine size, or a fuel system ("carbureted", "FI") is ALWAYS on topic, even when no symptom is given. For those messages, briefly acknowledge the bike and ask ONE short question about the symptom. Never introduce MotorAssistant or ask "Is this inquiry regarding a motorcycle?" when the rider has already named their motorcycle.
 12. STRICT 4-STAGE DISCIPLINE: During Stage 2 (safe checks), focus strictly on guiding safe tests to narrow down the problem. NEVER jump prematurely to a repair plan if the user hasn't checked yet or is still observing. In Stage 3 (review findings), explain the cause and include a component picture using [part-image: URL | Part Name]. In Stage 4 (repair plan), deliver actionable repair steps.
-14. CONCISE & PUNCHY REPLIES (NOT TOO LONG, NOT TOO SHORT):
-    - Keep reply_text short, crisp, and direct (typically 2 to 4 sentences maximum).
-    - NEVER write wordy preamble, robotic empathy, or restate the user's issue (do NOT say: "I understand you are experiencing...", "To assist you accurately, I need to...", "Please note that when testing...").
-    - Jump straight to the point: state any immediate safety precaution or mechanical insight in 1–2 sharp sentences, then ask 1 or 2 clear, specific questions to identify the vehicle or symptom.
-    - Not too short (avoid blunt single-word answers), but never verbose. Deliver sharp, actionable guidance.
+14. MATCH THE ANSWER DEPTH TO THE REQUEST (ADAPTIVE, NOT ONE FIXED FORMAT):
+    - A simple fact or quick question gets a short, direct answer. Do not pad it into a tutorial.
+    - A troubleshooting question gets the most likely cause, the most relevant alternative causes, and the next safe check.
+    - A complex repair gets an organised procedure with numbered steps and verification.
+    - The ADAPTIVE RESPONSE PLAN in the prompt is authoritative for this turn. It tells you whether the rider wants a short answer, more detail, step-by-step guidance, the complete procedure, or a "why" explanation.
+    - NEVER force step-by-step mode on every answer. NEVER write a long preamble or robotic empathy, and never restate the rider's issue. Do not say "I understand you are experiencing..." or "To assist you accurately...".
+    - Never omit a safety warning just to keep an answer short.
+    - When the plan asks for a short answer, stop after the direct answer and the next safe action.
 15. ENGINE DISPLACEMENT & FUEL SYSTEM (CARB VS. FI) SPECIFICITY:
     - Always identify and incorporate the engine displacement / size (e.g. 110cc, 125cc, 150cc, 200cc, 250cc, etc.) in your diagnosis, as clearances, compression specifications, and repair tolerances directly correlate with displacement.
     - CRITICAL: Working on or fixing a carbureted (carb) motorcycle is vastly different from fixing a fuel-injected (FI) motorcycle, especially regarding tools, diagnostics, and failure modes.
@@ -107,6 +136,8 @@ Non-negotiable rules:
     - If the user has NOT explicitly provided the name, model, or type of their motorcycle, ALWAYS treat and refer to the vehicle generally as a "motorcycle" (or "motor" / "motorsiklo").
     - NEVER assume, guess, or default to calling it a "scooter", and NEVER assume a scooter CVT transmission unless the user explicitly names a scooter model or confirms it is a scooter.
     - Do not mistake sounds or symptoms like "clicks", "clicking", or "starter click" for a Honda Click motorcycle. Keep all initial guidance general to motorcycles until the user states their motorcycle's make/model.
+    - CONVERSELY, once the rider HAS given a make/model, always refer to their bike by that name (for example "your Honda XR 150") instead of generic "your motorcycle", "the motorcycle", or "the bike". Never ask for the make or model again.
+17. RIDER-FACING next_action: The next_action field is the next thing the RIDER should do. Write it as a direct instruction to the rider ("Describe what happens and when it started", "Check the battery voltage"). NEVER write instructions aimed at yourself or the assistant, including "Ask the user...", "Tell the rider...", "Wait for user to...", "Wait for the rider...", "Await the user's response...", "Need to ask...", "Gather information from the user...", "The user should...", "Request more details", or "Answer the question". If information is still needed, put the real question in reply_text and missing_questions and make next_action that same rider-facing question.
 """
 
 
@@ -118,9 +149,10 @@ or general information about motorcycle models — directly and accurately.
 Rules:
 1. Answer directly in the first 1–3 sentences. Never ask for the make, model,
    or year before giving the answer.
-2. Match the depth to the question. A simple interval, spec, or location
-   question gets a concise answer; a full how-to may include tools, a short
-   checklist, and safety notes.
+2. Match the depth to the question and the ADAPTIVE RESPONSE PLAN supplied in
+   the prompt. A simple interval, spec, or location question gets a concise
+   answer; a full how-to may include tools, a short checklist, and safety notes.
+   Do not force step-by-step mode when a short answer is enough.
 3. For "where is X located?" questions, give the typical location first, then
    say it varies by model and tell the user to confirm in the owner's manual.
 4. Use the conversation history. If the user says "that part" or "it", use the
@@ -139,7 +171,7 @@ Rules:
      * Engine cut-outs: controlled by the kill switch, ignition key switch, sidestand safety switch, bank angle sensor, and the CDI/ECU grounding or pulsing the ignition coil.
      * Headlight: powered by AC lighting coils from the stator on traditional/carb bikes, or DC battery power through a headlight relay / ignition switch / ECU on modern/EFI bikes.
      * Battery charging: stator alternator produces AC voltage, which flows into the regulator/rectifier to be converted to DC and maintained at ~14.0V-14.5V to charge the 12V battery.
-5. MOTORCYCLE-EXCLUSIVE SCOPE: Answer only motorcycle-related questions. If an inquiry is not about motorcycles, scooters, or underbones, decline and clarify: 'Sir, this is MotorAssistant, designed specifically to help you diagnose, maintain, and fix problems on your motorcycle. Is this inquiry regarding a motorcycle?'.
+5. MOTORCYCLE-EXCLUSIVE SCOPE: Answer motorcycle-related questions. Use "Is this inquiry regarding a motorcycle?" ONLY when the topic is genuinely not a motorcycle (appliances, cars, trivia, etc.). A message naming a bike, brand/model, engine size, or carbureted/FI engine is on topic even without a symptom — answer it or ask one short symptom question. Never ask that question when the rider already named their motorcycle.
 4c. For BUYING / RECOMMENDATION questions ("best motorcycle for beginners"):
    - Give 2–3 concrete recommendations with a brief reason each and key factors
      (budget, skill level, use case, parts availability).
@@ -319,10 +351,7 @@ def _merge_missing_questions(structured, local_questions, asked_questions):
 def _add_limitations(structured, *, offline=False, used_ai=False, image=None,
                      evidence=None, image_supported=True):
     limitations = list(structured.get('limitations') or [])
-    standard = (
-        'This is guidance from an automated assistant, not a confirmed diagnosis '
-        'or a substitute for an in-person inspection.'
-    )
+    standard = AI_LIMITATION
     if standard not in limitations:
         limitations.append(standard)
     if used_ai and not evidence:
@@ -345,17 +374,32 @@ def _add_limitations(structured, *, offline=False, used_ai=False, image=None,
 
 
 def _chips_for(structured):
+    """Offer diagnostic answers plus adaptive explanation controls.
+
+    Question options stay first because they unblock the diagnosis.  The
+    remaining slots let the rider ask for a simpler, more detailed, stepwise,
+    complete, or "why" explanation at any point in the conversation.
+    """
     chips = []
     for question in structured.get('missing_questions', [])[:2]:
         for option in question.get('options', [])[:5]:
             label = re.sub(r'^[A-E][\.\)]\s*', '', str(option)).strip()
             if label and label not in chips:
                 chips.append(label)
-    for suggestion in ('Explain in simpler terms', 'What should I check first?'):
+
+    language = structured.get('language') or 'english'
+    for chip in style_chips(
+        structured.get('explanation_style') or 'auto',
+        language=language,
+        limit=3,
+    ):
         if len(chips) >= 5:
             break
-        if suggestion not in chips:
-            chips.append(suggestion)
+        if chip not in chips:
+            chips.append(chip)
+
+    if len(chips) < 5 and 'What should I check first?' not in chips:
+        chips.append('What should I check first?')
     return chips[:5]
 
 
@@ -404,14 +448,27 @@ def _append_chips(structured):
 
 
 def _prompt(*, message, language, experience_level, profile, conversation,
-            safety, evidence, image, image_supported):
+            safety, evidence, image, image_supported, response_plan,
+            style_followup=False):
     lines = [
         f'REQUESTED LANGUAGE: {LANGUAGE_LABELS.get(language, "English")} ({language})',
-        f'EXPERIENCE LEVEL: {experience_level}',
+        '',
+        adaptive_prompt_block(response_plan),
         '',
         'KNOWN VEHICLE PROFILE (may be incomplete; do not invent missing fields):',
         str(profile or {}),
         '',
+    ]
+    known_name = vehicle_label(profile)
+    if known_name:
+        lines.extend([
+            f'The rider already identified this motorcycle as {known_name}. '
+            f'Call it "your {known_name}" (or "{known_name}") instead of generic '
+            'phrases such as "your motorcycle", "the motorcycle", or "the bike". '
+            'Never ask for the make or model again.',
+            '',
+        ])
+    lines.extend([
         'AUTHORITATIVE LOCAL SAFETY ASSESSMENT (must be reflected first):',
         str({
             'severity': safety.get('severity'),
@@ -425,7 +482,7 @@ def _prompt(*, message, language, experience_level, profile, conversation,
         'APPROVED LOCAL REPAIR RECORDS (the only allowed source for technical values):',
         evidence_prompt(evidence),
         '',
-    ]
+    ])
     if image is not None:
         lines.extend([
             'PHOTO: One image is attached. Report only clearly visible evidence.',
@@ -442,13 +499,20 @@ def _prompt(*, message, language, experience_level, profile, conversation,
         message,
         'USER_MESSAGE>>>',
         '',
-        'Produce the JSON response now. Keep reply_text CONCISE and DIRECT (typically 2 to 4 sentences,',
-        'not too long and not too short). Never write filler preambles or robotic empathy ("I understand you are',
-        'experiencing...", "To assist you accurately..."). State the key mechanical or safety observation directly',
-        'and ask 1-2 focused questions. The reply_text must begin with safety warnings when the authoritative',
-        'assessment has any. If the local records do not contain a specification, say it needs verification',
-        'rather than guessing. Keep the answer focused on the next safe action.',
+        'Produce the JSON response now. Follow the ADAPTIVE RESPONSE PLAN above.',
+        'Begin reply_text with safety warnings when the authoritative assessment has any.',
+        'Put the direct answer first, then only the causes/details the rider needs for the',
+        'next safe action. Do not force step-by-step mode when the plan asks for a short',
+        'answer. Never write filler preambles or robotic empathy. If the local records do',
+        'not contain a specification, say it needs verification rather than guessing.',
+        'Ask at most two focused questions only when they are genuinely needed.',
     ])
+    if style_followup:
+        lines.append(
+            'The rider is asking you to re-explain the previous answer. Keep the same '
+            'diagnosis and safety warnings, do not start a new intake, and do not ask '
+            'for vehicle details again.'
+        )
     return '\n'.join(lines)
 
 
@@ -488,10 +552,105 @@ def _offline_reason(category):
     }.get(category, 'The AI service is unavailable.')
 
 
+_GENERIC_VEHICLE_PHRASES = (
+    (re.compile(r'\byour specific motorcycles?\b', re.I), 'your {name}'),
+    (re.compile(r'\byour motorcycles?\b', re.I), 'your {name}'),
+    (re.compile(r'\byour bikes?\b', re.I), 'your {name}'),
+    (re.compile(r'\bthis motorcycle\b', re.I), 'your {name}'),
+    (re.compile(r'\bthe motorcycle\b', re.I), 'your {name}'),
+    (re.compile(r'\bthis bike\b', re.I), 'your {name}'),
+    (re.compile(r'\bthe bike\b', re.I), 'your {name}'),
+)
+
+
+def _use_known_vehicle_name(structured, profile):
+    """Name the rider's bike once it is known instead of saying "your motorcycle"."""
+    name = vehicle_label(profile)
+    if not name:
+        return structured
+    for key in ('reply_text', 'next_action'):
+        text = structured.get(key) or ''
+        if not text:
+            continue
+        for pattern, replacement in _GENERIC_VEHICLE_PHRASES:
+            def _sub(match, _replacement=replacement):
+                value = _replacement.format(name=name)
+                if match.group(0)[:1].isupper():
+                    value = value[0].upper() + value[1:]
+                return value
+            text = pattern.sub(_sub, text)
+        structured[key] = text
+    return structured
+
+
+def _is_wrong_offtopic_reply(structured, message, conversation, style_followup):
+    """Detect the off-topic script being used for an on-topic vehicle message."""
+    if style_followup:
+        return False
+    reply = str(structured.get('reply_text') or '').lower()
+    if _OFFTOPIC_QUESTION not in reply:
+        return False
+    from .intent import is_motorcycle_related
+    profile = conversation.vehicle_profile if conversation is not None else {}
+    history = []
+    if conversation is not None:
+        history = [
+            {'role': turn.role, 'text': turn.content}
+            for turn in conversation.turns.all()
+        ]
+    return is_motorcycle_related(
+        (message or '').lower(), history=history, vehicle_profile=profile,
+    )
+
+
+def _rewrite_vehicle_only_reply(structured, message, conversation, language):
+    """Ask for the symptom instead of re-asking whether it is a motorcycle."""
+    profile = conversation.vehicle_profile if conversation is not None else {}
+    label = vehicle_label(profile)
+    details = [
+        str(profile[key]).strip()
+        for key in ('engine_displacement', 'fuel_system')
+        if str(profile.get(key) or '').strip()
+    ]
+    subject = f"{label} ({', '.join(details)})" if label and details else (
+        label or 'motorcycle'
+    )
+
+    questions = missing_symptom_questions(message, language=language)
+    fallback_question = {
+        'english': 'What exactly happens, and when did it start?',
+        'tagalog': 'Ano ang eksaktong nangyayari, at kailan ito nagsimula?',
+        'hiligaynon': 'Ano gid ang nagakatabo, kag san-o ini nagsugod?',
+    }.get(language, 'What exactly happens, and when did it start?')
+    question = questions[0]['question'] if questions else fallback_question
+    ack = {
+        'english': 'Noted',
+        'tagalog': 'Naitala',
+        'hiligaynon': 'Natala',
+    }.get(language, 'Noted')
+
+    structured['reply_text'] = f'{ack} — {subject}. {question}'
+    structured['intent'] = 'symptom_inquiry'
+    structured['diagnostic_stage'] = 'symptom'
+    structured['missing_questions'] = questions
+    structured['next_action'] = rider_facing_next_action(question) or question
+    structured['offline_cached'] = False
+    return structured
+
+
 def _finish(structured, *, conversation, message, language, mode, safety,
-            ai_result=None, image=None, general=False):
+            ai_result=None, image=None, general=False, experience_level='beginner',
+            explanation_style='auto', style_followup=False, vehicle_only=False):
     structured = _merge_profile(structured, conversation.vehicle_profile)
-    if not general:
+    wrong_offtopic = _is_wrong_offtopic_reply(
+        structured, message, conversation, style_followup,
+    )
+    if wrong_offtopic:
+        structured = _rewrite_vehicle_only_reply(
+            structured, message, conversation, language,
+        )
+    _use_known_vehicle_name(structured, structured.get('vehicle_profile') or {})
+    if not general and not style_followup and not wrong_offtopic and not vehicle_only:
         _merge_missing_questions(
             structured,
             missing_vehicle_questions(
@@ -516,13 +675,26 @@ def _finish(structured, *, conversation, message, language, mode, safety,
         structured['diagnostic_stage'] = 'safety'
     structured['offline'] = mode == 'offline'
     structured['offline_reason'] = '' if mode != 'offline' else structured.get('offline_reason', '')
+    structured['experience_level'] = experience_level
+    structured['explanation_style'] = explanation_style
+    if style_followup:
+        # A request to re-explain the previous answer must not be remembered
+        # as a new symptom or used to rewrite the diagnosis.
+        structured['symptoms'] = []
     _ensure_safety_first(structured)
     _append_chips(structured)
 
     # Persist before returning so a retry after a dropped response still has
-    # the conversation history.
-    update_conversation_from_structured(conversation, structured, user_message=message)
+    # the conversation history.  A style-only follow-up must not be recorded as
+    # a new symptom.
+    update_conversation_from_structured(
+        conversation,
+        structured,
+        user_message='' if style_followup else message,
+    )
     conversation.language = language
+    conversation.experience_level = experience_level
+    conversation.explanation_style = explanation_style
     conversation.is_active = True
     conversation.updated_at = timezone.now()
     conversation.save()
@@ -546,6 +718,8 @@ def _finish(structured, *, conversation, message, language, mode, safety,
         'chips': structured.get('chips') or [],
         'image_id': getattr(image, 'pk', None),
         'model': getattr(ai_result, 'model', '') if ai_result else '',
+        'experience_level': experience_level,
+        'explanation_style': explanation_style,
     }
 
 
@@ -670,10 +844,12 @@ def _general_offline_reply(message, language='english', history_text=''):
 
 
 def _general_prompt(*, message, language, experience_level, profile,
-                    conversation, safety, evidence):
+                    conversation, safety, evidence, response_plan,
+                    style_followup=False):
     lines = [
         f'REQUESTED LANGUAGE: {LANGUAGE_LABELS.get(language, "English")} ({language})',
-        f'EXPERIENCE LEVEL: {experience_level}',
+        '',
+        adaptive_prompt_block(response_plan),
         '',
         'KNOWN VEHICLE PROFILE (may be incomplete; do not invent missing fields):',
         str(profile or {}),
@@ -697,14 +873,22 @@ def _general_prompt(*, message, language, experience_level, profile,
         'USER_MESSAGE>>>',
         '',
         'Answer as J.A.R.V.I.S. in plain text with short Markdown. Do not output',
-        'JSON. Answer directly, then end with 3–5 chips in the format',
+        'JSON. Follow the ADAPTIVE RESPONSE PLAN above: answer the exact question',
+        'first, keep a simple question short, and only expand when the plan or the',
+        'rider asks for more. End with 3–5 chips in the format',
         '`[chips: Option 1 | Option 2 | Option 3]`.',
     ]
+    if style_followup:
+        lines.append(
+            'The rider is asking you to re-explain the previous answer. Keep the '
+            'same answer and safety warnings; do not start a new topic.'
+        )
     return '\n'.join(lines)
 
 
 def _respond_general(*, message, conversation, language, experience_level,
-                     profile, safety, evidence):
+                     profile, safety, evidence, explanation_style,
+                     response_plan, style_followup=False):
     ai_result = None
     mode = 'offline'
     offline_reason = ''
@@ -721,6 +905,8 @@ def _respond_general(*, message, conversation, language, experience_level,
                     conversation=conversation,
                     safety=safety,
                     evidence=evidence,
+                    response_plan=response_plan,
+                    style_followup=style_followup,
                 ),
                 system_instruction=GENERAL_SYSTEM_INSTRUCTION,
                 temperature=0.6,
@@ -777,7 +963,9 @@ def _respond_general(*, message, conversation, language, experience_level,
     structured['reply_text'] = reply_text
     structured['intent'] = 'general_motorcycle_question'
     structured['diagnostic_stage'] = 'general'
-    structured['next_action'] = 'Answer the question or ask a relevant follow-up'
+    structured['next_action'] = (
+        'Describe the symptom you want checked, or ask another motorcycle question.'
+    )
     structured['safety'] = {
         'severity': safety.get('severity', 'none'),
         'summary': safety.get('summary', ''),
@@ -802,15 +990,32 @@ def _respond_general(*, message, conversation, language, experience_level,
         ai_result=ai_result,
         image=None,
         general=True,
+        experience_level=experience_level,
+        explanation_style=explanation_style,
+        style_followup=style_followup,
     )
 
 
+def _last_assistant_stage(conversation):
+    turn = (
+        conversation.turns.filter(role='assistant', structured__isnull=False)
+        .order_by('-id')
+        .first()
+    )
+    structured = getattr(turn, 'structured', None) or {}
+    return str(structured.get('diagnostic_stage') or '')
+
+
 def respond(user, message, *, conversation_id=None, language=None,
-            experience_level='beginner', image=None):
+            experience_level=None, explanation_style='auto', image=None):
     """Build one structured assistant turn and persist the conversation.
 
     ``image`` is an owned ``ImageUpload`` instance or ``None``.  The caller is
     responsible for validating uploads and ownership before this point.
+
+    ``experience_level`` and ``explanation_style`` are remembered on the
+    conversation.  A style requested in the message ("explain more simply")
+    overrides the stored style for this turn and for later turns.
     """
     message = _bounded_message(message)
     if not message and image is None:
@@ -821,10 +1026,47 @@ def respond(user, message, *, conversation_id=None, language=None,
         language=language if language in ('english', 'tagalog', 'hiligaynon') else 'auto',
     )
     language = _language(language, message, conversation)
+
+    detected_style = detect_explanation_style_request(message)
+    stored_style = normalize_explanation_style(
+        getattr(conversation, 'explanation_style', 'auto')
+    )
+    style = resolve_explanation_style(
+        explanation_style,
+        detected=detected_style,
+        stored=stored_style,
+    )
+    stored_level = normalize_experience_level(
+        getattr(conversation, 'experience_level', 'beginner')
+    )
+    if experience_level:
+        level = normalize_experience_level(experience_level)
+    else:
+        level = stored_level
+
+    style_followup = bool(
+        detected_style
+        and is_style_only_message(message)
+        and conversation.turns.filter(role='assistant').exists()
+    )
+
+    # Remember the preference even if this turn later falls back to offline
+    # knowledge.  That keeps the rest of the conversation consistent.
+    preference_fields = []
+    if getattr(conversation, 'explanation_style', 'auto') != style:
+        conversation.explanation_style = style
+        preference_fields.append('explanation_style')
+    if getattr(conversation, 'experience_level', 'beginner') != level:
+        conversation.experience_level = level
+        preference_fields.append('experience_level')
+    if preference_fields:
+        conversation.save(update_fields=preference_fields)
+
     extracted = extract_vehicle_profile(message, conversation=conversation)
 
-    # Off-topic / prompt-injection gate
-    if message and image is None:
+    # Off-topic / prompt-injection gate.  A style-only follow-up is not a new
+    # topic; it refers to the answer already in the conversation.
+    if message and image is None and not style_followup:
         from apps.core.services.intent import classify_intent as _ci
         hist = [{'role': t.role, 'text': t.content} for t in conversation.turns.all()]
         _pre_intent = _ci(message, history=hist, vehicle_profile=conversation.vehicle_profile)
@@ -880,12 +1122,20 @@ def respond(user, message, *, conversation_id=None, language=None,
                 'mode': 'offline', 'offline': True, 'safety': {},
                 'chips': ['Help with my motorcycle', "Engine won't start", 'Front brake check', 'Oil change'],
                 'image_id': None, 'model': '',
+                'experience_level': level, 'explanation_style': style,
             }
     profile = _profile_for_conversation(conversation, message, extracted)
     safety = assess_safety(
         message,
         context=_safety_context(conversation, message),
         language=language,
+    )
+    response_plan = build_response_plan(
+        message,
+        safety=safety,
+        experience_level=level,
+        style=style,
+        style_followup=style_followup,
     )
 
     query = _search_query(message, conversation)
@@ -895,19 +1145,65 @@ def respond(user, message, *, conversation_id=None, language=None,
         logger.exception('Local knowledge retrieval failed: %s', type(exc).__name__)
         evidence = []
 
-    if image is None and _is_general_structured_question(
-        message, prompt_context(conversation)
-    ):
+    wants_general = (
+        _last_assistant_stage(conversation) == 'general'
+        if style_followup
+        else _is_general_structured_question(message, prompt_context(conversation))
+    )
+    if image is None and wants_general:
         # General maintenance/how-to/location questions get a direct answer.
         # They must not be forced into the diagnostic intake.
         return _respond_general(
             message=message,
             conversation=conversation,
             language=language,
-            experience_level=experience_level,
+            experience_level=level,
             profile=profile,
             safety=safety,
             evidence=evidence,
+            explanation_style=style,
+            response_plan=response_plan,
+            style_followup=style_followup,
+        )
+
+    # The rider named a bike but gave no symptom and has not reported one yet.
+    # Ask for the symptom directly instead of asking whether it is a motorcycle
+    # or letting the model invent a fault the rider never described.
+    vehicle_only = (
+        image is None
+        and not style_followup
+        and not has_symptom_signal(message)
+        and bool(profile.get('make') or profile.get('model'))
+        and not str(getattr(conversation, 'symptoms', '') or '').strip()
+    )
+    if vehicle_only:
+        image_supported = bool(getattr(settings, 'GEMINI_INPUT_IMAGE_SUPPORTED', True))
+        update_vehicle_from_profile(conversation, profile)
+        structured = _rewrite_vehicle_only_reply(
+            empty_structured(language), message, conversation, language,
+        )
+        structured['vehicle_profile'] = dict(profile)
+        structured['offline_reason'] = 'Waiting for the symptom before diagnosing'
+        structured['safety'] = merge_safety_into_structured(structured, safety)['safety']
+        structured = _add_limitations(
+            structured,
+            offline=False,
+            used_ai=False,
+            image=None,
+            evidence=evidence,
+            image_supported=image_supported,
+        )
+        return _finish(
+            structured,
+            conversation=conversation,
+            message=message,
+            language=language,
+            mode='offline',
+            safety=safety,
+            image=None,
+            experience_level=level,
+            explanation_style=style,
+            vehicle_only=True,
         )
 
     image_supported = bool(getattr(settings, 'GEMINI_INPUT_IMAGE_SUPPORTED', True))
@@ -922,13 +1218,15 @@ def respond(user, message, *, conversation_id=None, language=None,
                 _prompt(
                     message=message,
                     language=language,
-                    experience_level=experience_level,
+                    experience_level=level,
                     profile=profile,
                     conversation=conversation,
                     safety=safety,
                     evidence=evidence,
                     image=image_payload,
                     image_supported=image_supported,
+                    response_plan=response_plan,
+                    style_followup=style_followup,
                 ),
                 system_instruction=SYSTEM_INSTRUCTION,
                 images=[image_payload] if image_payload else None,
@@ -963,7 +1261,8 @@ def respond(user, message, *, conversation_id=None, language=None,
             evidence,
             safety,
             language=language,
-            experience_level=experience_level,
+            experience_level=level,
+            explanation_style=style,
         )
         structured['offline_reason'] = _offline_reason(offline_reason)
         structured['safety'] = merge_safety_into_structured(structured, safety)['safety']
@@ -992,20 +1291,22 @@ def respond(user, message, *, conversation_id=None, language=None,
             evidence=evidence,
             image_supported=image_supported,
         )
-        # Local intake still decides whether a vehicle question is needed.
-        structured = _merge_missing_questions(
-            structured,
-            missing_vehicle_questions(
-                structured.get('vehicle_profile') or {},
-                language=language,
-                asked_questions=conversation.asked_questions,
-            ) or missing_symptom_questions(
-                message,
-                language=language,
-                asked_questions=conversation.asked_questions,
-            ),
-            conversation.asked_questions,
-        )
+        # Local intake still decides whether a vehicle question is needed.  A
+        # style-only follow-up should re-explain, not restart the intake.
+        if not style_followup:
+            structured = _merge_missing_questions(
+                structured,
+                missing_vehicle_questions(
+                    structured.get('vehicle_profile') or {},
+                    language=language,
+                    asked_questions=conversation.asked_questions,
+                ) or missing_symptom_questions(
+                    message,
+                    language=language,
+                    asked_questions=conversation.asked_questions,
+                ),
+                conversation.asked_questions,
+            )
 
     structured = _add_limitations(
         structured,
@@ -1019,10 +1320,7 @@ def respond(user, message, *, conversation_id=None, language=None,
         # Offline responses get the same general limitation, but keep their
         # clearer explanation about unreviewed variants.
         limitations = list(structured.get('limitations') or [])
-        general = (
-            'This is guidance from an automated assistant, not a confirmed '
-            'diagnosis or a substitute for an in-person inspection.'
-        )
+        general = AI_LIMITATION
         if general not in limitations:
             limitations.append(general)
         structured['limitations'] = limitations[:8]
@@ -1055,6 +1353,9 @@ def respond(user, message, *, conversation_id=None, language=None,
         safety=safety,
         ai_result=ai_result,
         image=image,
+        experience_level=level,
+        explanation_style=style,
+        style_followup=style_followup,
     )
 
 

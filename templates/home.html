@@ -1439,6 +1439,55 @@
   const STORAGE_KEY = 'jarvis_ui_history_' + USER_KEY;
   const MODE_KEY = 'jarvis-assistant-mode_' + USER_KEY;
   const CONVERSATION_KEY = 'jarvis_conversation_id_' + USER_KEY;
+  const STYLE_KEY = 'jarvis-pref-style';
+
+  // These labels mirror the server-side style chips.  Clicking one also
+  // remembers the style for later turns and new conversations.
+  const STYLE_CHIP_LABELS = {
+    simple: [
+      'Explain more simply',
+      'Ipaliwanag nang mas simple',
+      'Ipaliwanag sing mas simple'
+    ],
+    detailed: [
+      'Give me more details',
+      'Bigyan mo ako ng mas detalyadong paliwanag',
+      'Hatagi ako sang mas detalyado nga pagpaliwanag'
+    ],
+    step_by_step: [
+      'Explain step by step',
+      'Ipaliwanag nang hakbang-hakbang',
+      'Ipaliwanag sing tikang-tikang'
+    ],
+    complete: [
+      'Complete procedure',
+      'Kumpletong proseso',
+      'Kompleto nga proseso'
+    ],
+    why: [
+      'Explain why this happens',
+      'Ipaliwanag kung bakit nangyayari ito',
+      'Ipaliwanag kon ngaa nagakatabo ini'
+    ]
+  };
+
+  function rememberStyleFromChip(label) {
+    const wanted = String(label || '').trim().toLowerCase();
+    if (!wanted) return '';
+    for (const style of Object.keys(STYLE_CHIP_LABELS)) {
+      if (STYLE_CHIP_LABELS[style].some(text => text.toLowerCase() === wanted)) {
+        try { localStorage.setItem(STYLE_KEY, style); } catch (e) {}
+        return style;
+      }
+    }
+    return '';
+  }
+
+  function rememberServerStyle(data) {
+    const style = data && data.explanation_style;
+    if (!style) return;
+    try { localStorage.setItem(STYLE_KEY, style); } catch (e) {}
+  }
 
   const messagesContainer = document.getElementById('jarvis-chat-messages');
   const inputEl = document.getElementById('jarvis-user-input');
@@ -2671,6 +2720,7 @@
           // Highlight this clicked chip
           chipsContainer.querySelectorAll('.jarvis-chip').forEach(c => c.classList.remove('active'));
           chipBtn.classList.add('active');
+          rememberStyleFromChip(chipText);
           sendMessage(chipText);
         });
 
@@ -2706,6 +2756,7 @@
         btn.className = 'jarvis-chip';
         btn.textContent = text;
         btn.addEventListener('click', () => {
+          rememberStyleFromChip(text);
           sendMessage(text);
         });
         followupDiv.appendChild(btn);
@@ -2964,16 +3015,19 @@
 
 // [Removed Approved local sources per user request]
 
-    const limitations = asArray(structured.limitations).filter(Boolean);
-    if (limitations.length) {
-      card.innerHTML += structuredSection('Limitations', 'fa-circle-info',
-        '<div class="jarvis-structured-callout">' + limitations.map(item => renderMarkdownInline(item)).join('<br>') + '</div>');
-    }
-
     if (structured.next_action) {
       card.innerHTML += structuredSection('Next safe action', 'fa-arrow-right',
         '<div class="jarvis-structured-next">' + renderMarkdownInline(structured.next_action) + '</div>');
     }
+
+    // Always finish with the AI note. J.A.R.V.I.S. can be wrong or inaccurate.
+    const limitations = asArray(structured.limitations).filter(Boolean);
+    const aiNote = 'AI-assisted answer: this can be wrong or inaccurate. Verify before acting; it is not a confirmed diagnosis or a substitute for an in-person inspection.';
+    const notes = limitations.some(item => /wrong or inaccurate|automated assistant/i.test(String(item)))
+      ? limitations
+      : limitations.concat(aiNote);
+    card.innerHTML += structuredSection('AI note & limitations', 'fa-circle-info',
+      '<div class="jarvis-structured-callout">' + notes.map(item => renderMarkdownInline(item)).join('<br>') + '</div>');
 
     card.innerHTML += '<div class="jarvis-structured-actions">'
       + '<button type="button" class="jarvis-structured-action js-copy-reply"><i class="fa-regular fa-copy"></i>Copy</button>'
@@ -2993,7 +3047,10 @@
       copyBtn.addEventListener('click', () => copyToClipboard(copyBtn, structured.reply_text || structured.next_action || ''));
     }
     card.querySelectorAll('[data-structured-chip]').forEach(chipBtn => {
-      chipBtn.addEventListener('click', () => sendMessage(chipBtn.dataset.structuredChip));
+      chipBtn.addEventListener('click', () => {
+        rememberStyleFromChip(chipBtn.dataset.structuredChip);
+        sendMessage(chipBtn.dataset.structuredChip);
+      });
     });
 
     messagesContainer.appendChild(block);
@@ -3727,11 +3784,13 @@
     try {
       const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
       const userLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
+      const userStyle = localStorage.getItem(STYLE_KEY) || 'auto';
       const payload = {
         message: messageText,
         structured: true,
         language: userLang,
-        experience_level: userLevel
+        experience_level: userLevel,
+        explanation_style: userStyle
       };
       if (conversationId) payload.conversation_id = conversationId;
       if (retry.imageId) payload.image_id = retry.imageId;
@@ -3789,6 +3848,7 @@
       }
 
       const structured = data.structured || {};
+      rememberServerStyle(data);
       const botId = 'msg-b-' + Date.now();
       const botTime = getTimeStr();
       const meta = {
@@ -3917,6 +3977,7 @@
 
       const userLang = localStorage.getItem('jarvis-pref-lang') || 'auto';
       const userLevel = localStorage.getItem('jarvis-pref-level') || 'beginner';
+      const userStyle = localStorage.getItem(STYLE_KEY) || 'auto';
 
       if (text.toLowerCase() === 'retry last request' && window._lastUserMessageText) {
         text = window._lastUserMessageText;
@@ -3939,7 +4000,8 @@
             message: text,
             history: recentHistory,
             language: userLang,
-            experience_level: userLevel
+            experience_level: userLevel,
+            explanation_style: userStyle
           }),
           signal: abortCtrl.signal
         });
@@ -3963,7 +4025,8 @@
               message: text,
               history: recentHistory,
               language: userLang,
-              experience_level: userLevel
+              experience_level: userLevel,
+              explanation_style: userStyle
             }),
             signal: abortCtrl2.signal
           });
@@ -3980,6 +4043,7 @@
       if (res && res.ok) {
         const data = await res.json();
         reply = data.reply || reply;
+        rememberServerStyle(data);
         if (data.quota) {
           updateQuotaUI(data.quota);
         }
@@ -4325,6 +4389,13 @@
   let speechSynthUtterance = null;
   let manuallyStopped = false;
 
+  // Voice-turn guard: prevents Jarvis's own speech from being captured as a new user message.
+  let voiceTurnLock = false;
+  let voiceInputArmed = false;
+  let lastSpokenText = '';
+  let lastSpeechEndedAt = 0;
+  let voiceUnlockTimer = null;
+
   // Confirmation Flow State
   let isAwaitingConfirmation = false;
   let pendingProcedure = null;
@@ -4521,6 +4592,19 @@
     }
   }
 
+  function isEchoOfJarvisSpeech(transcript) {
+    // Only guard against an immediate echo right after Jarvis stops talking.
+    if (!lastSpokenText || !transcript || Date.now() - lastSpeechEndedAt > 2500) return false;
+    const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const heard = normalize(transcript);
+    const spoken = normalize(lastSpokenText);
+    const heardWords = heard.split(' ').filter(w => w.length > 2);
+    if (heardWords.length < 4) return false;
+    const spokenWords = new Set(spoken.split(' ').filter(w => w.length > 2));
+    const overlap = heardWords.filter(w => spokenWords.has(w)).length / heardWords.length;
+    return overlap > 0.6;
+  }
+
   function initSpeechRecognition() {
     if (!hasSpeechRec) return null;
     try {
@@ -4532,6 +4616,7 @@
       rec.onstart = () => {
         isListening = true;
         manuallyStopped = false;
+        voiceInputArmed = !isSpeaking && !voiceTurnLock;
         if (micBtn) {
           micBtn.classList.add('is-listening');
           micBtn.title = "Microphone active — Listening";
@@ -4544,7 +4629,8 @@
       };
 
       rec.onresult = (event) => {
-        if (isSpeaking) return; // Prevent mic from hearing Jarvis\'s own speech
+        // Ignore anything captured while Jarvis is speaking or while a voice turn is being answered.
+        if (!voiceInputArmed || isSpeaking || voiceTurnLock) return;
         let interim = '';
         let final = '';
 
@@ -4558,6 +4644,15 @@
         }
 
         const spokenNow = (final || interim).trim();
+
+        // Extra safety net: if the mic catches Jarvis's own answer, discard it.
+        if (isEchoOfJarvisSpeech(spokenNow)) {
+          if (silenceTimer) clearTimeout(silenceTimer);
+          if (inputEl) inputEl.value = '';
+          if (voicePreview) voicePreview.textContent = 'Ignoring echo of my own voice...';
+          return;
+        }
+
         if (spokenNow) {
           if (inputEl) {
             inputEl.value = spokenNow;
@@ -4615,29 +4710,27 @@
           lastFinalTranscript = final.trim();
         }
 
-        // Automatic silence detection: when user pauses for 950ms after speaking, send with immediate real-time verbal feedback!
+        // Automatic silence detection: send only after the user actually pauses.
         if (spokenNow.length > 2 && !isAwaitingConfirmation) {
           if (silenceTimer) clearTimeout(silenceTimer);
           silenceTimer = setTimeout(() => {
             const queryToSend = (lastFinalTranscript || spokenNow).trim();
             if (queryToSend && !isLoading && !isSpeaking) {
+              // Close the mic gate immediately so nothing Jarvis says can be re-sent.
+              voiceTurnLock = true;
+              voiceInputArmed = false;
               lastFinalTranscript = '';
+              stopListening();
+
               setVoiceHudState('processing', `J.A.R.V.I.S. analyzing: "${queryToSend}"`);
-              
-              // 1. Play immediate sci-fi sound effect
+
+              // Audible feedback only — no spoken acknowledgement that the mic could hear.
               playJarvisSound('thinking');
 
-              // 2. Real-time verbal acknowledgement so the user immediately hears J.A.R.V.I.S. talking
-              const immediateAcks = [
-                "Right away, sir. Analyzing your motorcycle now.",
-                "Looking into that for you now, sir.",
-                "Checking the diagnostic schematics, sir.",
-                "Scanning systems now, sir."
-              ];
-              const chosenAck = immediateAcks[Math.floor(Math.random() * immediateAcks.length)];
-              speakText(chosenAck, { immediateOnly: true });
+              // Reopen the mic only after Jarvis's real reply has finished speaking.
+              armVoiceReplyUnlock();
 
-              // 3. Send query
+              // Send query.
               sendMessage(queryToSend);
             }
           }, 950);
@@ -4683,10 +4776,12 @@
   recognition = initSpeechRecognition();
 
   function startListening() {
+    if (voiceTurnLock) return;
     if (!recognition) {
       alert("Voice recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or a Web Speech API compatible browser.");
       return;
     }
+    voiceInputArmed = false;
     manuallyStopped = false;
     try {
       recognition.lang = getRecLanguage();
@@ -4696,12 +4791,47 @@
 
   function stopListening() {
     manuallyStopped = true;
+    voiceInputArmed = false;
     if (silenceTimer) clearTimeout(silenceTimer);
     if (recognition) {
       try { recognition.stop(); } catch (e) {}
     }
     isListening = false;
     if (micBtn) micBtn.classList.remove('is-listening');
+  }
+
+  // Keep hands-free muted until Jarvis has finished speaking the reply to a voice query.
+  function releaseVoiceTurnLock() {
+    voiceTurnLock = false;
+    voiceInputArmed = false;
+    if (voiceUnlockTimer) {
+      clearInterval(voiceUnlockTimer);
+      voiceUnlockTimer = null;
+    }
+    if (isHandsFree && !isSpeaking) {
+      setTimeout(() => {
+        if (isHandsFree && !isSpeaking && !voiceTurnLock) startListening();
+      }, 300);
+    }
+  }
+
+  function armVoiceReplyUnlock() {
+    if (voiceUnlockTimer) clearInterval(voiceUnlockTimer);
+    if (!voiceReplyEnabled) {
+      setTimeout(() => { if (voiceTurnLock) releaseVoiceTurnLock(); }, 1200);
+      return;
+    }
+    let sawSpeech = false;
+    const startedAt = Date.now();
+    voiceUnlockTimer = setInterval(() => {
+      if (isSpeaking) sawSpeech = true;
+      if (sawSpeech && !isSpeaking) {
+        releaseVoiceTurnLock();
+      } else if (!sawSpeech && Date.now() - startedAt > 12000) {
+        // Voice replies may be muted or the network may have failed — don't stay locked forever.
+        releaseVoiceTurnLock();
+      }
+    }, 150);
   }
 
   // Speech synthesis queue & state
@@ -4758,6 +4888,7 @@
   }
 
   function stopSpeaking() {
+    releaseVoiceTurnLock();
     stopAllSpeech();
     if (isHandsFree) {
       if (isAwaitingConfirmation) {
@@ -4803,6 +4934,7 @@
     } else {
       isAwaitingConfirmation = false;
       pendingProcedure = null;
+      releaseVoiceTurnLock();
       stopListening();
       stopSpeaking();
       setVoiceHudState('hidden');
@@ -5008,8 +5140,11 @@
 
   function playNextSpeechChunk() {
     if (!isSpeaking || !voiceReplyEnabled || currentSpeechIndex >= currentSpeechQueue.length) {
+      // Capture this before stopAllSpeech() clears currentSpeechOptions.
+      const wasImmediateOnly = !!(currentSpeechOptions && currentSpeechOptions.immediateOnly);
+      lastSpeechEndedAt = Date.now();
       stopAllSpeech();
-      if (isHandsFree && !currentSpeechOptions.immediateOnly) {
+      if (isHandsFree && !wasImmediateOnly) {
         if (isAwaitingConfirmation) {
           setVoiceHudState('confirming', 'Say "Yes" or "Ready" to begin · Say "Wait" to hold on');
         } else {
@@ -5085,6 +5220,7 @@
     const clean = cleanTextForSpeech(rawText);
     if (!clean) return;
 
+    lastSpokenText = clean;
     stopListening(); // Pause mic so Jarvis doesn't hear himself
     stopAllSpeech();
 
