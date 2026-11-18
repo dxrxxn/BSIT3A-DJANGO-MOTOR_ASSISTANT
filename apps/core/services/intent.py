@@ -338,7 +338,12 @@ def is_motorcycle_related(norm: str, history=None, vehicle_profile=None) -> bool
             r'leak|smoke|vibrat|idle|stalls?|die|dies|power|dead|light|lights|'
             r'spark|fire|check|inspect|test|tested|fixed|work|working|broken|'
             r'problem|issue|trouble|hindi|ayaw|wala|grabe|init|amoy|usok|tunog|'
-            r'ingay|preno|makina|langis|kuryente|clutch|preno)\b',
+            r'ingay|preno|makina|langis|kuryente|clutch|preno|'
+            # Short status answers to guided questions ("fully engaged",
+            # "stays running once warm", "only on cold start") must stay in
+            # the active diagnostic session instead of being tagged off-topic.
+            r'run(?:s|ning)?|ran|warm(?:s|ed|ing)?|cold|stay(?:s|ed)?|'
+            r'engag(?:e|es|ed|ing))\b',
             re.IGNORECASE,
         )
         if _DIAGNOSTIC_TERMS.search(norm):

@@ -5138,8 +5138,12 @@
     return chunks.length ? chunks : [text];
   }
 
+  function speechStillAllowed() {
+    return isSpeaking && (voiceReplyEnabled || !!(currentSpeechOptions && currentSpeechOptions.force));
+  }
+
   function playNextSpeechChunk() {
-    if (!isSpeaking || !voiceReplyEnabled || currentSpeechIndex >= currentSpeechQueue.length) {
+    if (!speechStillAllowed() || currentSpeechIndex >= currentSpeechQueue.length) {
       // Capture this before stopAllSpeech() clears currentSpeechOptions.
       const wasImmediateOnly = !!(currentSpeechOptions && currentSpeechOptions.immediateOnly);
       lastSpeechEndedAt = Date.now();
@@ -5182,7 +5186,7 @@
 
       utter.onend = () => {
         window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
-        if (isSpeaking && voiceReplyEnabled) {
+        if (speechStillAllowed()) {
           playNextSpeechChunk();
         }
       };
@@ -5190,9 +5194,9 @@
       utter.onerror = (err) => {
         window._activeUtterances = window._activeUtterances.filter(u => u !== utter);
         // Continue playing next chunk so speech does not die mid-message
-        if (isSpeaking && voiceReplyEnabled) {
+        if (speechStillAllowed()) {
           setTimeout(() => {
-            if (isSpeaking && voiceReplyEnabled) playNextSpeechChunk();
+            if (speechStillAllowed()) playNextSpeechChunk();
           }, 40);
         }
       };
@@ -5200,7 +5204,7 @@
       window.speechSynthesis.speak(utter);
     } catch (err) {
       console.error('Jarvis speech chunk failed:', err);
-      if (isSpeaking && voiceReplyEnabled) {
+      if (speechStillAllowed()) {
         playNextSpeechChunk();
       }
     }
@@ -5245,37 +5249,35 @@
     // Settle timeout allows Chromium internal audio cancellation to settle before speaking
     if (speechChunkTimeout) clearTimeout(speechChunkTimeout);
     speechChunkTimeout = setTimeout(() => {
-      if (isSpeaking && voiceReplyEnabled) {
+      if (speechStillAllowed()) {
         playNextSpeechChunk();
       }
     }, 65);
   }
 
   function speakStructured(structured, options = {}) {
-    if (!voiceReplyEnabled || !('speechSynthesis' in window) || !structured) return;
+    if (!structured || !('speechSynthesis' in window)) return;
+    // The "Listen" button passes force:true so it works even when auto voice
+    // replies are muted.  Auto replies still respect voiceReplyEnabled.
+    if (!voiceReplyEnabled && !options.force) return;
 
-    // Deliver complete spoken message from reply_text or full structured data:
-    if (structured.reply_text) {
-      speakText(structured.reply_text, options);
-      return;
-    }
-
+    // Build one complete spoken message from every section the card shows.
+    // Previously this returned after reply_text, so the "Next safe action"
+    // card (and safety/causes/steps) were displayed but never read aloud.
     let spokenParts = [];
     if (structured.safety && structured.safety.severity && structured.safety.severity !== 'none') {
       const sev = structured.safety.severity === 'critical' ? 'Critical safety alert.' : 'Safety notice.';
       spokenParts.push(sev + ' ' + (structured.safety.summary || ''));
     }
-    if (structured.possible_causes && structured.possible_causes.length > 0) {
-      const causes = structured.possible_causes.map((c, i) => `${i === 0 ? 'Primary suspect' : 'Secondary cause'}: ${c.cause}. ${c.description || ''}`).join(' ');
-      spokenParts.push(causes);
+    const replyText = stripLeadingSafetyBlock(structured.reply_text || '');
+    if (replyText) {
+      spokenParts.push(replyText.trim());
     }
-    if (structured.diagnostic_tests && structured.diagnostic_tests.length > 0) {
-      spokenParts.push('Recommended diagnostic tests: ' + structured.diagnostic_tests.map((t, i) => `Test ${i + 1}: ${t.test}. ${t.instruction || ''}`).join(' '));
+    const nextAction = String(structured.next_action || '').trim();
+    if (nextAction) {
+      spokenParts.push('Next safe action: ' + nextAction);
     }
-    if (structured.repair_steps && structured.repair_steps.length > 0) {
-      spokenParts.push('Repair steps: ' + structured.repair_steps.map((s, i) => `Step ${i + 1}: ${s.step || ''}. ${s.instruction || ''}`).join(' '));
-    }
-    const combined = spokenParts.join(' ');
+    const combined = spokenParts.join(' ').trim();
     if (combined) {
       speakText(combined, options);
     }
