@@ -225,12 +225,18 @@
     }
   }
 
-  // Also listen for the event dispatched by home.html after IIFE runs
-  document.addEventListener('jarvis:historyReady', function(e) {
+  function syncSidebarFromEvent(e) {
     if (e.detail && Array.isArray(e.detail.history)) {
       populateSidebarSessions(e.detail.history);
+    } else {
+      tryPopulateFromStorage();
     }
-  });
+  }
+
+  // Initial render from home.html after its IIFE runs
+  document.addEventListener('jarvis:historyReady', syncSidebarFromEvent);
+  // Keep the sidebar in sync whenever a history entry is added or deleted
+  document.addEventListener('jarvis:historyChanged', syncSidebarFromEvent);
 
   // Initial population from localStorage
   tryPopulateFromStorage();

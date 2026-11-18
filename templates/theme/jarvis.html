@@ -1013,6 +1013,35 @@
       localStorage.setItem(SHARED_STORAGE_KEY, jsonStr);
     } catch {}
     updateWidgetHistoryUI(widgetHistorySearch ? widgetHistorySearch.value : '');
+    // Let the sidebar's Recent Sessions list refresh immediately.
+    try {
+      document.dispatchEvent(new CustomEvent('jarvis:historyChanged', { detail: { history: trimmed } }));
+    } catch {}
+  }
+
+  // Remove the user's question and all assistant replies that belong to it,
+  // so a deleted history record also clears the matching Recent Sessions item.
+  function removeHistoryTurn(history, id) {
+    const idx = history.findIndex(item => (item.id || item.msgId) === id);
+    if (idx === -1) return { history: history, removedIds: [] };
+
+    let start = idx;
+    if (history[idx].role !== 'user') {
+      while (start > 0 && history[start].role !== 'user') start--;
+      if (history[start].role !== 'user') {
+        return {
+          history: history.filter((_, i) => i !== idx),
+          removedIds: [id]
+        };
+      }
+    }
+
+    let end = start + 1;
+    while (end < history.length && history[end].role !== 'user') end++;
+    return {
+      history: history.slice(0, start).concat(history.slice(end)),
+      removedIds: history.slice(start, end).map(item => item.id || item.msgId)
+    };
   }
 
   function loadOpenState() {
@@ -1079,7 +1108,7 @@
             <button type="button" class="jarvis-history-action-btn jarvis-widget-history-view" data-id="${id}" title="Focus in chat">
               <i class="fa-solid fa-eye"></i> View
             </button>
-            <button type="button" class="jarvis-history-action-btn jarvis-widget-history-del" data-id="${id}" title="Delete this record">
+            <button type="button" class="jarvis-history-action-btn jarvis-widget-history-del" data-id="${id}" title="Delete this conversation turn">
               <i class="fa-solid fa-trash-can"></i> Delete
             </button>
           </div>
@@ -1127,10 +1156,13 @@
       const delBtn = e.target.closest('.jarvis-widget-history-del');
       if (delBtn) {
         const id = delBtn.dataset.id;
-        const msgEl = document.getElementById('widget-msg-el-' + id);
-        if (msgEl) msgEl.remove();
-        const history = loadHistory();
-        saveHistory(history.filter(item => (item.id || item.msgId) !== id));
+        const result = removeHistoryTurn(loadHistory(), id);
+        if (result.removedIds.length === 0) return;
+        saveHistory(result.history);
+        result.removedIds.forEach(removedId => {
+          const msgEl = document.getElementById('widget-msg-el-' + removedId);
+          if (msgEl) msgEl.remove();
+        });
         return;
       }
 

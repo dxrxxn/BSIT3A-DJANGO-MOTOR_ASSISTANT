@@ -1551,12 +1551,44 @@
   }
 
   function saveHistory(history) {
+    const stored = history.slice(-80);
     try {
-      const jsonStr = JSON.stringify(history.slice(-80));
+      const jsonStr = JSON.stringify(stored);
       localStorage.setItem(STORAGE_KEY, jsonStr);
       localStorage.setItem('jarvis_shared_chat_' + USER_KEY, jsonStr);
     } catch (e) {}
     updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
+    // Let the sidebar's Recent Sessions list refresh immediately.
+    try {
+      document.dispatchEvent(new CustomEvent('jarvis:historyChanged', { detail: { history: stored } }));
+    } catch (e) {}
+  }
+
+  // A "turn" is the user's question plus every assistant reply up to the next
+  // question. Deleting any message in a turn removes the whole turn so the
+  // matching Recent Sessions entry disappears too.
+  function removeHistoryTurn(history, id) {
+    const idx = history.findIndex(item => item.id === id);
+    if (idx === -1) return { history: history, removedIds: [] };
+
+    let start = idx;
+    if (history[idx].role !== 'user') {
+      while (start > 0 && history[start].role !== 'user') start--;
+      if (history[start].role !== 'user') {
+        // No question before this message (welcome/notice): delete it alone.
+        return {
+          history: history.filter((_, i) => i !== idx),
+          removedIds: [id]
+        };
+      }
+    }
+
+    let end = start + 1;
+    while (end < history.length && history[end].role !== 'user') end++;
+    return {
+      history: history.slice(0, start).concat(history.slice(end)),
+      removedIds: history.slice(start, end).map(item => item.id)
+    };
   }
 
   function scrollToBottom(delay = 50) {
@@ -3634,7 +3666,7 @@
           <div class="jarvis-history-item-actions">
             ${!isBot ? `<button type="button" class="jarvis-history-item-btn item-ask-btn" data-text="${escapeHtml(item.text)}" title="Ask again"><i class="fa-solid fa-arrow-turn-up"></i> Ask again</button>` : ''}
             <button type="button" class="jarvis-history-item-btn item-view-btn" data-id="${item.id}" title="Jump to in chat"><i class="fa-solid fa-eye"></i> View</button>
-            <button type="button" class="jarvis-history-item-btn delete item-del-btn" data-id="${item.id}" title="Delete entry"><i class="fa-solid fa-trash-can"></i></button>
+            <button type="button" class="jarvis-history-item-btn delete item-del-btn" data-id="${item.id}" title="Delete this conversation turn"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>
       `;
@@ -4157,12 +4189,15 @@
       const delBtn = e.target.closest('.item-del-btn');
       if (delBtn) {
         const id = delBtn.dataset.id;
-        const history = loadHistory();
-        const filtered = history.filter(item => item.id !== id);
-        saveHistory(filtered);
-        const node = document.getElementById('msg-node-' + id);
-        if (node) node.remove();
-        updateHistoryDrawerUI(historySearchInput ? historySearchInput.value : '');
+        const result = removeHistoryTurn(loadHistory(), id);
+        if (result.removedIds.length === 0) return;
+        saveHistory(result.history);
+        result.removedIds.forEach(removedId => {
+          const node = document.getElementById('msg-node-' + removedId);
+          if (node) node.remove();
+        });
+        updateHeroVisibility(result.history);
+        setDiagnosticStep(calculateDiagnosticStep(result.history));
         return;
       }
 
