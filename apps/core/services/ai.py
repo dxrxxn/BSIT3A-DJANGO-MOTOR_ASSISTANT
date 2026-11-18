@@ -13,6 +13,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import urlsplit
 
 from django.conf import settings
 
@@ -70,6 +71,7 @@ class AiResult:
     model: str = ''
     usage: dict = field(default_factory=dict)
     raw_finish_reason: str = ''
+    grounded_sources: list[dict] = field(default_factory=list)
 
 
 def model_name():
@@ -189,6 +191,42 @@ def _extract_usage(response):
     }
 
 
+def _extract_grounded_sources(response):
+    def value(item, name):
+        return item.get(name) if isinstance(item, dict) else getattr(item, name, None)
+
+    sources = []
+    seen = set()
+    for candidate in getattr(response, 'candidates', None) or []:
+        metadata = value(candidate, 'grounding_metadata')
+        for chunk in value(metadata, 'grounding_chunks') or []:
+            web = value(chunk, 'web')
+            uri = str(value(web, 'uri') or '').strip()
+            title = str(value(web, 'title') or '').strip()
+            if len(uri) > 500:
+                continue
+            try:
+                parsed = urlsplit(uri)
+            except ValueError:
+                continue
+            if parsed.scheme != 'https' or not parsed.netloc:
+                continue
+            key = uri.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            sources.append({
+                'title': title[:255] or parsed.netloc[:255],
+                'reference': uri[:500],
+                'reviewed': False,
+                'date': '',
+                'source_type': 'web',
+            })
+            if len(sources) >= 8:
+                return sources
+    return sources
+
+
 def _record_usage(usage):
     try:
         from apps.core.models import GeminiUsageTracker
@@ -217,7 +255,7 @@ def _parse_structured(text):
 
 
 def generate(prompt, *, system_instruction=None, images=None, response_schema=None,
-             temperature=0.2, max_output_tokens=4096):
+             temperature=0.2, max_output_tokens=4096, google_search=False):
     """Generate one AI response with no application-level duplicate retries.
 
     Bounded retries are delegated to the installed google-genai SDK via
@@ -248,6 +286,10 @@ def generate(prompt, *, system_instruction=None, images=None, response_schema=No
     if response_schema:
         config_kwargs['response_mime_type'] = 'application/json'
         config_kwargs['response_schema'] = response_schema
+    if google_search:
+        config_kwargs['tools'] = [
+            types.Tool(google_search=types.GoogleSearch()),
+        ]
     try:
         config = types.GenerateContentConfig(**config_kwargs)
     except Exception as exc:
@@ -313,6 +355,7 @@ def generate(prompt, *, system_instruction=None, images=None, response_schema=No
         model=model,
         usage=usage,
         raw_finish_reason=finish_reason,
+        grounded_sources=_extract_grounded_sources(response) if google_search else [],
     )
 
 

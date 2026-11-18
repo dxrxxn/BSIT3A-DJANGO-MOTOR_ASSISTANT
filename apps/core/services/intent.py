@@ -291,6 +291,19 @@ MOTORCYCLE_VOCABULARY = [
     'rain riding', 'riding in the rain', 'wet road', 'pag umuulan',
 ]
 
+SHORT_CONTEXTUAL_REPLIES = {
+    'yes', 'yeah', 'yep', 'yup', 'no', 'nope', 'okay', 'ok', 'sure', 'ready',
+    'not sure', 'not yet', 'not fixed', 'still not', 'still the same',
+    'same', 'same problem', 'no change', 'unchanged', 'better', 'worse',
+    'normal', 'abnormal', 'fine', 'looks fine', 'looks ok', 'seems fine',
+    'seems ok', 'found it', 'i found it', 'not found', 'cant find it',
+    "can't find it", 'checked', 'i checked', 'i did', 'done', 'fixed',
+    'no sound', 'nothing', 'nothing yet', 'yes please', 'no thanks',
+    'oo', 'opo', 'hindi', 'hindi pa', 'wala', 'wala pa', 'wala pa rin',
+    'maayos', 'ok na', 'sige', 'indi', 'indi pa', 'indi gihapon',
+    'wala pa gid', 'maayo', 'amo na',
+}
+
 
 def is_motorcycle_related(norm: str, history=None, vehicle_profile=None) -> bool:
     """Check whether the message has genuine motorcycle relevance or context."""
@@ -378,8 +391,10 @@ def is_motorcycle_related(norm: str, history=None, vehicle_profile=None) -> bool
         if _VISUAL_INQUIRY.search(norm):
             return True
 
-        # Short in-session answers (under 6 words) that aren't open-ended general knowledge questions
-        if len(norm.split()) <= 6 and not norm.startswith(('who ', 'how do i cook', 'tell me a joke', 'tell me a poem')):
+        # Preserve common guided answers, but don't treat any random short text
+        # as motorcycle-related just because the user has older chat history.
+        short_reply = norm.strip(' \t\r\n.,!?')
+        if short_reply in SHORT_CONTEXTUAL_REPLIES:
             return True
 
     # Location or visual requests with part/component/assembly context
@@ -461,6 +476,15 @@ def classify_intent(message: str, history=None, vehicle_profile=None) -> IntentR
     for pattern in INJECTION_PATTERNS:
         if re.search(pattern, norm):
             return _make_intent('off_topic', sub_intent='prompt_injection', entity=None, is_off_topic=True, details={'reason': 'Prompt injection attempt detected'})
+
+    from .moderation import contains_profanity
+    if contains_profanity(norm):
+        return _make_intent(
+            'abusive',
+            sub_intent='profanity',
+            is_off_topic=True,
+            details={'reason': 'Profanity detected'},
+        )
 
     # 2. Fictional / joke parts
     for fictional in FICTIONAL_PARTS:
@@ -575,6 +599,10 @@ def classify_intent(message: str, history=None, vehicle_profile=None) -> IntentR
     # 17. Courtesy / greeting / identity / help
     for pattern, kind in COURTESY_PATTERNS:
         if re.search(pattern, norm):
+            if kind in ('greeting', 'help') and is_motorcycle_related(
+                norm, history=history, vehicle_profile=vehicle_profile
+            ):
+                continue
             return _make_intent(kind, sub_intent=kind, entity=None, is_off_topic=False, details={})
 
     # 17. Motorcycle relevance gate before diagnostic fallback

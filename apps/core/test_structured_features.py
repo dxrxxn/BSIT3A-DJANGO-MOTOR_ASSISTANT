@@ -165,6 +165,67 @@ def test_structured_chat_is_safety_first_and_persists_memory(client):
     assert Conversation.objects.filter(user=user).count() == 1
 
 
+@pytest.mark.parametrize('message,language,expected', [
+    ('fuck you', 'english', 'respectful'),
+    ("fuck, my Honda won't start", 'english', 'respectful'),
+    ('fuck, my brakes failed', 'english', 'respectful'),
+    ('putang ina', 'tagalog', 'magalang'),
+    ('pakyu', 'tagalog', 'magalang'),
+    ('yawa', 'hiligaynon', 'matinahuron'),
+])
+@pytest.mark.parametrize('structured_mode', [False, True])
+@pytest.mark.django_db
+def test_chat_blocks_profanity_before_ai_or_database_save(
+    client, monkeypatch, message, language, expected, structured_mode
+):
+    from apps.core import views
+
+    user = make_user(f'moderation-{language}-{structured_mode}-{message[:4]}')
+    client.force_login(user)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError('profanity must be blocked before assistant processing')
+
+    monkeypatch.setattr(views, '_jarvis_response', fail_if_called)
+    monkeypatch.setattr(views.assistant_service, 'respond', fail_if_called)
+    response = client.post(
+        reverse('jarvis_chat'),
+        data=json.dumps({
+            'message': message,
+            'language': language,
+            'structured': structured_mode,
+        }),
+        content_type='application/json',
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data['moderation_blocked'] is True
+    assert expected in data['reply'].lower()
+    if 'brakes failed' in message:
+        assert 'Do not ride or drive' in data['reply']
+    assert Conversation.objects.filter(user=user).count() == 0
+    assert ChatTurn.objects.filter(user=user).count() == 0
+    if structured_mode:
+        assert data['structured']['intent'] == 'profanity_blocked'
+        assert data['structured']['reply_text'] == data['reply']
+        if 'brakes failed' in message:
+            assert data['structured']['safety']['stop_use'] is True
+
+
+@pytest.mark.django_db
+def test_assistant_service_blocks_profanity_before_creating_conversation():
+    from apps.core.services import assistant
+
+    user = make_user('moderation-service')
+    result = assistant.respond(user, 'putang ina', language='tagalog')
+
+    assert result['moderation_blocked'] is True
+    assert 'magalang' in result['reply'].lower()
+    assert Conversation.objects.filter(user=user).count() == 0
+    assert ChatTurn.objects.filter(user=user).count() == 0
+
+
 @override_settings(GEMINI_API_KEY='')
 @override_settings(GEMINI_API_KEY='')
 @pytest.mark.django_db
@@ -243,6 +304,7 @@ def test_structured_general_question_uses_general_ai_prompt(monkeypatch):
     def fake_generate(prompt, **kwargs):
         captured['prompt'] = prompt
         captured['system'] = kwargs.get('system_instruction')
+        captured['google_search'] = kwargs.get('google_search')
         return AiResult(
             text='The ECU is usually under the seat, sir.\n\n[chips: Battery | Fuse box | Wiring]',
             model='fake-general-model',
@@ -258,7 +320,9 @@ def test_structured_general_question_uses_general_ai_prompt(monkeypatch):
     assert result['offline'] is False
     assert structured['intent'] == 'general_motorcycle_question'
     assert structured['missing_questions'] == []
-    assert 'friendly and knowledgeable motorcycle assistant' in captured['system']
+    assert 'Motorcycle Diagnostic Assistant' in captured['system']
+    assert 'politely decline briefly' in captured['system']
+    assert captured['google_search'] is True
     assert 'where is the ECU located' in captured['prompt']
     assert 'under the seat' in structured['reply_text'].lower()
 
@@ -484,6 +548,42 @@ def test_model_sources_not_in_local_evidence_are_dropped():
     ]
 
 
+def test_only_provider_grounded_web_sources_are_added_to_ai_response():
+    from apps.core.services.ai import AiResult
+    from apps.core.services.assistant import _normalise_ai_result
+
+    result = AiResult(
+        structured={
+            'reply_text': 'Check the exact model service manual.',
+            'intent': 'general_diagnostic',
+            'diagnostic_stage': 'general',
+            'next_action': 'Confirm the model year.',
+            'sources': [{'title': 'Invented source', 'reference': 'https://fake.example'}],
+        },
+        grounded_sources=[{
+            'title': 'Official Service Information',
+            'reference': 'https://manufacturer.example/service',
+            'reviewed': False,
+            'source_type': 'web',
+        }],
+    )
+
+    structured = _normalise_ai_result(
+        result,
+        language='english',
+        safety=None,
+        evidence=[],
+    )
+
+    assert structured['sources'] == [{
+        'title': 'Official Service Information',
+        'reference': 'https://manufacturer.example/service',
+        'reviewed': False,
+        'date': '',
+        'source_type': 'web',
+    }]
+
+
 @pytest.mark.django_db
 def test_unapproved_or_unsourced_guides_are_not_retrieved():
     from apps.motor.models import DiagnosticSymptom, TroubleshootingGuide
@@ -534,10 +634,14 @@ def test_unapproved_or_unsourced_guides_are_not_retrieved():
 class _FakeModels:
     def __init__(self, failures=0):
         self.calls = []
+        self.configs = []
+        self.contents = []
         self.failures = failures
 
-    def generate_content(self, *, model, contents):
+    def generate_content(self, *, model, contents, config=None):
         self.calls.append(model)
+        self.configs.append(config)
+        self.contents.append(contents)
         if self.failures:
             self.failures -= 1
             raise RuntimeError('raw-provider-detail-must-not-be-logged')
@@ -562,6 +666,7 @@ def test_legacy_gemini_uses_env_model_and_fallback(caplog):
 
     assert reply == 'Grounded local answer.'
     assert models.calls == ['configured-model', 'configured-fallback']
+    assert 'Motorcycle Diagnostic Assistant' in models.configs[0].system_instruction
     assert 'raw-provider-detail' not in caplog.text
 
 
@@ -584,3 +689,24 @@ def test_diagnostic_engine_uses_configured_fallback_without_raw_logs(caplog):
     assert reply == 'Grounded local answer.'
     assert models.calls == ['primary-model', 'fallback-model']
     assert 'raw-provider-detail' not in caplog.text
+
+
+@override_settings(
+    AI_PROVIDER='gemini',
+    GEMINI_MODEL='scope-model',
+    GEMINI_FALLBACK_MODEL='',
+)
+@pytest.mark.django_db
+def test_diagnostic_engine_sends_role_scope_as_gemini_system_instruction():
+    from apps.core import diagnostic_engine
+
+    models = _FakeModels()
+    with patch('apps.core.views._get_gemini_client', return_value=SimpleNamespace(models=models)):
+        reply = diagnostic_engine.call_configured_ai(
+            'diagnostic prompt',
+            system_instruction='Motorcycle-only system instruction.',
+        )
+
+    assert reply == 'Grounded local answer.'
+    assert models.configs[0].system_instruction == 'Motorcycle-only system instruction.'
+    assert models.contents[0] == 'diagnostic prompt'

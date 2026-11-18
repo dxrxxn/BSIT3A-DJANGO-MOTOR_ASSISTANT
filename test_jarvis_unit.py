@@ -268,6 +268,64 @@ class TestOfflineKnowledge:
         assert result.text == 'Recovered after retry!'
         assert len(attempts) == 2
 
+    def test_google_search_grounding_adds_tool_and_returns_safe_sources(self, monkeypatch):
+        from types import SimpleNamespace
+
+        from google.genai import types
+
+        from apps.core.services import ai
+
+        captured = {}
+        response = SimpleNamespace(
+            text='Check the exact model service manual.',
+            parsed=None,
+            usage_metadata=None,
+            candidates=[
+                SimpleNamespace(
+                    finish_reason='STOP',
+                    grounding_metadata=SimpleNamespace(
+                        grounding_chunks=[
+                            SimpleNamespace(web=SimpleNamespace(
+                                title='Official Service Information',
+                                uri='https://manufacturer.example/service',
+                            )),
+                            SimpleNamespace(web=SimpleNamespace(
+                                title='Duplicate source',
+                                uri='https://manufacturer.example/service',
+                            )),
+                            SimpleNamespace(web=SimpleNamespace(
+                                title='Insecure source',
+                                uri='http://untrusted.example/page',
+                            )),
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+        class FakeModels:
+            def generate_content(self, *, model, contents, config):
+                captured['config'] = config
+                return response
+
+        class FakeClient:
+            models = FakeModels()
+
+        monkeypatch.setattr(ai, 'is_ai_configured', lambda: True)
+        monkeypatch.setattr(ai, '_daily_budget_remaining', lambda: True)
+        monkeypatch.setattr(ai, '_make_client', lambda: (FakeClient(), types))
+
+        result = ai.generate('Find repair info for this exact motorcycle.', google_search=True)
+
+        assert captured['config'].tools[0].google_search is not None
+        assert result.grounded_sources == [{
+            'title': 'Official Service Information',
+            'reference': 'https://manufacturer.example/service',
+            'reviewed': False,
+            'date': '',
+            'source_type': 'web',
+        }]
+
     def test_new_mapped_symptoms_offline(self):
         from apps.motor.knowledge import retrieve_verified_knowledge
         
@@ -523,6 +581,56 @@ class TestRuleBasedDiagnostic:
 
 @pytest.mark.django_db
 class TestJarvisResponseFallbackChain:
+    @pytest.mark.parametrize('message', ['selena gomez', 'fuck', 'fuck you'])
+    def test_irrelevant_messages_do_not_reuse_guided_diagnosis(
+        self, user, clean_knowledge, message
+    ):
+        state = {
+            'stage': 'checks',
+            'bike': {'make': 'Honda', 'model': 'Click 125'},
+            'diagnosis': 'old drivetrain diagnosis',
+        }
+        original_state = {
+            'stage': 'checks',
+            'bike': {'make': 'Honda', 'model': 'Click 125'},
+            'diagnosis': 'old drivetrain diagnosis',
+        }
+        history = [
+            {'role': 'assistant', 'text': 'The drivetrain may need inspection.'},
+        ]
+
+        reply = views._jarvis_response(
+            message, user, history=history, guided_state=state
+        )
+
+        assert 'drivetrain' not in reply.lower()
+        if message.startswith('fuck'):
+            assert 'respectful' in reply.lower()
+            assert 'motorcycle' in reply.lower()
+        else:
+            assert 'what issue' in reply.lower()
+        assert state == original_state
+
+    @pytest.mark.parametrize('message', ['yes', 'no', 'not yet', 'okay'])
+    def test_common_short_replies_keep_motorcycle_context(self, message):
+        from apps.core.services.intent import is_motorcycle_related
+
+        history = [{'role': 'assistant', 'text': 'Check whether the engine starts.'}]
+        assert is_motorcycle_related(
+            message,
+            history=history,
+            vehicle_profile={'make': 'Honda', 'model': 'Click 125'},
+        )
+
+    def test_profanity_is_blocked_even_when_message_mentions_a_symptom(self, user):
+        from apps.core.services.intent import classify_intent
+
+        message = "fuck, my Honda won't start"
+        assert classify_intent(message) == 'abusive'
+        reply = views._jarvis_response(message, user)
+        assert 'respectful' in reply.lower()
+        assert '[vehicle-form:' not in reply
+
     def test_rule_based_used_when_gemini_offline(self, user, clean_knowledge):
         reply = views._jarvis_response("engine won't start", user)
         assert reply

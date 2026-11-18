@@ -577,14 +577,19 @@ def call_configured_ai(prompt, system_instruction=None):
 
         response = None
         last_exc = None
+        from google.genai import types
+        config = (
+            types.GenerateContentConfig(system_instruction=system_instruction)
+            if system_instruction else None
+        )
         for m in models_to_try:
             max_attempts = 2 if len(models_to_try) > 1 else 3
             for attempt in range(1, max_attempts + 1):
                 try:
-                    response = client.models.generate_content(
-                        model=m,
-                        contents=combined_prompt,
-                    )
+                    kwargs = {'model': m, 'contents': prompt}
+                    if config is not None:
+                        kwargs['config'] = config
+                    response = client.models.generate_content(**kwargs)
                     if response:
                         break
                 except Exception as api_err:
@@ -650,6 +655,13 @@ def orchestrate_diagnostic_response(message, user, history=None, language=None, 
        style, question type, and strict anti-hallucination guardrails.
     5. Calls configured AI provider with seamless fallback to verified local database knowledge.
     """
+    from .services.moderation import contains_profanity
+    if contains_profanity(message):
+        from .services.intake import detect_language
+        lang = language if language in ('english', 'tagalog', 'hiligaynon') else detect_language(message)
+        from .services.assistant import profanity_blocked_result
+        return profanity_blocked_result(message, language=lang)['reply']
+
     from .guided_diagnostic import _is_greeting
     if _is_greeting(message):
         return None
